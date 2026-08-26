@@ -11,7 +11,7 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 - Unit/smoke tests: `npm run test`.
 - Production build: `npm run build`.
 - Bounded code verification: `npm run verify`.
-- PR change-size gate: `bash scripts/check-change-size.sh <base-ref>`.
+- PR change-size gate: `npm run verify:change-size -- <base-ref>`.
 - Run verification for the surface changed:
   - TypeScript/code -> lint, typecheck, unit tests.
   - API/contracts -> contract tests.
