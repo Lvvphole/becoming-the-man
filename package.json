@@ -11,7 +11,8 @@
     "typecheck": "react-router typegen && tsc --noEmit",
     "test": "vitest run",
     "build": "react-router build",
-    "verify": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "verify:change-size": "bash scripts/check-change-size.sh"
   },
   "dependencies": {
     "@react-router/node": "7.18.2",
