@@ -1,7 +1,9 @@
 node_modules/
 build/
 .react-router/
+.vercel/
 coverage/
+verification-reports/
 .env
 .env.*
 !.env.example

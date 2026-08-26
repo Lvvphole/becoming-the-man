@@ -1,0 +1,22 @@
+# id	state	requirement	command	oracle
+required_repository_files	ACTIVE	Locked repository shape and verification controls are present.	builtin:required_files	All required paths exist.
+frozen_dependency_install	ACTIVE	Install from the committed lockfile with the repository's real frozen-install command.	npm ci	The committed npm lockfile installs successfully.
+git_secret_verification	ACTIVE	Inspect selected Git objects and tree-entry names without exposing matched secret material.	builtin:secret	History is complete; no detected secret material or prohibited .env path exists.
+generated_artifacts	NOT_ACTIVE	Verify generated artifacts and drift when generated outputs exist.	-	Generated output matches committed source.
+lint	ACTIVE	Run the repository lint command.	npm run lint	Lint passes.
+typecheck	ACTIVE	Run the repository typecheck command.	npm run typecheck	Typecheck passes.
+production_build	ACTIVE	Build the production React Router/Vite application.	npm run build	Production build succeeds.
+unit_tests	ACTIVE	Run website unit tests.	npm run test	Unit and smoke tests pass.
+api_contract_tests	NOT_ACTIVE	Run API/contract tests when API/contracts are implemented.	-	Applicable contract assertions pass.
+supabase_migration_rls_tests	NOT_ACTIVE	Run Supabase migration, grant, and RLS tests when schema is implemented.	-	Applicable isolated database checks pass.
+deterministic_assessment_tests	NOT_ACTIVE	Run versioned deterministic assessment fixtures when assessment is implemented.	-	Known inputs produce exact expected outputs.
+applicable_ai_evals	NOT_ACTIVE	Run the R4 AI eval suite when AI surfaces or governed AI inputs are active.	-	All mandatory G0-G3 and applicable G4 assertions pass.
+e2e_user_journeys	NOT_ACTIVE	Run critical user journeys when implemented.	-	Applicable governed journeys pass.
+accessibility	NOT_ACTIVE	Run accessibility checks when rendered journeys exist.	-	Applicable accessibility assertions pass.
+seo_indexing	NOT_ACTIVE	Verify rendered HTML, metadata, canonical, schema, sitemap, robots, llms, and noindex behavior when public routes exist.	-	Applicable indexing/discoverability assertions pass.
+release_acceptance	NOT_ACTIVE	Run the owning release exit contract when a release candidate exists.	-	Owning release acceptance evidence passes.
+prior_release_regression	NOT_ACTIVE	Rerun all earlier accepted release exit suites on later promotions.	-	No previously accepted release behavior regresses.
+deployment_config_validation	NOT_ACTIVE	Validate preview/production configuration when deployable application configuration exists.	-	Architecture-owned deployment configuration is valid.
+verification_control_tests	ACTIVE	Protect candidate identity, cleanliness, aggregation, Git boundary, and verification controls from silent weakening.	builtin:selftest	All bounded verification-layer regression fixtures pass.
+git_diff_check	ACTIVE	Reject whitespace errors in the committed candidate.	builtin:git_diff_check	The committed candidate diff contains no whitespace errors.
+pr_merge_identity	CONDITIONAL	On pull-request CI, bind verification to GitHub's exact two-parent merge candidate.	builtin:pr_merge_identity	HEAD^1 equals the expected base SHA and HEAD^2 equals the expected feature SHA.

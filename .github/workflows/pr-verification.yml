@@ -17,18 +17,21 @@ jobs:
   verify:
     name: PR Verification
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout exact candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-node@v4
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/merge', github.event.pull_request.number) || github.sha }}
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22.16.0
           cache: npm
-      - name: Install frozen dependencies
-        run: npm ci
+
       - name: Enforce bounded change size
         if: github.event_name == 'pull_request'
         shell: bash
@@ -36,15 +39,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            base_ref="origin/${{ github.base_ref }}"
-          else
-            base_ref="origin/main"
-          fi
-          npm run verify:change-size -- "$base_ref"
-      - name: Verify code
-        run: npm run verify
+        run: npm run verify:change-size -- "origin/${{ github.base_ref }}"
+
+      - name: Run canonical production verification
+        env:
+          VERIFY_PR_MERGE_CANDIDATE: ${{ github.event_name == 'pull_request' && '1' || '0' }}
+          EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
+        run: bash scripts/verify-production.sh
+
       - name: Verify first-response SSR
         shell: bash
         run: |
@@ -62,11 +65,12 @@ jobs:
           grep -F 'href="/book"' /tmp/home.html
           grep -F 'BOOK ORIENTATION' /tmp/book.html
           grep -F 'href="/"' /tmp/book.html
-      - name: Bind evidence to tested SHA
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          tested_sha="$(git rev-parse HEAD)"
-          test "$tested_sha" = "$EXPECTED_SHA"
-          echo "PASS: PR Verification tested exact SHA $tested_sha"
+
+      - name: Preserve verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pr-verification-${{ github.event.pull_request.head.sha || github.sha }}
+          path: verification-reports/*.md
+          if-no-files-found: warn
+          retention-days: 14

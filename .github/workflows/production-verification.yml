@@ -1,0 +1,40 @@
+name: Production Verification
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-verification-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: PR Production Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request merge candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run canonical production verification
+        env:
+          VERIFY_PR_MERGE_CANDIDATE: "1"
+          EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/verify-production.sh
+
+      - name: Preserve production verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: production-verification-${{ github.sha }}
+          path: verification-reports/*.md
+          if-no-files-found: warn
+          retention-days: 14
