@@ -4,9 +4,13 @@ Repository: `Lvvphole/becoming-the-man`
 Status: bootstrap instructions for an empty repository. Keep this file short; update it only when the repository gains real commands, paths, or checks.
 
 ## Build & Test
-- No repository build, lint, typecheck, test, or CI commands exist yet.
-- Do not invent commands.
-- Once `package.json` exists, use only scripts defined there and update this section with the exact commands.
+- Install locked dependencies: `npm ci`.
+- Start the SSR development server: `npm run dev`.
+- Lint: `npm run lint`.
+- Typecheck: `npm run typecheck`.
+- Unit/smoke tests: `npm run test`.
+- Production build: `npm run build`.
+- Bounded code verification: `npm run verify`.
 - Run verification for the surface changed:
   - TypeScript/code -> lint, typecheck, unit tests.
   - API/contracts -> contract tests.
