@@ -1,20 +1,23 @@
 # AGENTS.md
 
 Repository: `Lvvphole/becoming-the-man`
-Status: bootstrap instructions for an empty repository. Keep this file short; update it only when the repository gains real commands, paths, or checks.
+Status: bootstrap instructions for the approved single repository. Keep this file short; update commands only when the repository's executable scripts change.
 
 ## Build & Test
-- No repository build, lint, typecheck, test, or CI commands exist yet.
-- Do not invent commands.
-- Once `package.json` exists, use only scripts defined there and update this section with the exact commands.
-- Run verification for the surface changed:
-  - TypeScript/code -> lint, typecheck, unit tests.
-  - API/contracts -> contract tests.
-  - Supabase schema/RLS -> migration and RLS tests.
-  - User journeys -> E2E and accessibility checks.
-  - SEO/indexing -> rendered HTML, metadata, canonical, schema, sitemap/noindex checks.
-  - AI/assessment -> the applicable AI evals and deterministic assessment fixtures.
-  - Release candidate -> owning release checks plus all earlier-release regressions.
+- Install from the committed lockfile with `npm ci`.
+- Run the development server with `npm run dev`.
+- Build the SSR application with `npm run build`.
+- Run lint with `npm run lint`.
+- Run type checking with `npm run typecheck`.
+- Run unit/contract tests with `npm run test`.
+- Run contract-focused tests with `npm run test:contracts`.
+- Run migration/RLS contract tests with `npm run test:rls`.
+- Run browser journey tests with `npm run test:e2e`.
+- Run accessibility checks with `npm run test:a11y`.
+- Run first-response SEO/SSR checks with `npm run verify:seo`.
+- Run static module-boundary checks with `npm run verify:boundaries`.
+- Run the normal code verification set with `npm run verify`.
+- Run the release-candidate verification set with `npm run verify:release`.
 - A green build alone is not release evidence.
 
 ## Code Style & Conventions
