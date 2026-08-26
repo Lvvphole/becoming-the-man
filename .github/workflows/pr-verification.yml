@@ -4,7 +4,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
-    branches: [main]
 
 permissions:
   contents: read
@@ -29,9 +28,16 @@ jobs:
           cache: npm
       - name: Install frozen dependencies
         run: npm ci
-      - name: Enforce bounded PR size
-        if: github.event_name == 'pull_request'
-        run: bash scripts/check-change-size.sh "origin/${{ github.base_ref }}"
+      - name: Enforce bounded change size
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_ref="origin/${{ github.base_ref }}"
+          else
+            base_ref="origin/main"
+          fi
+          npm run verify:change-size -- "$base_ref"
       - name: Verify code
         run: npm run verify
       - name: Verify first-response SSR
