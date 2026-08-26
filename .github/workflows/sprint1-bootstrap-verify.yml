@@ -1,0 +1,56 @@
+name: Sprint 1 bootstrap verification
+
+on:
+  push:
+    branches:
+      - feat/r1-01-sprint1-ssr-foundation
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Install dependencies
+        run: npm install
+      - name: Commit generated dependency lockfile
+        shell: bash
+        run: |
+          if [[ -n "$(git status --porcelain package-lock.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: lock Sprint 1 dependencies"
+            git push origin HEAD:feat/r1-01-sprint1-ssr-foundation
+          fi
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit and smoke tests
+        run: npm run test
+      - name: Production build
+        run: npm run build
+      - name: Verify first-response SSR HTML
+        shell: bash
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/sprint1-ssr.log 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ > /tmp/home.html; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/book > /tmp/book.html
+          grep -F '<h1>Becoming the Man She Can Trust</h1>' /tmp/home.html
+          grep -F 'href="/book"' /tmp/home.html
+          grep -F 'BOOK ORIENTATION' /tmp/book.html
+          grep -F 'href="/"' /tmp/book.html
