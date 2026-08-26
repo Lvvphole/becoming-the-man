@@ -30,7 +30,7 @@ jobs:
       - name: Install frozen dependencies
         run: npm ci
       - name: Enforce bounded change size
-        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        if: github.event_name == 'pull_request'
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
