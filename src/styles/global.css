@@ -1,0 +1,174 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #f5f2eb;
+  background: #0f1720;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #0f1720;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(189, 158, 93, 0.12), transparent 34rem),
+    linear-gradient(180deg, #0f1720 0%, #111b25 100%);
+}
+
+a {
+  color: inherit;
+}
+
+main {
+  width: min(100% - 2rem, 72rem);
+  margin: 0 auto;
+}
+
+.hero,
+.book-page {
+  min-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(4rem, 10vw, 8rem) 0;
+}
+
+.eyebrow,
+.section-kicker {
+  margin: 0 0 1rem;
+  color: #d1b476;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+h1,
+h2,
+p,
+blockquote {
+  max-width: 48rem;
+}
+
+h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(3rem, 9vw, 6.8rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+h2 {
+  margin: 0 0 1rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.7rem, 4vw, 2.7rem);
+  font-weight: 500;
+  line-height: 1.08;
+}
+
+.subtitle {
+  margin: 1.5rem 0 0;
+  color: #d9d7cf;
+  font-size: clamp(1.1rem, 2.4vw, 1.55rem);
+  line-height: 1.45;
+}
+
+.lede,
+.orientation p,
+.book-grid p,
+.purchase p {
+  color: #c8c6c0;
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+blockquote {
+  margin: 2.5rem 0 0;
+  padding-left: 1.25rem;
+  border-left: 2px solid #d1b476;
+  color: #f5f2eb;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.2rem, 3vw, 1.75rem);
+  line-height: 1.45;
+}
+
+.byline {
+  margin: 1rem 0 0;
+  color: #9fa6ad;
+}
+
+.actions {
+  margin-top: 2.5rem;
+}
+
+.button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.85rem 1.35rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button-primary {
+  background: #d1b476;
+  color: #111820;
+}
+
+.button:focus-visible,
+.text-link:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 4px;
+}
+
+.orientation {
+  padding: 0 0 clamp(5rem, 10vw, 9rem);
+}
+
+.text-link {
+  width: fit-content;
+  margin-bottom: 3rem;
+  color: #c8c6c0;
+  text-underline-offset: 0.25em;
+}
+
+.book-grid {
+  display: grid;
+  gap: 1px;
+  margin-top: 4rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.book-grid section {
+  background: #121c26;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.purchase {
+  padding: 3rem 0 0;
+}
+
+@media (min-width: 820px) {
+  .book-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
