@@ -30,6 +30,7 @@ Status: bootstrap instructions for an empty repository. Keep this file short; up
 ## Project Architecture
 Use the locked single-repository shape when scaffolding:
 - `src/` — routes, components, features, layouts, browser-safe helpers, styles.
+- `api/` — Vercel function entry points where needed.
 - `server/` — domain, schemas, repositories, adapters, email, AI, security.
 - `contracts/` — shared API/event/error/schema contracts.
 - `supabase/` — migrations, seed data, RLS/migration tests.
