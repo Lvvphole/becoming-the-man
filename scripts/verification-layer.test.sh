@@ -20,6 +20,10 @@ new_repo(){
 #!/usr/bin/env bash
 exit 0
 STUB
+  cat > "$dir/scripts/verification-selection.test.sh" <<'STUB'
+#!/usr/bin/env bash
+exit 0
+STUB
   chmod +x "$dir"/scripts/*.sh
   printf '# fixture\n' > "$dir/AGENTS.md"
   printf '# fixture\n' > "$dir/README.md"
