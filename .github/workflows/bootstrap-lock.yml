@@ -23,6 +23,7 @@ jobs:
       - name: Run bounded verification
         run: npm run verify
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: package-lock
           path: package-lock.json

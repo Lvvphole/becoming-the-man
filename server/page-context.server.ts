@@ -3,22 +3,31 @@ export type PublicPageContext = {
   robots: "index,follow" | "noindex,nofollow";
 };
 
-export function getPublicPageContext(pathname: string): PublicPageContext {
+function resolveCanonicalUrl(pathname: string): string | null {
   const canonicalOrigin = process.env.CANONICAL_ORIGIN;
-  const isProduction = process.env.VERCEL_ENV === "production";
 
-  let canonicalUrl: string | null = null;
-
-  if (canonicalOrigin) {
-    try {
-      canonicalUrl = new URL(pathname, canonicalOrigin).toString();
-    } catch {
-      canonicalUrl = null;
-    }
+  if (!canonicalOrigin) {
+    return null;
   }
+
+  try {
+    const origin = new URL(canonicalOrigin);
+    if (origin.protocol !== "https:" && origin.protocol !== "http:") {
+      return null;
+    }
+
+    return new URL(pathname, origin).toString();
+  } catch {
+    return null;
+  }
+}
+
+export function getPublicPageContext(pathname: string): PublicPageContext {
+  const canonicalUrl = resolveCanonicalUrl(pathname);
+  const canIndex = process.env.VERCEL_ENV === "production" && canonicalUrl !== null;
 
   return {
     canonicalUrl,
-    robots: isProduction ? "index,follow" : "noindex,nofollow",
+    robots: canIndex ? "index,follow" : "noindex,nofollow",
   };
 }

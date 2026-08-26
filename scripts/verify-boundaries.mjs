@@ -1,3 +1,4 @@
+/* global console, process */
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 

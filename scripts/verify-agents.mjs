@@ -1,3 +1,4 @@
+/* global console */
 import { readFile } from "node:fs/promises";
 
 const agents = await readFile("AGENTS.md", "utf8");
