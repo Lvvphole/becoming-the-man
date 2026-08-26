@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Repository: `Lvvphole/becoming-the-man`
-Status: active React SSR repository. Keep this file under 150 lines and synchronized with real commands and enforced checks.
+Status: executable SSR foundation present. Keep this file short; update it only when the repository gains real commands, paths, or checks.
 
 ## Build & Test
 - Install locked dependencies: `npm ci`.
@@ -11,7 +11,7 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 - Unit/smoke tests: `npm run test`.
 - Production build: `npm run build`.
 - Bounded code verification: `npm run verify`.
-- PR change-size gate: `npm run verify:change-size -- <base-ref>`.
+- Change-size verification: `npm run verify:change-size -- <base-ref>`.
 - Run verification for the surface changed:
   - TypeScript/code -> lint, typecheck, unit tests.
   - API/contracts -> contract tests.
@@ -25,7 +25,7 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 ## Change & Review Gates
 - A PR may contain at most 1,000 reviewable implementation lines changed, measured as additions + deletions from the merge base to the final head.
 - Count source, tests, scripts, SQL, configuration, and workflow definitions. Exclude Markdown/docs, dependency lockfiles, and explicitly generated framework/build artifacts.
-- Over-budget work must be decomposed unless the user explicitly authorizes an exception before merge.
+- Over-budget work must be decomposed unless the user explicitly authorizes an exception before merge. Record that authorization in a PR comment containing the exact line `CHANGE-SIZE-EXCEPTION: APPROVED`; CI accepts it only when the comment author is the repository owner.
 - Persistent `PR Verification` must PASS for the exact final PR head SHA. Any new implementation commit invalidates earlier verification evidence.
 - After CI is green, request a Codex review on the exact final head. Any substantive implementation change after that review requires CI and Codex review again.
 - Do not declare PASS, complete, or merge-ready while required CI is missing/failing or an actionable Codex finding remains unresolved.
@@ -63,13 +63,12 @@ Do not introduce microservices, queues, Kubernetes, custom payment/order systems
 - Keep `/admin` and sensitive/session-specific pages private, no-store, and non-indexable.
 - Use non-production provider projects/test modes for previews; previews remain noindex.
 - Do not bypass required checks to obtain a green deployment.
-- `main` must require `PR Verification` and require the branch to be up to date before merge. Until repository rules enforce both, merge enforcement is incomplete.
 
 ## Upstream Source Router
 Do not preload upstream specifications. Read only the smallest relevant authoritative section when the task requires it.
 - Product goal, governing UX, DoD, release intent/order, or product constraints -> **Website Governing Product Specification v1.0 — LOCKED**.
 - Exact user/operator behavior, journey, requirement, or acceptance criterion -> **Website Product Specification v1.0 — LOCKED**.
-- Repository boundary, runtime, data ownership, API/provider contract, security, AI grounding/evals, CI/CD, or recovery -> **Website System Architecture v1.0 — LOCKED**, as amended by approved versioned architecture amendments.
+- Repository boundary, runtime, data ownership, API/provider contract, security, AI grounding/evals, CI/CD, or recovery -> **Website System Architecture v1.0 — LOCKED**.
 - Public book identity or Twenty-Four Non-Negotiables -> published **Becoming the Man She Can Trust**.
 - Deeper relationship protocols, evidence calibration, or safety/referral rules -> **Master Relationship Operating System v1.4**.
 If the required authoritative source is not present in the repository or supplied task context, stop and request it. Do not substitute memory or guess.
