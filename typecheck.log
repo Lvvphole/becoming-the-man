@@ -1,0 +1,13 @@
+
+> typecheck
+> react-router typegen && tsc --noEmit
+
+Error: Could not determine server runtime. Please install @react-router/node, or provide a custom entry.server.tsx/jsx file in your app directory.
+    at resolveEntryFiles (/home/runner/work/becoming-the-man/becoming-the-man/node_modules/@react-router/dev/dist/vite.js:839:13)
+    at updatePluginContext (/home/runner/work/becoming-the-man/becoming-the-man/node_modules/@react-router/dev/dist/vite.js:3166:56)
+    at BasicMinimalPluginContext.config (/home/runner/work/becoming-the-man/becoming-the-man/node_modules/@react-router/dev/dist/vite.js:3594:9)
+    at runConfigHook (file:///home/runner/work/becoming-the-man/becoming-the-man/node_modules/vite/dist/node/chunks/config.js:36023:15)
+    at Module.resolveConfig (file:///home/runner/work/becoming-the-man/becoming-the-man/node_modules/vite/dist/node/chunks/config.js:35525:13)
+    at hasReactRouterRscPlugin (/home/runner/work/becoming-the-man/becoming-the-man/node_modules/@react-router/dev/dist/cli/index.js:1460:22)
+    at typegen (/home/runner/work/becoming-the-man/becoming-the-man/node_modules/@react-router/dev/dist/cli/index.js:2538:15)
+    at run2 (/home/runner/work/becoming-the-man/becoming-the-man/node_modules/@react-router/dev/dist/cli/index.js:2721:7)
