@@ -95,4 +95,48 @@ describe("Supabase site settings adapter", () => {
       code: "provider_unavailable",
     });
   });
+
+  it("bounds a stalled provider read and maps the abort to provider_unavailable", async () => {
+    vi.useFakeTimers();
+
+    try {
+      let observedSignal: AbortSignal | null = null;
+      const repository = createSupabaseSiteSettingsRepository({
+        env: {
+          SUPABASE_URL: "https://project.supabase.co",
+          SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",
+        },
+        fetchImpl: async (_input, init) => {
+          observedSignal = init.signal ?? null;
+
+          return new Promise<Response>((_resolve, reject) => {
+            init.signal?.addEventListener(
+              "abort",
+              () => reject(new DOMException("The operation was aborted", "AbortError")),
+              { once: true },
+            );
+          });
+        },
+      });
+
+      const read = repository.read("book_purchase_url");
+      const guardedRead = Promise.race([
+        read,
+        new Promise<"test-timeout">((resolve) => {
+          setTimeout(() => resolve("test-timeout"), 10_000);
+        }),
+      ]);
+
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      await expect(guardedRead).resolves.toEqual({
+        ok: false,
+        code: "provider_unavailable",
+      });
+      expect(observedSignal).not.toBeNull();
+      expect(observedSignal?.aborted).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
