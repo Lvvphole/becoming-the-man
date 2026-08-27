@@ -27,7 +27,11 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 - Count source, tests, scripts, SQL, configuration, and workflow definitions. Exclude Markdown/docs, dependency lockfiles, and explicitly generated framework/build artifacts.
 - Over-budget work must be decomposed unless the user explicitly authorizes an exception before merge. Record that authorization in a PR comment containing the exact line `CHANGE-SIZE-EXCEPTION: APPROVED`; CI accepts it only when the comment author is the repository owner.
 - Persistent `PR Verification` must PASS for the exact final PR head SHA. Any new implementation commit invalidates earlier verification evidence.
-- After CI is green, request a Codex review on the exact final head. Any substantive implementation change after that review requires CI and Codex review again.
+- After CI is green, request a Codex review on the exact implementation state.
+- Without new explicit user authorization, a PR may execute at most three Codex review cycles. If cycle 3 reports any actionable finding, stop immediately and report `BLOCKED`; do not repair that finding or start a fourth review cycle unless the user explicitly authorizes continue, split, reduce, redesign, or abandon.
+- A substantive implementation, verification-logic, or governance-semantics change after Codex review invalidates that review and requires fresh exact-head CI plus the next permitted Codex review cycle.
+- A pure refresh with newer `main` always requires fresh exact-head CI. The prior Codex review remains current only when the effective reviewable implementation diff against updated `main` is unchanged; if equivalence cannot be demonstrated, require the next permitted Codex review cycle.
+- Documentation-only evidence updates that do not alter implementation, verification logic, or governance semantics do not consume a Codex review cycle or invalidate a current review.
 - Do not declare PASS, complete, or merge-ready while required CI is missing/failing or an actionable Codex finding remains unresolved.
 - Merge remains a separate user-authorized action. Verification and review create eligibility, never merge authority.
 
@@ -41,6 +45,7 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 - If no materially new diagnostic evidence remains, stop and report BLOCKED. Do not continue speculative fix-forward.
 - If repairs expose a new significant defect class caused by the same mechanism, stop local repair and reassess the mechanism: `STOP -> REDUCE OR REDESIGN -> VERIFY`.
 - The 1,000-line change-size rule remains a reviewability guardrail. Do not fragment one coherent repair merely to satisfy the limit; request the existing explicit exception when safe decomposition would weaken verification or correctness.
+- Bug-repair re-review is subject to the same three-cycle Codex convergence cap in Change & Review Gates.
 - A repaired change is not complete until required verification passes on the exact final head SHA and the required Codex review has no unresolved actionable finding.
 - Verification establishes merge eligibility only. Merge remains separately user-authorized.
 
