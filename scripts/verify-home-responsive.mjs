@@ -139,6 +139,7 @@ if (layout.ctaTop < layout.heroTop || layout.ctaBottom > layout.heroBottom + 0.5
   );
 }
 
+cleanup();
 process.stdout.write(
   `PASS: Home purchase CTA remains visible at 1101px; rendered hero height ${layout.heroHeight}px.\n`,
 );
