@@ -102,22 +102,17 @@ echo "==> Candidate dependency install"
 run_candidate_gate "$npm_bin" ci --ignore-scripts
 
 echo "==> Lint"
-run_as_candidate "$trusted_root/node_modules/.bin/eslint" .
-clear_candidate_processes
+run_candidate_gate "$trusted_root/node_modules/.bin/eslint" .
 
 echo "==> Typecheck"
-run_as_candidate "$trusted_root/node_modules/.bin/react-router" typegen
-clear_candidate_processes
-run_as_candidate "$trusted_root/node_modules/.bin/tsc" --noEmit
-clear_candidate_processes
+run_candidate_gate "$trusted_root/node_modules/.bin/react-router" typegen
+run_candidate_gate "$trusted_root/node_modules/.bin/tsc" --noEmit
 
 echo "==> Unit tests"
-run_as_candidate "$trusted_root/node_modules/.bin/vitest" run
-clear_candidate_processes
+run_candidate_gate "$trusted_root/node_modules/.bin/vitest" run
 
 echo "==> Production build"
-run_as_candidate "$trusted_root/node_modules/.bin/react-router" build
-clear_candidate_processes
+run_candidate_gate "$trusted_root/node_modules/.bin/react-router" build
 
 echo "==> Git diff check"
 git -C "$candidate_root" diff --check "$EXPECTED_BASE_SHA...$EXPECTED_HEAD_SHA"
