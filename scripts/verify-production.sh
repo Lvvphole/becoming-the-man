@@ -26,6 +26,10 @@ if ! START_SHA="$(git rev-parse --verify HEAD^{commit} 2>/dev/null)"; then
   echo "BLOCKED: cannot resolve the candidate HEAD."
   exit 2
 fi
+if [[ -n "${EXPECTED_CANDIDATE_SHA:-}" && "$START_SHA" != "$EXPECTED_CANDIDATE_SHA" ]]; then
+  echo "FAIL: checked-out candidate does not match the expected candidate SHA."
+  exit 1
+fi
 check_clean
 preflight_rc=$?
 if [ "$preflight_rc" -ne 0 ]; then
@@ -36,6 +40,9 @@ echo "Candidate: $START_SHA"
 echo "Candidate clean before verification: PASS"
 mkdir -p "$REPORT_DIR" || { echo "BLOCKED: cannot create verification report directory."; exit 2; }
 REPORT="$REPORT_DIR/verification-$START_SHA.md"
+if [[ -n "${EXPECTED_CANDIDATE_SHA:-}" ]]; then
+  rows+=("| Expected candidate SHA | PASS | checked out exact expected candidate |")
+fi
 rows+=("| Candidate clean before verification | PASS | clean committed candidate |")
 
 record() {
@@ -60,9 +67,11 @@ run_gate() {
 
 check_required_files() { bash scripts/verify-required-files.sh .; }
 check_secret_boundary() { bash scripts/scan-secrets.sh --candidate "$START_SHA"; }
+check_contract_policy() { bash scripts/verify-contract-policy.sh "$VERIFY_TRUSTED_BASE_SHA"; }
 check_verification_layer() {
-  bash scripts/verification-layer.test.sh || return $?
-  bash scripts/verification-selection.test.sh
+  env -u VERIFY_PR_MERGE_CANDIDATE -u EXPECTED_BASE_SHA -u EXPECTED_HEAD_SHA -u VERIFY_TRUSTED_BASE_SHA -u EXPECTED_CANDIDATE_SHA bash scripts/verification-layer.test.sh || return $?
+  bash scripts/verification-selection.test.sh || return $?
+  bash scripts/verification-contract-policy.test.sh
 }
 check_pr_identity() { bash scripts/verify-pr-identity.sh; }
 check_diff() {
@@ -81,8 +90,13 @@ check_head_unchanged() {
 }
 
 run_gate "Required repository files" check_required_files
-
 contract="verification/contract.tsv"
+if [[ -n "${VERIFY_TRUSTED_BASE_SHA:-}" ]]; then
+  run_gate "Verification contract policy" check_contract_policy
+else
+  record "Verification contract policy" "NOT ACTIVE" "trusted base not supplied for this candidate"
+fi
+
 if [ ! -f "$contract" ]; then
   record "Verification contract" BLOCKED "contract missing"
   blocked=$((blocked + 1))
