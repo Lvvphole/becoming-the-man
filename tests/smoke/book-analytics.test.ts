@@ -38,7 +38,9 @@ describe("book CTA analytics contract", () => {
   });
 
   it("queues a privacy-minimized PostHog capture without waiting for a provider response", () => {
-    const fetchImpl = vi.fn(async () => new Response(null, { status: 200 }));
+    const fetchImpl = vi.fn(async (_input: URL, _init: RequestInit) =>
+      new Response(null, { status: 200 }),
+    );
     const analytics = createBrowserAnalytics({
       projectKey: "phc_test",
       host: "https://us.i.posthog.com",
