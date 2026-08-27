@@ -100,23 +100,21 @@ describe("Supabase site settings adapter", () => {
     vi.useFakeTimers();
 
     try {
-      let observedSignal: AbortSignal | null = null;
+      const fetchImpl = vi.fn(async (_input: URL, init: RequestInit) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("The operation was aborted", "AbortError")),
+            { once: true },
+          );
+        });
+      });
       const repository = createSupabaseSiteSettingsRepository({
         env: {
           SUPABASE_URL: "https://project.supabase.co",
           SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",
         },
-        fetchImpl: async (_input, init) => {
-          observedSignal = init.signal ?? null;
-
-          return new Promise<Response>((_resolve, reject) => {
-            init.signal?.addEventListener(
-              "abort",
-              () => reject(new DOMException("The operation was aborted", "AbortError")),
-              { once: true },
-            );
-          });
-        },
+        fetchImpl,
       });
 
       const read = repository.read("book_purchase_url");
@@ -133,8 +131,9 @@ describe("Supabase site settings adapter", () => {
         ok: false,
         code: "provider_unavailable",
       });
-      expect(observedSignal).not.toBeNull();
-      expect(observedSignal?.aborted).toBe(true);
+      const signal = fetchImpl.mock.calls[0]?.[1].signal;
+      expect(signal).toBeDefined();
+      expect(signal?.aborted).toBe(true);
     } finally {
       vi.useRealTimers();
     }
