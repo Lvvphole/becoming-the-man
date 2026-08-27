@@ -3,6 +3,7 @@ import {
   BOOK_CTA_EVENT,
   createBookCtaAnalyticsEvent,
   type BookCtaEventName,
+  type BookCtaSurface,
 } from "../../contracts/analytics";
 import {
   browserAnalytics,
@@ -14,9 +15,10 @@ export function recordBookCtaEvent(
   analytics: BrowserAnalytics,
   eventName: BookCtaEventName,
   destinationUrl: string,
+  surface: BookCtaSurface = "book",
 ): AnalyticsCaptureResult {
   try {
-    return analytics.capture(createBookCtaAnalyticsEvent(eventName, destinationUrl));
+    return analytics.capture(createBookCtaAnalyticsEvent(eventName, destinationUrl, surface));
   } catch {
     return "failed";
   }
@@ -24,14 +26,16 @@ export function recordBookCtaEvent(
 
 export function BookPurchaseAction({
   url,
+  surface = "book",
   analytics = browserAnalytics,
 }: {
   url: string;
+  surface?: BookCtaSurface;
   analytics?: BrowserAnalytics;
 }) {
   useEffect(() => {
-    recordBookCtaEvent(analytics, BOOK_CTA_EVENT.view, url);
-  }, [analytics, url]);
+    recordBookCtaEvent(analytics, BOOK_CTA_EVENT.view, url, surface);
+  }, [analytics, surface, url]);
 
   return (
     <a
@@ -39,7 +43,7 @@ export function BookPurchaseAction({
       href={url}
       rel="external"
       onClick={() => {
-        recordBookCtaEvent(analytics, BOOK_CTA_EVENT.click, url);
+        recordBookCtaEvent(analytics, BOOK_CTA_EVENT.click, url, surface);
       }}
     >
       Buy the book

@@ -6,10 +6,11 @@ export const BOOK_CTA_EVENT = {
 } as const;
 
 export type BookCtaEventName = (typeof BOOK_CTA_EVENT)[keyof typeof BOOK_CTA_EVENT];
+export type BookCtaSurface = "book" | "home";
 
 export type BookCtaEventProperties = Readonly<{
   event_version: typeof ANALYTICS_EVENT_VERSION;
-  surface: "book";
+  surface: BookCtaSurface;
   destination_host: string;
 }>;
 
@@ -21,6 +22,7 @@ export type BookCtaAnalyticsEvent = Readonly<{
 export function createBookCtaAnalyticsEvent(
   name: BookCtaEventName,
   destinationUrl: string,
+  surface: BookCtaSurface = "book",
 ): BookCtaAnalyticsEvent {
   const destination = new URL(destinationUrl);
 
@@ -28,7 +30,7 @@ export function createBookCtaAnalyticsEvent(
     name,
     properties: {
       event_version: ANALYTICS_EVENT_VERSION,
-      surface: "book",
+      surface,
       destination_host: destination.host,
     },
   };
