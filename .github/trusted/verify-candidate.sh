@@ -46,7 +46,17 @@ echo "==> Trusted Git / secret verification"
   bash "$trusted_root/.github/trusted/scan-secrets.sh" --candidate "$EXPECTED_HEAD_SHA"
 )
 
-echo "==> Frozen dependency install"
+echo "==> Trusted verification toolchain install"
+(
+  cd "$trusted_root"
+  npm ci --ignore-scripts
+)
+trusted_bin="$trusted_root/node_modules/.bin"
+for tool in eslint react-router tsc vitest; do
+  [[ -x "$trusted_bin/$tool" ]] || block "trusted verification tool '$tool' is unavailable."
+done
+
+echo "==> Candidate dependency install"
 (
   cd "$candidate_root"
   npm ci --ignore-scripts
@@ -55,26 +65,26 @@ echo "==> Frozen dependency install"
 echo "==> Lint"
 (
   cd "$candidate_root"
-  ./node_modules/.bin/eslint .
+  "$trusted_root/node_modules/.bin/eslint" .
 )
 
 echo "==> Typecheck"
 (
   cd "$candidate_root"
-  ./node_modules/.bin/react-router typegen
-  ./node_modules/.bin/tsc --noEmit
+  "$trusted_root/node_modules/.bin/react-router" typegen
+  "$trusted_root/node_modules/.bin/tsc" --noEmit
 )
 
 echo "==> Unit tests"
 (
   cd "$candidate_root"
-  ./node_modules/.bin/vitest run
+  "$trusted_root/node_modules/.bin/vitest" run
 )
 
 echo "==> Production build"
 (
   cd "$candidate_root"
-  ./node_modules/.bin/react-router build
+  "$trusted_root/node_modules/.bin/react-router" build
 )
 
 echo "==> Git diff check"
@@ -94,7 +104,7 @@ cleanup() {
 trap cleanup EXIT
 (
   cd "$candidate_root"
-  ./node_modules/.bin/react-router dev --host 127.0.0.1 --port 4173 >"$ssr_log" 2>&1
+  "$trusted_root/node_modules/.bin/react-router" dev --host 127.0.0.1 --port 4173 >"$ssr_log" 2>&1
 ) &
 app_pid=$!
 ready=0
