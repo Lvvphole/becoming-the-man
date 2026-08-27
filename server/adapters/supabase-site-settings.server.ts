@@ -52,30 +52,33 @@ export function createSupabaseSiteSettingsRepository(
       const abortController = new AbortController();
       const timeout = setTimeout(() => abortController.abort(), SETTINGS_READ_TIMEOUT_MS);
 
-      let response: Response;
+      let payload: unknown;
       try {
-        response = await fetchImpl(endpoint, {
+        const response = await fetchImpl(endpoint, {
           headers: {
             apikey: publishableKey,
             authorization: `Bearer ${publishableKey}`,
           },
           signal: abortController.signal,
         });
+
+        if (!response.ok) {
+          return { ok: false, code: "provider_unavailable" };
+        }
+
+        try {
+          payload = await response.json();
+        } catch {
+          if (abortController.signal.aborted) {
+            return { ok: false, code: "provider_unavailable" };
+          }
+
+          return { ok: false, code: "invalid_response" };
+        }
       } catch {
         return { ok: false, code: "provider_unavailable" };
       } finally {
         clearTimeout(timeout);
-      }
-
-      if (!response.ok) {
-        return { ok: false, code: "provider_unavailable" };
-      }
-
-      let payload: unknown;
-      try {
-        payload = await response.json();
-      } catch {
-        return { ok: false, code: "invalid_response" };
       }
 
       if (!Array.isArray(payload)) {
