@@ -29,6 +29,9 @@ jobs:
           cache: npm
       - name: Install frozen dependencies
         run: npm ci
+      - name: Verify Supabase migration and RLS
+        shell: bash
+        run: bash supabase/tests/site_settings_rls.sh
       - name: Enforce bounded change size
         if: github.event_name == 'pull_request'
         shell: bash
