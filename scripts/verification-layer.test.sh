@@ -24,6 +24,10 @@ STUB
 #!/usr/bin/env bash
 exit 0
 STUB
+  cat > "$dir/scripts/verification-contract-policy.test.sh" <<'STUB'
+#!/usr/bin/env bash
+exit 0
+STUB
   chmod +x "$dir"/scripts/*.sh
   printf '# fixture\n' > "$dir/AGENTS.md"
   printf '# fixture\n' > "$dir/README.md"
@@ -43,7 +47,7 @@ CONTRACT
   git -C "$dir" add .
   git -C "$dir" commit -qm 'fixture base'
 }
-run_verify(){ local dir="$1" log="$2"; (cd "$dir" && env -u VERIFY_PR_MERGE_CANDIDATE -u EXPECTED_BASE_SHA -u EXPECTED_HEAD_SHA bash scripts/verify-production.sh) >"$log" 2>&1; }
+run_verify(){ local dir="$1" log="$2"; (cd "$dir" && env -u VERIFY_PR_MERGE_CANDIDATE -u EXPECTED_BASE_SHA -u EXPECTED_HEAD_SHA -u VERIFY_TRUSTED_BASE_SHA -u EXPECTED_CANDIDATE_SHA bash scripts/verify-production.sh) >"$log" 2>&1; }
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
 
 r="$work/clean"; new_repo "$r"
