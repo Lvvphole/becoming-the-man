@@ -42,7 +42,7 @@ process.on("SIGINT", () => process.exit(130));
 process.on("SIGTERM", () => process.exit(143));
 
 async function findPageTarget() {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
+  for (let attempt = 0; attempt < 150; attempt += 1) {
     if (chrome.exitCode !== null) {
       throw new Error(`Headless Chrome exited early with code ${chrome.exitCode}.`);
     }
