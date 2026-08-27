@@ -12,7 +12,7 @@
   }
 
   .home-hero {
-    height: 494px;
+    height: auto;
     min-height: 494px;
     padding: 20px max(48px, calc((100% - 1352px) / 2));
     grid-template-columns: minmax(0, 1fr) 390px 230px;
