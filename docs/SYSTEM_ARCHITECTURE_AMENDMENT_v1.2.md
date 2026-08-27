@@ -15,7 +15,7 @@ Without new explicit user authorization, a PR SHALL execute no more than **three
 1. Cycle 1 begins only after required CI is green for the exact PR head.
 2. If Codex reports an actionable finding, a repair is permitted only when the finding is valid and the correction is specific, bounded, and evidence-backed. The repaired head must pass fresh required CI before the next Codex review.
 3. The same rule governs cycle 2 and cycle 3.
-4. If cycle 3 reports any actionable finding, the automated repair/re-review process SHALL stop and the PR SHALL be reported `BLOCKED`. No fourth implementation repair or Codex review cycle may occur in that PR unless the user explicitly authorizes a disposition: continue, split, reduce, redesign, or abandon.
+4. If cycle 3 reports any actionable finding, the automated repair/re-review process SHALL stop immediately and the PR SHALL be reported `BLOCKED`. No implementation repair after that cycle-3 finding and no fourth Codex review cycle may occur in that PR unless the user explicitly authorizes a disposition: continue, split, reduce, redesign, or abandon.
 5. Reaching the cycle limit never waives a P0, P1, or other actionable finding. A capped PR with an unresolved actionable finding is not merge-ready.
 6. Documentation-only evidence updates that do not alter implementation, verification logic, or governance semantics neither consume a review cycle nor invalidate an otherwise current review.
 
