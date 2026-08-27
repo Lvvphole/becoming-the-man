@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import "./styles/global.css";
+import "./styles/home-approved.css";
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
