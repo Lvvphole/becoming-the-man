@@ -8,6 +8,8 @@ import {
 type ServerEnvironment = Readonly<Record<string, string | undefined>>;
 type SettingsFetch = (input: URL, init: RequestInit) => Promise<Response>;
 
+const SETTINGS_READ_TIMEOUT_MS = 2_000;
+
 interface SupabaseSiteSettingsOptions {
   env?: ServerEnvironment;
   fetchImpl?: SettingsFetch;
@@ -47,6 +49,9 @@ export function createSupabaseSiteSettingsRepository(
       endpoint.searchParams.set("select", "setting_value");
       endpoint.searchParams.set("limit", "1");
 
+      const abortController = new AbortController();
+      const timeout = setTimeout(() => abortController.abort(), SETTINGS_READ_TIMEOUT_MS);
+
       let response: Response;
       try {
         response = await fetchImpl(endpoint, {
@@ -54,9 +59,12 @@ export function createSupabaseSiteSettingsRepository(
             apikey: publishableKey,
             authorization: `Bearer ${publishableKey}`,
           },
+          signal: abortController.signal,
         });
       } catch {
         return { ok: false, code: "provider_unavailable" };
+      } finally {
+        clearTimeout(timeout);
       }
 
       if (!response.ok) {
