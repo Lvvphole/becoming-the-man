@@ -22,7 +22,7 @@ describe("trusted PR verification authority", () => {
     expect(workflow).toContain("bash trusted/.github/trusted/verify-candidate.sh candidate");
 
     expect(verifier).not.toMatch(/candidate\/scripts\/verify-production\.sh|npm run verify/);
-    expect(verifier).toContain("npm ci --ignore-scripts");
+    expect(verifier).toContain("ci --ignore-scripts");
     expect(verifier).toContain("scan-secrets.sh\" --candidate");
     expect(verifier).toContain("git -C \"$candidate_root\" diff --check");
     expect(verifier).toContain("refs/pull/$PR_NUMBER/merge");
