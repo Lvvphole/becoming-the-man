@@ -64,17 +64,19 @@ describe("book CTA analytics contract", () => {
       throw new Error("Expected analytics request body to be serialized JSON.");
     }
 
-    expect(JSON.parse(init.body)).toEqual({
+    const payload = JSON.parse(init.body) as Record<string, unknown>;
+    expect(payload).toEqual({
       api_key: "phc_test",
       event: "book_cta_click",
-      distinct_id: "00000000-0000-4000-8000-000000000001",
       properties: {
+        distinct_id: "00000000-0000-4000-8000-000000000001",
         event_version: 1,
         surface: "book",
         destination_host: "example.test",
         $process_person_profile: false,
       },
     });
+    expect(payload).not.toHaveProperty("distinct_id");
   });
 
   it("disables capture when provider configuration is missing or invalid", () => {
