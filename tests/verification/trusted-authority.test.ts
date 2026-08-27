@@ -23,11 +23,6 @@ describe("trusted PR verification authority", () => {
 
     expect(verifier).not.toMatch(/candidate\/scripts\/verify-production\.sh|npm run verify/);
     expect(verifier).toContain("npm ci --ignore-scripts");
-    expect(verifier).toContain("./node_modules/.bin/eslint .");
-    expect(verifier).toContain("./node_modules/.bin/react-router typegen");
-    expect(verifier).toContain("./node_modules/.bin/tsc --noEmit");
-    expect(verifier).toContain("./node_modules/.bin/vitest run");
-    expect(verifier).toContain("./node_modules/.bin/react-router build");
     expect(verifier).toContain("scan-secrets.sh\" --candidate");
     expect(verifier).toContain("git -C \"$candidate_root\" diff --check");
     expect(verifier).toContain("refs/pull/$PR_NUMBER/merge");
@@ -35,5 +30,18 @@ describe("trusted PR verification authority", () => {
     expect(verifier).toContain("$merge_sha^2");
     expect(verifier).toContain("$merge_sha^{tree}");
     expect(verifier).toContain("$EXPECTED_HEAD_SHA^{tree}");
+  });
+
+  it("does not execute gate binaries installed from the candidate dependency graph", () => {
+    const verifier = read(".github/trusted/verify-candidate.sh");
+
+    expect(verifier).toContain('cd "$trusted_root"');
+    expect(verifier).toContain('"$trusted_root/node_modules/.bin/eslint" .');
+    expect(verifier).toContain('"$trusted_root/node_modules/.bin/react-router" typegen');
+    expect(verifier).toContain('"$trusted_root/node_modules/.bin/tsc" --noEmit');
+    expect(verifier).toContain('"$trusted_root/node_modules/.bin/vitest" run');
+    expect(verifier).toContain('"$trusted_root/node_modules/.bin/react-router" build');
+    expect(verifier).toContain('"$trusted_root/node_modules/.bin/react-router" dev');
+    expect(verifier).not.toContain("./node_modules/.bin/");
   });
 });
