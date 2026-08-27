@@ -99,12 +99,14 @@ a:focus-visible {
 }
 
 .hero-copy h1 {
+  max-width: 690px;
   margin: 0;
   color: var(--navy);
   font-size: clamp(3rem, 5vw, 4.85rem);
   line-height: 0.98;
   letter-spacing: 0.015em;
   font-weight: 850;
+  text-transform: uppercase;
 }
 
 .hero-copy h1 span {
