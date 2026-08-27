@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/merge', github.event.pull_request.number) || github.sha }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -43,9 +43,9 @@ jobs:
 
       - name: Run canonical production verification
         env:
-          VERIFY_PR_MERGE_CANDIDATE: ${{ github.event_name == 'pull_request' && '1' || '0' }}
-          EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
-          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
+          EXPECTED_CANDIDATE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          VERIFY_TRUSTED_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          VERIFY_PR_MERGE_CANDIDATE: "0"
         run: bash scripts/verify-production.sh
 
       - name: Verify first-response SSR
