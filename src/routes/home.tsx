@@ -37,12 +37,9 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
       </header>
 
       <main>
-        <section className="home-hero" aria-labelledby="home-title">
+        <section className="home-hero">
           <div className="hero-copy">
-            <h1 id="home-title">
-              <span>BECOMING THE MAN</span>
-              <span>SHE CAN TRUST</span>
-            </h1>
+            <h1>Becoming the Man She Can Trust</h1>
             <div className="accent-rule" aria-hidden="true" />
             <p className="hero-subtitle">
               A SYSTEM FOR BUILDING THE LIFE, CHARACTER, AND LEADERSHIP THAT CREATE LASTING LOVE
