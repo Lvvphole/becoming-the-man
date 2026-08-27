@@ -51,9 +51,17 @@ jobs:
       - name: Verify first-response SSR and rendered Home journey
         shell: bash
         run: |
-          npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/ssr.log 2>&1 &
+          node --input-type=module -e 'import http from "node:http"; const body=JSON.stringify([{setting_value:"https://example.test/book"}]); http.createServer((_req,res)=>{res.writeHead(200,{"content-type":"application/json"});res.end(body);}).listen(54321,"127.0.0.1");' > /tmp/settings-fixture.log 2>&1 &
+          fixture_pid=$!
+          for attempt in {1..20}; do
+            if curl -fsS http://127.0.0.1:54321/health > /dev/null; then
+              break
+            fi
+            sleep 0.1
+          done
+          SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_PUBLISHABLE_KEY=ci-test npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/ssr.log 2>&1 &
           app_pid=$!
-          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          trap 'kill "$app_pid" "$fixture_pid" 2>/dev/null || true' EXIT
           for attempt in {1..30}; do
             if curl -fsS http://127.0.0.1:4173/ > /tmp/home.html; then
               break
@@ -63,6 +71,7 @@ jobs:
           curl -fsS http://127.0.0.1:4173/book > /tmp/book.html
           grep -F '<h1>Becoming the Man She Can Trust</h1>' /tmp/home.html
           grep -F 'href="/book"' /tmp/home.html
+          grep -F 'href="https://example.test/book"' /tmp/home.html
           grep -F 'BOOK ORIENTATION' /tmp/book.html
           grep -F 'href="/"' /tmp/book.html
           node scripts/verify-home-responsive.mjs http://127.0.0.1:4173/
