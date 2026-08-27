@@ -1,5 +1,4 @@
 import { spawn, spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
@@ -35,8 +34,7 @@ const chrome = spawn(findChrome(), [
 ], { stdio: "ignore" });
 
 function cleanup() {
-  chrome.kill("SIGTERM");
-  rmSync(profileDir, { recursive: true, force: true });
+  if (chrome.exitCode === null) chrome.kill("SIGTERM");
 }
 
 process.on("exit", cleanup);
