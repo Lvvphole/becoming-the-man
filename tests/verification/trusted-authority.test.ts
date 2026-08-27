@@ -44,4 +44,19 @@ describe("trusted PR verification authority", () => {
     expect(verifier).toContain('"$trusted_root/node_modules/.bin/react-router" dev');
     expect(verifier).not.toContain("./node_modules/.bin/");
   });
+
+  it("isolates candidate-loaded code from the trusted checkout", () => {
+    const workflow = read(".github/workflows/trusted-pr-verification.yml");
+    const verifier = read(".github/trusted/verify-candidate.sh");
+
+    expect(workflow).toContain("CANDIDATE_USER: btm-candidate");
+    expect(workflow).toContain("sudo useradd --create-home --shell /bin/bash btm-candidate");
+    expect(workflow).toContain("sudo chown -R btm-candidate:btm-candidate candidate");
+    expect(verifier).toContain("run_as_candidate()");
+    expect(verifier).toContain("env -i");
+    expect(verifier).toContain('test ! -w "$trusted_root"');
+    expect(verifier).toContain('run_as_candidate "$trusted_root/node_modules/.bin/eslint" .');
+    expect(verifier).toContain('run_as_candidate "$trusted_root/node_modules/.bin/vitest" run');
+    expect(verifier).toContain('run_as_candidate "$trusted_root/node_modules/.bin/react-router" dev');
+  });
 });
