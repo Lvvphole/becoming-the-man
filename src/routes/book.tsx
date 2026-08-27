@@ -1,5 +1,6 @@
 import { useLoaderData } from "react-router";
 import type { BookPurchaseDestination } from "../../server/domain/book-purchase";
+import { BookPurchaseAction } from "../components/book-purchase-action";
 
 export function meta() {
   return [
@@ -37,9 +38,7 @@ export function BookPage({ purchase }: { purchase: BookPurchaseDestination }) {
         <h2 id="purchase-heading">Read the book</h2>
         {purchase.status === "available" ? (
           <>
-            <a className="primary-action" href={purchase.url} rel="external">
-              Buy the book
-            </a>
+            <BookPurchaseAction url={purchase.url} />
             <p className="purchase-note">Purchase is completed at the configured retailer.</p>
           </>
         ) : (
