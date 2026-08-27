@@ -31,6 +31,19 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 - Do not declare PASS, complete, or merge-ready while required CI is missing/failing or an actionable Codex finding remains unresolved.
 - Merge remains a separate user-authorized action. Verification and review create eligibility, never merge authority.
 
+## Bug Fix & Repair
+- Establish the violated observable contract before changing code. Do not infer new product behavior from the defect.
+- Reproduce the defect before repair when it is reproducible.
+- For a reproducible defect, add or update regression evidence that fails on the faulty baseline and passes after the repair.
+- Make the smallest coherent repair that restores the contract. Do not combine unrelated cleanup, redesign, or feature work with the fix.
+- Run the narrowest relevant verification after each repair, then run all affected change-set gates.
+- If the same failure remains, make another repair only when materially new diagnostic evidence identifies a specific, bounded, non-speculative correction.
+- If no materially new diagnostic evidence remains, stop and report BLOCKED. Do not continue speculative fix-forward.
+- If repairs expose a new significant defect class caused by the same mechanism, stop local repair and reassess the mechanism: `STOP -> REDUCE OR REDESIGN -> VERIFY`.
+- The 1,000-line change-size rule remains a reviewability guardrail. Do not fragment one coherent repair merely to satisfy the limit; request the existing explicit exception when safe decomposition would weaken verification or correctness.
+- A repaired change is not complete until required verification passes on the exact final head SHA and the required Codex review has no unresolved actionable finding.
+- Verification establishes merge eligibility only. Merge remains separately user-authorized.
+
 ## Code Style & Conventions
 - Production code is TypeScript/TSX.
 - Keep route and presentation code free of provider SDKs, secrets, SQL, assessment scoring, and AI safety logic.
@@ -39,7 +52,6 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 - Centralize Supabase access behind repository/data-access modules.
 - Validate mutation input at the server boundary and preserve stable machine-readable error codes.
 - Make duplicate-sensitive writes, sends, webhooks, and paid calls idempotent.
-- Add regression coverage for behavior changes and bug fixes where practical.
 
 ## Project Architecture
 Use the locked single-repository shape when scaffolding:
