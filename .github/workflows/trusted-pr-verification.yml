@@ -51,12 +51,23 @@ jobs:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: bash ../trusted/scripts/check-change-size.sh "${{ github.event.pull_request.base.sha }}"
 
+      - name: Establish candidate execution boundary
+        shell: bash
+        run: |
+          if id btm-candidate >/dev/null 2>&1; then
+            echo "BLOCKED: candidate execution identity already exists."
+            exit 2
+          fi
+          sudo useradd --create-home --shell /bin/bash btm-candidate
+          sudo chown -R btm-candidate:btm-candidate candidate
+
       - name: Run trusted verification authority
         shell: bash
         env:
           EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          CANDIDATE_USER: btm-candidate
         run: |
           mkdir -p trusted-evidence
           set -o pipefail
