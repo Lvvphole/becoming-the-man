@@ -23,8 +23,16 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
       - name: Run canonical production verification
         env:
+          EXPECTED_CANDIDATE_SHA: ${{ github.sha }}
+          VERIFY_TRUSTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           VERIFY_PR_MERGE_CANDIDATE: "1"
           EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
