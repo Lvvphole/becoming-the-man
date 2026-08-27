@@ -28,10 +28,12 @@ describe("trusted PR verification authority", () => {
     expect(verifier).toContain("./node_modules/.bin/tsc --noEmit");
     expect(verifier).toContain("./node_modules/.bin/vitest run");
     expect(verifier).toContain("./node_modules/.bin/react-router build");
-    expect(verifier).toContain("scan-secrets.sh --candidate");
-    expect(verifier).toContain("git diff --check");
+    expect(verifier).toContain("scan-secrets.sh\" --candidate");
+    expect(verifier).toContain("git -C \"$candidate_root\" diff --check");
     expect(verifier).toContain("refs/pull/$PR_NUMBER/merge");
-    expect(verifier).toContain("HEAD^1");
-    expect(verifier).toContain("HEAD^2");
+    expect(verifier).toContain("$merge_sha^1");
+    expect(verifier).toContain("$merge_sha^2");
+    expect(verifier).toContain("$merge_sha^{tree}");
+    expect(verifier).toContain("$EXPECTED_HEAD_SHA^{tree}");
   });
 });
