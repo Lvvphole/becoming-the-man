@@ -36,12 +36,12 @@ describe("trusted PR verification authority", () => {
     const verifier = read(".github/trusted/verify-candidate.sh");
 
     expect(verifier).toContain('cd "$trusted_root"');
-    expect(verifier).toContain('"$trusted_root/node_modules/.bin/eslint" .');
-    expect(verifier).toContain('"$trusted_root/node_modules/.bin/react-router" typegen');
-    expect(verifier).toContain('"$trusted_root/node_modules/.bin/tsc" --noEmit');
-    expect(verifier).toContain('"$trusted_root/node_modules/.bin/vitest" run');
-    expect(verifier).toContain('"$trusted_root/node_modules/.bin/react-router" build');
-    expect(verifier).toContain('"$trusted_root/node_modules/.bin/react-router" dev');
+    expect(verifier).toContain('run_candidate_gate "$trusted_root/node_modules/.bin/eslint" .');
+    expect(verifier).toContain('run_candidate_gate "$trusted_root/node_modules/.bin/react-router" typegen');
+    expect(verifier).toContain('run_candidate_gate "$trusted_root/node_modules/.bin/tsc" --noEmit');
+    expect(verifier).toContain('run_candidate_gate "$trusted_root/node_modules/.bin/vitest" run');
+    expect(verifier).toContain('run_candidate_gate "$trusted_root/node_modules/.bin/react-router" build');
+    expect(verifier).toContain('run_as_candidate "$trusted_root/node_modules/.bin/react-router" dev');
     expect(verifier).not.toContain("./node_modules/.bin/");
   });
 
@@ -53,10 +53,13 @@ describe("trusted PR verification authority", () => {
     expect(workflow).toContain("sudo useradd --create-home --shell /bin/bash btm-candidate");
     expect(workflow).toContain("sudo chown -R btm-candidate:btm-candidate candidate");
     expect(verifier).toContain("run_as_candidate()");
+    expect(verifier).toContain("run_candidate_gate()");
     expect(verifier).toContain("env -i");
     expect(verifier).toContain('test ! -w "$trusted_root"');
-    expect(verifier).toContain('run_as_candidate "$trusted_root/node_modules/.bin/eslint" .');
-    expect(verifier).toContain('run_as_candidate "$trusted_root/node_modules/.bin/vitest" run');
+    expect(verifier).toContain('test ! -w "$trusted_root/node_modules"');
+    expect(verifier).toContain('sudo pkill -KILL -u "$CANDIDATE_USER"');
+    expect(verifier).toContain('run_candidate_gate "$trusted_root/node_modules/.bin/eslint" .');
+    expect(verifier).toContain('run_candidate_gate "$trusted_root/node_modules/.bin/vitest" run');
     expect(verifier).toContain('run_as_candidate "$trusted_root/node_modules/.bin/react-router" dev');
   });
 });
