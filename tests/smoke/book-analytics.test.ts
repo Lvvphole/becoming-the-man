@@ -37,6 +37,16 @@ describe("book CTA analytics contract", () => {
     ]);
   });
 
+  it("labels homepage CTA events with the home surface", () => {
+    const homeEvent = Reflect.apply(createBookCtaAnalyticsEvent, undefined, [
+      BOOK_CTA_EVENT.click,
+      "https://example.test/books/becoming-the-man",
+      "home",
+    ]) as ReturnType<typeof createBookCtaAnalyticsEvent>;
+
+    expect(homeEvent.properties.surface).toBe("home");
+  });
+
   it("queues a privacy-minimized PostHog capture without waiting for a provider response", () => {
     const fetchImpl = vi.fn(async (input: URL, init: RequestInit) => {
       void input;
