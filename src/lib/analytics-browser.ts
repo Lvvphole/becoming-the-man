@@ -68,8 +68,8 @@ export function createBrowserAnalytics(options: BrowserAnalyticsOptions): Browse
           body: JSON.stringify({
             api_key: projectKey,
             event: event.name,
-            distinct_id: distinctId,
             properties: {
+              distinct_id: distinctId,
               ...event.properties,
               $process_person_profile: false,
             },
