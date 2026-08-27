@@ -15,7 +15,9 @@ docker run --rm -d \
 
 ready=false
 for _ in {1..30}; do
-  if docker exec "$container" pg_isready -U postgres >/dev/null 2>&1; then
+  if docker exec "$container" sh -c 'test "$(cat /proc/1/comm)" = "postgres"' >/dev/null 2>&1 \
+    && docker exec "$container" psql -qAt -v ON_ERROR_STOP=1 -U postgres -d postgres \
+      -c 'select 1' 2>/dev/null | grep -qx '1'; then
     ready=true
     break
   fi
@@ -23,7 +25,7 @@ for _ in {1..30}; do
 done
 
 if [[ "$ready" != "true" ]]; then
-  echo "FAIL: isolated Postgres did not become ready."
+  echo "FAIL: isolated Postgres final server did not become ready."
   exit 1
 fi
 
