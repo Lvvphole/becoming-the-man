@@ -1,0 +1,108 @@
+/*
+ * Home canonical book visual oracle.
+ * Approved reference: upright, mostly front-facing cover; restrained right page block;
+ * thin dark rear edge; subtle floor/contact shadow. Responsive rules may change only scale.
+ */
+.home-hero .book-stage {
+  perspective: none;
+  overflow: visible;
+}
+
+.home-hero .book-3d {
+  position: relative;
+  transform: none;
+  transform-origin: center center;
+  transform-style: flat;
+  filter: none;
+  isolation: isolate;
+}
+
+.home-hero .book-3d::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0.7%;
+  right: -9.25%;
+  bottom: 0.7%;
+  width: 2.05%;
+  border-radius: 0 2px 2px 0;
+  background: #17222e;
+  box-shadow: 1px 0 1px rgb(6 20 33 / 0.16);
+  pointer-events: none;
+}
+
+.home-hero .book-3d::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: -14%;
+  right: -22%;
+  bottom: -3.8%;
+  height: 5.2%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(6 35 63 / 0.2) 0%,
+    rgb(6 35 63 / 0.1) 42%,
+    rgb(6 35 63 / 0.03) 62%,
+    transparent 76%
+  );
+  filter: blur(3px);
+  pointer-events: none;
+}
+
+.home-hero .book-cover-image {
+  position: relative;
+  z-index: 3;
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: none;
+  border-radius: 1px 1px 2px 1px;
+  box-shadow:
+    0 0 0 1px rgb(6 35 63 / 0.08),
+    2px 3px 6px rgb(6 35 63 / 0.08);
+}
+
+.home-hero .book-pages {
+  position: absolute;
+  z-index: 2;
+  top: 1.4%;
+  right: -7.2%;
+  bottom: 1.4%;
+  width: 7.2%;
+  transform: none;
+  border: 1px solid #cfd2d0;
+  border-left: 0;
+  border-radius: 0 2px 2px 0;
+  background: repeating-linear-gradient(
+    90deg,
+    #fbfaf7 0 18%,
+    #e4e4e0 19% 24%,
+    #f8f7f3 25% 44%,
+    #dadbd8 45% 50%,
+    #fffefa 51% 72%,
+    #e1e2df 73% 78%,
+    #faf9f5 79% 100%
+  );
+  box-shadow: inset 3px 0 5px rgb(6 35 63 / 0.08);
+  clip-path: polygon(0 0.8%, 92% 0, 100% 0.7%, 100% 99.3%, 92% 100%, 0 99.2%);
+}
+
+@media (min-width: 1101px) {
+  .home-hero .book-stage-desktop .book-3d {
+    width: 286px;
+  }
+}
+
+@media (min-width: 781px) and (max-width: 1100px) {
+  .home-hero .book-stage-desktop .book-3d {
+    width: min(29vw, 270px);
+  }
+}
+
+@media (max-width: 780px) {
+  .home-hero .book-stage-mobile .book-3d {
+    width: min(62vw, 242px);
+  }
+}

@@ -90,181 +90,278 @@ function command(method, params = {}) {
   });
 }
 
-await command("Runtime.enable");
-await command("Emulation.setDeviceMetricsOverride", desktopViewport);
-
-for (let attempt = 0; attempt < 50; attempt += 1) {
-  const state = await command("Runtime.evaluate", {
-    expression: `({ ready: document.readyState, hero: Boolean(document.querySelector(".home-hero")), cta: Boolean(document.querySelector(".primary-action")) })`,
-    returnByValue: true,
-  });
-  if (state.result.value.ready === "complete" && state.result.value.hero && state.result.value.cta) break;
-  if (attempt === 49) throw new Error("Timed out waiting for the Home journey to render.");
-  await sleep(100);
+async function settleViewport(viewport) {
+  await command("Emulation.setDeviceMetricsOverride", viewport);
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const state = await command("Runtime.evaluate", {
+      expression: `({ ready: document.readyState, width: window.innerWidth, hero: Boolean(document.querySelector(".home-hero")), cta: Boolean(document.querySelector(".primary-action")) })`,
+      returnByValue: true,
+    });
+    const value = state.result.value;
+    if (value.ready === "complete" && value.width === viewport.width && value.hero && value.cta) return;
+    if (attempt === 49) throw new Error(`Timed out waiting for the ${viewport.width}px Home layout.`);
+    await sleep(100);
+  }
 }
 
+async function evaluateHome(visibleVariant) {
+  const evaluation = await command("Runtime.evaluate", {
+    expression: `(() => {
+      const hero = document.querySelector(".home-hero");
+      const cta = document.querySelector(".primary-action");
+      const heading = document.querySelector(".hero-copy h1");
+      const description = document.querySelector(".hero-description");
+      const quote = document.querySelector(".communication-quote");
+      const header = document.querySelector(".site-header");
+      const menu = document.querySelector(".mobile-nav summary");
+      const desktopNav = document.querySelector(".site-nav-desktop");
+      const mobileBook = document.querySelector(".book-stage-mobile");
+      const desktopBook = document.querySelector(".book-stage-desktop");
+      const stage = document.querySelector(".book-stage-${visibleVariant}");
+      const book = stage.querySelector(".book-3d");
+      const cover = book.querySelector(".book-cover-image");
+      const pages = book.querySelector(".book-pages");
+      const headerRect = header.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const heroRect = hero.getBoundingClientRect();
+      const ctaRect = cta.getBoundingClientRect();
+      const headingRect = heading.getBoundingClientRect();
+      const descriptionRect = description.getBoundingClientRect();
+      const quoteRect = quote.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      const bookRect = book.getBoundingClientRect();
+      const coverRect = cover.getBoundingClientRect();
+      const pageRect = pages.getBoundingClientRect();
+      const bookStyle = getComputedStyle(book);
+      const coverStyle = getComputedStyle(cover);
+      const pageStyle = getComputedStyle(pages);
+      const rearStyle = getComputedStyle(book, "::before");
+      const shadowStyle = getComputedStyle(book, "::after");
+      const stageStyle = getComputedStyle(stage);
+      const rearWidth = Number.parseFloat(rearStyle.width);
+      const rearRight = Number.parseFloat(rearStyle.right);
+      return {
+        viewportWidth: window.innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        headerHeight: headerRect.height,
+        menuWidth: menuRect.width,
+        menuHeight: menuRect.height,
+        desktopNavDisplay: getComputedStyle(desktopNav).display,
+        heroHeight: heroRect.height,
+        heroTop: heroRect.top,
+        heroBottom: heroRect.bottom,
+        ctaTop: ctaRect.top,
+        ctaBottom: ctaRect.bottom,
+        ctaWidth: ctaRect.width,
+        ctaHeight: ctaRect.height,
+        headingFontSize: Number.parseFloat(getComputedStyle(heading).fontSize),
+        headingBottom: headingRect.bottom,
+        stageTop: stageRect.top,
+        stageBottom: stageRect.bottom,
+        descriptionTop: descriptionRect.top,
+        descriptionBottom: descriptionRect.bottom,
+        quoteTop: quoteRect.top,
+        mobileBookDisplay: getComputedStyle(mobileBook).display,
+        desktopBookDisplay: getComputedStyle(desktopBook).display,
+        stagePerspective: stageStyle.perspective,
+        bookWidth: bookRect.width,
+        bookTransform: bookStyle.transform,
+        bookFilter: bookStyle.filter,
+        coverTransform: coverStyle.transform,
+        coverSrc: cover.getAttribute("src"),
+        coverNaturalWidth: cover.naturalWidth,
+        coverNaturalHeight: cover.naturalHeight,
+        pageWidthRatio: pageRect.width / coverRect.width,
+        pageTopInsetRatio: (pageRect.top - coverRect.top) / coverRect.height,
+        pageBottomInsetRatio: (coverRect.bottom - pageRect.bottom) / coverRect.height,
+        pageGapRatio: (pageRect.left - coverRect.right) / coverRect.width,
+        pageClipPath: pageStyle.clipPath,
+        pageBackgroundImage: pageStyle.backgroundImage,
+        rearContent: rearStyle.content,
+        rearWidthRatio: rearWidth / coverRect.width,
+        rearRightRatio: rearRight / coverRect.width,
+        rearBackgroundColor: rearStyle.backgroundColor,
+        shadowContent: shadowStyle.content,
+        shadowBackgroundImage: shadowStyle.backgroundImage,
+        shadowFilter: shadowStyle.filter,
+        shadowLeftRatio: Number.parseFloat(shadowStyle.left) / coverRect.width,
+        shadowRightRatio: Number.parseFloat(shadowStyle.right) / coverRect.width,
+        shadowHeightRatio: Number.parseFloat(shadowStyle.height) / coverRect.height,
+        shadowBottomRatio: Number.parseFloat(shadowStyle.bottom) / coverRect.height,
+        bookLeft: Math.min(coverRect.left, pageRect.left),
+        bookRight: Math.max(coverRect.right, pageRect.right + rearWidth),
+      };
+    })()`,
+    returnByValue: true,
+  });
+  return evaluation.result.value;
+}
+
+function near(value, target, tolerance) {
+  return Math.abs(value - target) <= tolerance;
+}
+
+function assertCanonicalBook(layout, label) {
+  if (layout.coverSrc !== "/book-cover.webp") {
+    throw new Error(`${label} book no longer uses the canonical /book-cover.webp source: ${layout.coverSrc}.`);
+  }
+  if (layout.coverNaturalWidth !== 240 || layout.coverNaturalHeight !== 365) {
+    throw new Error(
+      `${label} canonical cover dimensions changed: ${layout.coverNaturalWidth}x${layout.coverNaturalHeight}.`,
+    );
+  }
+  if (layout.stagePerspective !== "none" || layout.bookTransform !== "none" || layout.coverTransform !== "none") {
+    throw new Error(
+      `${label} book is no longer the approved mostly front-facing treatment: perspective=${layout.stagePerspective}, book=${layout.bookTransform}, cover=${layout.coverTransform}.`,
+    );
+  }
+  if (layout.bookFilter !== "none") {
+    throw new Error(`${label} book regained an unapproved object drop-shadow: ${layout.bookFilter}.`);
+  }
+  if (!near(layout.pageWidthRatio, 0.072, 0.004)) {
+    throw new Error(`${label} white page-block depth changed: ratio ${layout.pageWidthRatio}.`);
+  }
+  if (!near(layout.pageTopInsetRatio, 0.014, 0.004) || !near(layout.pageBottomInsetRatio, 0.014, 0.004)) {
+    throw new Error(
+      `${label} page-block vertical treatment changed: top ${layout.pageTopInsetRatio}, bottom ${layout.pageBottomInsetRatio}.`,
+    );
+  }
+  if (Math.abs(layout.pageGapRatio) > 0.004) {
+    throw new Error(`${label} page block is detached from the front cover: gap ratio ${layout.pageGapRatio}.`);
+  }
+  if (!layout.pageClipPath.includes("polygon") || !layout.pageBackgroundImage.includes("repeating-linear-gradient")) {
+    throw new Error(`${label} approved shallow page-block perspective is missing.`);
+  }
+  if (
+    layout.rearContent === "none" ||
+    !near(layout.rearWidthRatio, 0.0205, 0.004) ||
+    !near(layout.rearRightRatio, -0.0925, 0.005)
+  ) {
+    throw new Error(
+      `${label} thin dark rear edge is missing or out of proportion: width ${layout.rearWidthRatio}, right ${layout.rearRightRatio}.`,
+    );
+  }
+  if (layout.rearBackgroundColor === "rgba(0, 0, 0, 0)") {
+    throw new Error(`${label} rear edge is transparent.`);
+  }
+  if (layout.shadowContent === "none" || !layout.shadowBackgroundImage.includes("radial-gradient")) {
+    throw new Error(`${label} approved floor/contact shadow is missing.`);
+  }
+  if (
+    !near(layout.shadowLeftRatio, -0.14, 0.01) ||
+    !near(layout.shadowRightRatio, -0.22, 0.01) ||
+    !near(layout.shadowHeightRatio, 0.052, 0.008) ||
+    !near(layout.shadowBottomRatio, -0.038, 0.008) ||
+    !layout.shadowFilter.includes("blur(3px)")
+  ) {
+    throw new Error(
+      `${label} contact-shadow geometry changed: left ${layout.shadowLeftRatio}, right ${layout.shadowRightRatio}, height ${layout.shadowHeightRatio}, bottom ${layout.shadowBottomRatio}, filter ${layout.shadowFilter}.`,
+    );
+  }
+  if (layout.bookLeft < -0.5 || layout.bookRight > layout.viewportWidth + 0.5) {
+    throw new Error(
+      `${label} canonical book clips horizontally: left ${layout.bookLeft}px, right ${layout.bookRight}px, viewport ${layout.viewportWidth}px.`,
+    );
+  }
+}
+
+await command("Runtime.enable");
+await settleViewport(desktopViewport);
 await command("Runtime.evaluate", {
   expression: "document.fonts.ready.then(() => true)",
   awaitPromise: true,
 });
+const desktop = await evaluateHome("desktop");
 
-const desktopEvaluation = await command("Runtime.evaluate", {
-  expression: `(() => {
-    const heroRect = document.querySelector(".home-hero").getBoundingClientRect();
-    const ctaRect = document.querySelector(".primary-action").getBoundingClientRect();
-    return {
-      heroHeight: heroRect.height,
-      heroTop: heroRect.top,
-      heroBottom: heroRect.bottom,
-      ctaTop: ctaRect.top,
-      ctaBottom: ctaRect.bottom,
-      ctaWidth: ctaRect.width,
-      ctaHeight: ctaRect.height,
-    };
-  })()`,
-  returnByValue: true,
-});
+if (desktop.desktopNavDisplay === "none") {
+  throw new Error("Desktop navigation is hidden at the desktop breakpoint.");
+}
+if (desktop.mobileBookDisplay !== "none" || desktop.desktopBookDisplay === "none") {
+  throw new Error("Desktop Home must show only the desktop-positioned canonical book instance.");
+}
+if (desktop.heroHeight < 494) {
+  throw new Error(`Home hero is shorter than the approved 494px minimum: ${desktop.heroHeight}px.`);
+}
+if (desktop.ctaWidth <= 0 || desktop.ctaHeight <= 0) {
+  throw new Error("Desktop primary purchase CTA has no rendered size.");
+}
+if (desktop.ctaTop < desktop.heroTop || desktop.ctaBottom > desktop.heroBottom + 0.5) {
+  throw new Error("Desktop primary purchase CTA is clipped inside the Home hero.");
+}
+if (desktop.bookWidth < 270 || desktop.bookWidth > 300) {
+  throw new Error(`Desktop canonical book has regressed in visual presence: ${desktop.bookWidth}px wide.`);
+}
+assertCanonicalBook(desktop, "Desktop");
 
-const desktopLayout = desktopEvaluation.result.value;
-if (desktopLayout.heroHeight < 494) {
-  throw new Error(`Home hero is shorter than the approved 494px minimum: ${desktopLayout.heroHeight}px.`);
-}
-if (desktopLayout.ctaWidth <= 0 || desktopLayout.ctaHeight <= 0) {
-  throw new Error("Primary purchase CTA has no rendered size.");
-}
-if (desktopLayout.ctaTop < desktopLayout.heroTop || desktopLayout.ctaBottom > desktopLayout.heroBottom + 0.5) {
-  throw new Error(
-    `Primary purchase CTA is clipped at 1101px: CTA bottom ${desktopLayout.ctaBottom}px, hero bottom ${desktopLayout.heroBottom}px.`,
-  );
-}
+await settleViewport(mobileViewport);
+const mobile = await evaluateHome("mobile");
 
-await command("Emulation.setDeviceMetricsOverride", mobileViewport);
-for (let attempt = 0; attempt < 20; attempt += 1) {
-  const state = await command("Runtime.evaluate", {
-    expression: "({ width: window.innerWidth, ready: document.readyState })",
-    returnByValue: true,
-  });
-  if (state.result.value.ready === "complete" && state.result.value.width === mobileViewport.width) break;
-  if (attempt === 19) throw new Error("Timed out waiting for the mobile Home layout to settle.");
-  await sleep(100);
+if (mobile.headerHeight > 80) {
+  throw new Error(`Mobile header is vertically jumbled: ${mobile.headerHeight}px tall.`);
 }
-
-const mobileEvaluation = await command("Runtime.evaluate", {
-  expression: `(() => {
-    const headerRect = document.querySelector(".site-header").getBoundingClientRect();
-    const menu = document.querySelector(".mobile-nav summary");
-    const menuRect = menu.getBoundingClientRect();
-    const desktopNav = document.querySelector(".site-nav-desktop");
-    const mobileBook = document.querySelector(".book-stage-mobile");
-    const desktopBook = document.querySelector(".book-stage-desktop");
-    const mobileBookRect = mobileBook.getBoundingClientRect();
-    const mobileBook3d = mobileBook.querySelector(".book-3d");
-    const mobileBookPages = mobileBook.querySelector(".book-pages");
-    const mobileBook3dStyle = getComputedStyle(mobileBook3d);
-    const mobileBookPagesStyle = getComputedStyle(mobileBookPages);
-    const canonicalTransformReference = document.createElement("div");
-    canonicalTransformReference.style.transform = "rotateY(-7deg) rotateZ(0.7deg)";
-    document.body.append(canonicalTransformReference);
-    const canonicalMobileBookTransform = getComputedStyle(canonicalTransformReference).transform;
-    canonicalTransformReference.remove();
-    const heading = document.querySelector(".hero-copy h1");
-    const headingRect = heading.getBoundingClientRect();
-    const descriptionRect = document.querySelector(".hero-description").getBoundingClientRect();
-    const ctaRect = document.querySelector(".primary-action").getBoundingClientRect();
-    const quoteRect = document.querySelector(".communication-quote").getBoundingClientRect();
-    return {
-      viewportWidth: window.innerWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-      headerHeight: headerRect.height,
-      menuWidth: menuRect.width,
-      menuHeight: menuRect.height,
-      desktopNavDisplay: getComputedStyle(desktopNav).display,
-      mobileBookDisplay: getComputedStyle(mobileBook).display,
-      desktopBookDisplay: getComputedStyle(desktopBook).display,
-      mobileBookCssWidth: Number.parseFloat(mobileBook3dStyle.width),
-      mobileBookFilter: mobileBook3dStyle.filter,
-      mobileBookTransform: mobileBook3dStyle.transform,
-      canonicalMobileBookTransform,
-      mobileBookPagesTop: Number.parseFloat(mobileBookPagesStyle.top),
-      mobileBookPagesRight: Number.parseFloat(mobileBookPagesStyle.right),
-      mobileBookPagesBottom: Number.parseFloat(mobileBookPagesStyle.bottom),
-      mobileBookPagesWidth: Number.parseFloat(mobileBookPagesStyle.width),
-      headingFontSize: Number.parseFloat(getComputedStyle(heading).fontSize),
-      headingBottom: headingRect.bottom,
-      mobileBookTop: mobileBookRect.top,
-      mobileBookBottom: mobileBookRect.bottom,
-      descriptionTop: descriptionRect.top,
-      descriptionBottom: descriptionRect.bottom,
-      ctaTop: ctaRect.top,
-      ctaBottom: ctaRect.bottom,
-      ctaWidth: ctaRect.width,
-      ctaHeight: ctaRect.height,
-      quoteTop: quoteRect.top,
-    };
-  })()`,
-  returnByValue: true,
-});
-
-socket.close();
-const mobileLayout = mobileEvaluation.result.value;
-if (mobileLayout.headerHeight > 80) {
-  throw new Error(`Mobile header is vertically jumbled: ${mobileLayout.headerHeight}px tall.`);
+if (mobile.menuWidth < 44 || mobile.menuHeight < 44) {
+  throw new Error(`Mobile menu target is too small: ${mobile.menuWidth}x${mobile.menuHeight}px.`);
 }
-if (mobileLayout.menuWidth < 44 || mobileLayout.menuHeight < 44) {
-  throw new Error(`Mobile menu target is too small: ${mobileLayout.menuWidth}x${mobileLayout.menuHeight}px.`);
-}
-if (mobileLayout.desktopNavDisplay !== "none") {
+if (mobile.desktopNavDisplay !== "none") {
   throw new Error("Desktop navigation remains visible in the 390px mobile layout.");
 }
-if (mobileLayout.mobileBookDisplay === "none" || mobileLayout.desktopBookDisplay !== "none") {
-  throw new Error("Mobile Home must show only the mobile-positioned canonical book cover.");
+if (mobile.mobileBookDisplay === "none" || mobile.desktopBookDisplay !== "none") {
+  throw new Error("Mobile Home must show only the mobile-positioned canonical book instance.");
 }
-if (mobileLayout.mobileBookCssWidth < 300) {
-  throw new Error(
-    `Canonical mobile 3D book rendering is undersized: ${mobileLayout.mobileBookCssWidth}px CSS width.`,
-  );
+if (mobile.headingFontSize > 42) {
+  throw new Error(`Mobile Home heading remains oversized at ${mobile.headingFontSize}px.`);
 }
-if (mobileLayout.mobileBookTransform !== mobileLayout.canonicalMobileBookTransform) {
-  throw new Error(
-    `Canonical mobile book transform changed: expected ${mobileLayout.canonicalMobileBookTransform}, received ${mobileLayout.mobileBookTransform}.`,
-  );
-}
-if (!mobileLayout.mobileBookFilter.includes("0px 24px 20px")) {
-  throw new Error(`Canonical mobile book shadow changed: ${mobileLayout.mobileBookFilter}.`);
-}
-if (
-  Math.abs(mobileLayout.mobileBookPagesTop - 10) > 0.5 ||
-  Math.abs(mobileLayout.mobileBookPagesRight + 20) > 0.5 ||
-  Math.abs(mobileLayout.mobileBookPagesBottom - 8) > 0.5 ||
-  Math.abs(mobileLayout.mobileBookPagesWidth - 24) > 0.5
-) {
-  throw new Error(
-    `Canonical mobile page depth changed: top ${mobileLayout.mobileBookPagesTop}, right ${mobileLayout.mobileBookPagesRight}, bottom ${mobileLayout.mobileBookPagesBottom}, width ${mobileLayout.mobileBookPagesWidth}.`,
-  );
-}
-if (mobileLayout.headingFontSize > 42) {
-  throw new Error(`Mobile Home heading remains oversized at ${mobileLayout.headingFontSize}px.`);
+if (mobile.bookWidth < 225 || mobile.bookWidth > 250) {
+  throw new Error(`Mobile canonical book has regressed in visual presence: ${mobile.bookWidth}px wide.`);
 }
 if (
   !(
-    mobileLayout.headingBottom < mobileLayout.mobileBookTop &&
-    mobileLayout.mobileBookBottom < mobileLayout.descriptionTop &&
-    mobileLayout.descriptionBottom < mobileLayout.ctaTop &&
-    mobileLayout.ctaBottom < mobileLayout.quoteTop
+    mobile.headingBottom < mobile.stageTop &&
+    mobile.stageBottom < mobile.descriptionTop &&
+    mobile.descriptionBottom < mobile.ctaTop &&
+    mobile.ctaBottom < mobile.quoteTop
   )
 ) {
   throw new Error("Mobile Home hierarchy must remain heading -> book -> orientation -> buy -> quote.");
 }
-if (mobileLayout.ctaWidth < 330 || mobileLayout.ctaHeight < 44) {
-  throw new Error(`Mobile purchase CTA is not comfortably usable: ${mobileLayout.ctaWidth}x${mobileLayout.ctaHeight}px.`);
+if (mobile.ctaWidth < 330 || mobile.ctaHeight < 44) {
+  throw new Error(`Mobile purchase CTA is not comfortably usable: ${mobile.ctaWidth}x${mobile.ctaHeight}px.`);
 }
-if (mobileLayout.scrollWidth > mobileLayout.viewportWidth + 1) {
+if (mobile.scrollWidth > mobile.viewportWidth + 1) {
   throw new Error(
-    `Mobile Home has horizontal overflow: scroll width ${mobileLayout.scrollWidth}px for ${mobileLayout.viewportWidth}px viewport.`,
+    `Mobile Home has horizontal overflow: scroll width ${mobile.scrollWidth}px for ${mobile.viewportWidth}px viewport.`,
   );
 }
+assertCanonicalBook(mobile, "Mobile");
 
+for (const [name, desktopValue, mobileValue, tolerance] of [
+  ["page depth", desktop.pageWidthRatio, mobile.pageWidthRatio, 0.002],
+  ["page top inset", desktop.pageTopInsetRatio, mobile.pageTopInsetRatio, 0.002],
+  ["page bottom inset", desktop.pageBottomInsetRatio, mobile.pageBottomInsetRatio, 0.002],
+  ["rear edge", desktop.rearWidthRatio, mobile.rearWidthRatio, 0.002],
+  ["rear edge offset", desktop.rearRightRatio, mobile.rearRightRatio, 0.002],
+  ["shadow width-left", desktop.shadowLeftRatio, mobile.shadowLeftRatio, 0.002],
+  ["shadow width-right", desktop.shadowRightRatio, mobile.shadowRightRatio, 0.002],
+  ["shadow height", desktop.shadowHeightRatio, mobile.shadowHeightRatio, 0.002],
+  ["shadow offset", desktop.shadowBottomRatio, mobile.shadowBottomRatio, 0.002],
+]) {
+  if (!near(desktopValue, mobileValue, tolerance)) {
+    throw new Error(
+      `Desktop/mobile canonical ${name} diverged: desktop ${desktopValue}, mobile ${mobileValue}.`,
+    );
+  }
+}
+
+if (
+  desktop.pageClipPath !== mobile.pageClipPath ||
+  desktop.pageBackgroundImage !== mobile.pageBackgroundImage ||
+  desktop.rearBackgroundColor !== mobile.rearBackgroundColor
+) {
+  throw new Error("Desktop and mobile no longer share one canonical 3D book treatment.");
+}
+
+socket.close();
 cleanup();
 process.stdout.write(
-  `PASS: Home responsive contract holds at 1101px and 390px; desktop hero ${desktopLayout.heroHeight}px, mobile canonical book ${mobileLayout.mobileBookCssWidth}px.\n`,
+  `PASS: Home responsive contract holds at 1101px and 390px; one canonical front-facing book treatment uses /book-cover.webp with shared page/rear/shadow geometry.\n`,
 );
