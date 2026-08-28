@@ -40,6 +40,38 @@ const principles = [
   },
 ] as const;
 
+function PrimaryNavigation() {
+  return (
+    <>
+      <a href="/book">BOOK</a>
+      <a href="#non-negotiables">THE 24 NON-NEGOTIABLES</a>
+      <span aria-disabled="true">ABOUT</span>
+      <span aria-disabled="true">CONTACT</span>
+      <span aria-disabled="true">NEWSLETTER</span>
+    </>
+  );
+}
+
+function BookCover({ variant }: { variant: "desktop" | "mobile" }) {
+  return (
+    <figure
+      className={`book-stage book-stage-${variant}`}
+      aria-label="Becoming the Man She Can Trust book cover"
+    >
+      <div className="book-3d">
+        <span className="book-pages" aria-hidden="true" />
+        <img
+          className="book-cover-image"
+          src="/book-cover.webp"
+          width="240"
+          height="365"
+          alt="Becoming the Man She Can Trust by Emory Harris"
+        />
+      </div>
+    </figure>
+  );
+}
+
 export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
   return (
     <div className="site-page">
@@ -47,13 +79,22 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
         <a className="brand-mark" href="/" aria-label="Love Purpose Flourish home">
           LOVE | PURPOSE | FLOURISH
         </a>
-        <nav className="site-nav" aria-label="Primary">
-          <a href="/book">BOOK</a>
-          <a href="#non-negotiables">THE 24 NON-NEGOTIABLES</a>
-          <span aria-disabled="true">ABOUT</span>
-          <span aria-disabled="true">CONTACT</span>
-          <span aria-disabled="true">NEWSLETTER</span>
+        <nav className="site-nav site-nav-desktop" aria-label="Primary">
+          <PrimaryNavigation />
         </nav>
+        <details className="mobile-nav">
+          <summary>
+            <span className="mobile-nav-icon" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+            <span>MENU</span>
+          </summary>
+          <nav className="mobile-nav-panel" aria-label="Mobile primary">
+            <PrimaryNavigation />
+          </nav>
+        </details>
       </header>
 
       <main>
@@ -65,6 +106,9 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
               A SYSTEM FOR BUILDING THE LIFE, CHARACTER, AND LEADERSHIP THAT CREATE LASTING LOVE
             </p>
             <p className="hero-author">EMORY HARRIS</p>
+
+            <BookCover variant="mobile" />
+
             <p className="hero-description">
               In a world where charm is often mistaken for character, trust is built another way. <em>Becoming the Man She Can Trust</em> is a practical and thought-provoking guide for men who want to grow beyond inconsistency, ego, and emotional immaturity. It calls men to become steady, honest, disciplined, and safe, not through performance, but through transformation.
             </p>
@@ -79,18 +123,7 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
             </div>
           </div>
 
-          <figure className="book-stage" aria-label="Becoming the Man She Can Trust book cover">
-            <div className="book-3d">
-              <span className="book-pages" aria-hidden="true" />
-              <img
-                className="book-cover-image"
-                src="/book-cover.webp"
-                width="240"
-                height="365"
-                alt="Becoming the Man She Can Trust by Emory Harris"
-              />
-            </div>
-          </figure>
+          <BookCover variant="desktop" />
 
           <blockquote className="communication-quote">
             <p className="quote-principle">Communication Is Shared Meaning.</p>
