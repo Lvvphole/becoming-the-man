@@ -1,4 +1,9 @@
 /* User-approved Home visual contract: desktop oracle approved 2026-08-27. */
+.mobile-nav,
+.book-stage-mobile {
+  display: none;
+}
+
 @media (min-width: 1101px) {
   .site-header {
     width: min(1352px, calc(100% - 96px));
@@ -177,5 +182,343 @@
   .home-hero::before,
   .home-hero::after {
     content: none;
+  }
+}
+
+/* User-approved mobile contract: normal-scale scrolling composition approved 2026-08-27. */
+@media (max-width: 780px) {
+  .site-header {
+    width: calc(100% - 40px);
+    min-height: 68px;
+    padding: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .brand-mark {
+    font-size: 0.82rem;
+    letter-spacing: 0.018em;
+  }
+
+  .site-nav-desktop {
+    display: none;
+  }
+
+  .mobile-nav {
+    position: relative;
+    display: block;
+    margin-left: auto;
+    color: var(--navy);
+  }
+
+  .mobile-nav summary {
+    min-width: 96px;
+    min-height: 44px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1.5px solid var(--navy);
+    border-radius: 4px;
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    list-style: none;
+  }
+
+  .mobile-nav summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-nav summary:focus-visible {
+    outline: 3px solid var(--teal-ink);
+    outline-offset: 4px;
+  }
+
+  .mobile-nav-icon {
+    width: 18px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .mobile-nav-icon span {
+    width: 18px;
+    height: 2px;
+    display: block;
+    background: currentColor;
+  }
+
+  .mobile-nav-panel {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(280px, calc(100vw - 48px));
+    padding: 10px 16px;
+    display: grid;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: 0 18px 44px rgb(6 35 63 / 0.14);
+  }
+
+  .mobile-nav-panel a,
+  .mobile-nav-panel span[aria-disabled="true"] {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #e8edef;
+    color: var(--navy);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+    text-decoration: none;
+  }
+
+  .mobile-nav-panel > :last-child {
+    border-bottom: 0;
+  }
+
+  .home-hero {
+    min-height: auto;
+    padding: 34px 24px 52px;
+    grid-template-columns: 1fr;
+    gap: 0;
+    background: #ffffff;
+  }
+
+  .hero-copy {
+    width: 100%;
+    text-align: center;
+  }
+
+  .hero-copy h1 {
+    max-width: 350px;
+    margin: 0 auto;
+    font-size: clamp(2.25rem, 9vw, 2.6rem);
+    line-height: 0.98;
+    letter-spacing: 0.005em;
+  }
+
+  .hero-copy .accent-rule {
+    width: 58px;
+    height: 4px;
+    margin: 18px auto;
+  }
+
+  .hero-subtitle {
+    max-width: 350px;
+    margin: 0 auto;
+    font-size: 0.94rem;
+    line-height: 1.45;
+  }
+
+  .hero-author {
+    margin: 18px 0 0;
+    font-size: 0.86rem;
+  }
+
+  .book-stage-desktop {
+    display: none;
+  }
+
+  .book-stage-mobile {
+    min-height: 0;
+    margin: 30px 0 0;
+    display: grid;
+    justify-items: center;
+  }
+
+  .book-stage-mobile .book-3d {
+    width: min(58vw, 220px);
+    margin: 0;
+    transform: rotateY(-6deg) rotateZ(0.4deg);
+    transform-origin: left center;
+    filter: drop-shadow(12px 18px 14px rgb(11 45 81 / 0.16));
+  }
+
+  .book-stage-mobile .book-pages {
+    top: 7px;
+    right: -17px;
+    bottom: 6px;
+    width: 20px;
+  }
+
+  .hero-description {
+    max-width: 350px;
+    margin: 30px auto 0;
+    font-size: 1rem;
+    line-height: 1.62;
+    text-align: left;
+  }
+
+  .hero-action {
+    width: 100%;
+    margin: 24px auto 0;
+  }
+
+  .primary-action {
+    width: 100%;
+    min-height: 54px;
+    max-width: none;
+    border-radius: 4px;
+    font-size: 0.88rem;
+  }
+
+  .communication-quote {
+    width: 100%;
+    max-width: 350px;
+    margin: 44px auto 0;
+    padding: 28px 22px;
+    justify-self: center;
+    text-align: center;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: #fbfcfc;
+    box-shadow: 0 12px 32px rgb(16 43 69 / 0.05);
+  }
+
+  .communication-quote::before,
+  .communication-quote::after {
+    width: 58px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .communication-quote::before {
+    margin-bottom: 18px;
+  }
+
+  .communication-quote::after {
+    margin-top: 18px;
+  }
+
+  .communication-quote p {
+    font-size: 1.08rem;
+    line-height: 1.5;
+  }
+
+  .communication-quote .quote-principle {
+    margin-bottom: 12px;
+  }
+
+  .quote-symbol {
+    margin: 4px 0 14px;
+    font-size: 1.55rem;
+  }
+
+  .principle-band {
+    padding: 38px 24px;
+  }
+
+  .principle-item,
+  .principle-item:first-child {
+    min-height: 0;
+    padding: 26px 0;
+  }
+
+  .principle-item:first-child {
+    padding-top: 0;
+  }
+
+  .principle-item:last-child {
+    padding-bottom: 0;
+  }
+
+  .principle-item h2 {
+    margin-bottom: 10px;
+    font-size: 0.92rem;
+    line-height: 1.3;
+  }
+
+  .principle-item p {
+    font-size: 0.96rem;
+    line-height: 1.55;
+  }
+
+  .framework-section {
+    padding: 48px 24px 56px;
+    gap: 36px;
+  }
+
+  .framework-intro h2 {
+    max-width: 350px;
+    font-size: clamp(2.1rem, 9vw, 2.4rem);
+    line-height: 1.02;
+  }
+
+  .framework-intro .accent-rule {
+    margin: 18px 0 22px;
+  }
+
+  .framework-intro > p:not(.section-eyebrow) {
+    margin-bottom: 22px;
+    font-size: 0.98rem;
+    line-height: 1.6;
+  }
+
+  .framework-card {
+    padding: 22px 18px;
+    box-shadow: none;
+  }
+
+  .framework-card li {
+    min-height: 46px;
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+
+  .becoming-quote {
+    min-height: 0;
+    padding: 32px 24px;
+  }
+
+  .becoming-quote p {
+    font-size: 1.35rem;
+    line-height: 1.45;
+  }
+
+  .becoming-quote p + p {
+    margin-top: 24px;
+  }
+
+  .site-footer {
+    min-height: 0;
+    padding: 30px 24px 34px;
+    gap: 20px;
+  }
+
+  .site-footer nav {
+    gap: 18px 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .site-header {
+    width: calc(100% - 32px);
+  }
+
+  .brand-mark {
+    font-size: 0.76rem;
+  }
+
+  .mobile-nav summary {
+    min-width: 88px;
+    padding: 0 10px;
+  }
+
+  .home-hero,
+  .principle-band,
+  .framework-section {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(2.15rem, 9vw, 2.35rem);
   }
 }
