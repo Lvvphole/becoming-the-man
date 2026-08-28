@@ -1,0 +1,181 @@
+/* User-approved Home visual contract: desktop oracle approved 2026-08-27. */
+@media (min-width: 1101px) {
+  .site-header {
+    width: min(1352px, calc(100% - 96px));
+    min-height: 64px;
+  }
+
+  .site-nav,
+  .site-footer nav {
+    gap: 38px;
+    font-size: 0.73rem;
+  }
+
+  .home-hero {
+    height: auto;
+    min-height: 494px;
+    padding: 20px max(48px, calc((100% - 1352px) / 2));
+    grid-template-columns: minmax(0, 1fr) 390px 230px;
+    gap: 32px;
+    background: #ffffff url("/hero-atmosphere-approved.webp") center bottom / cover no-repeat;
+  }
+
+  .home-hero::before,
+  .home-hero::after {
+    content: none;
+  }
+
+  .hero-copy h1 {
+    max-width: 650px;
+    font-size: clamp(3.25rem, 3.85vw, 3.5rem);
+    line-height: 1.01;
+    letter-spacing: 0.008em;
+  }
+
+  .accent-rule {
+    width: 62px;
+    height: 4px;
+    margin: 14px 0 18px;
+  }
+
+  .hero-subtitle {
+    max-width: 610px;
+    font-size: 1rem;
+    line-height: 1.32;
+  }
+
+  .hero-author {
+    margin: 13px 0 16px;
+    font-size: 0.88rem;
+  }
+
+  .hero-description {
+    max-width: 515px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .hero-action {
+    margin-top: 18px;
+  }
+
+  .primary-action {
+    min-width: 180px;
+    min-height: 48px;
+  }
+
+  .book-stage {
+    min-height: 0;
+  }
+
+  .book-3d {
+    width: 300px;
+    transform: rotateY(-6deg) rotateZ(0.5deg);
+    transform-origin: left center;
+    filter: drop-shadow(16px 20px 16px rgb(11 45 81 / 0.16));
+  }
+
+  .book-cover-image {
+    width: 300px;
+    height: auto;
+    border-radius: 1px 3px 3px 1px;
+    box-shadow: 0 0 0 1px rgb(6 35 63 / 0.08);
+  }
+
+  .book-pages {
+    top: 8px;
+    right: -24px;
+    bottom: 7px;
+    width: 27px;
+  }
+
+  .communication-quote {
+    width: 220px;
+    padding-top: 0;
+    justify-self: end;
+  }
+
+  .communication-quote p {
+    font-size: 1.08rem;
+    line-height: 1.55;
+  }
+
+  .communication-quote::before {
+    margin-bottom: 24px;
+  }
+
+  .communication-quote::after {
+    margin-top: 24px;
+  }
+
+  .quote-symbol {
+    margin: 10px 0 20px;
+    font-size: 1.65rem;
+  }
+
+  .principle-band {
+    min-height: 150px;
+    padding: 20px max(48px, calc((100% - 1352px) / 2));
+    align-items: center;
+  }
+
+  .principle-item {
+    min-height: 104px;
+    padding: 0 38px;
+  }
+
+  .principle-item h2 {
+    font-size: 0.82rem;
+  }
+
+  .principle-item p {
+    font-size: 0.82rem;
+    line-height: 1.42;
+  }
+
+  .framework-section {
+    min-height: 278px;
+    padding: 14px max(48px, calc((100% - 1352px) / 2));
+    grid-template-columns: minmax(0, 1fr) 370px 365px;
+    gap: 72px;
+  }
+
+  .framework-intro h2 {
+    max-width: 410px;
+    font-size: 2.2rem;
+  }
+
+  .framework-intro > p:not(.section-eyebrow) {
+    max-width: 390px;
+    font-size: 0.9rem;
+  }
+
+  .framework-card {
+    padding: 16px 22px;
+  }
+
+  .becoming-quote {
+    min-height: 214px;
+    padding: 34px 38px;
+  }
+
+  .becoming-quote p {
+    font-size: 1.45rem;
+  }
+
+  .site-footer {
+    min-height: 100px;
+    padding: 0 max(48px, calc((100% - 1352px) / 2));
+  }
+}
+
+@media (max-width: 1100px) {
+  .home-hero {
+    background: #ffffff url("/hero-atmosphere-approved.webp") center bottom / cover no-repeat;
+  }
+
+  .home-hero::before,
+  .home-hero::after {
+    content: none;
+  }
+}

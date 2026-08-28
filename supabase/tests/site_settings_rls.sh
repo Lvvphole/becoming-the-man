@@ -38,11 +38,21 @@ while IFS= read -r migration; do
   docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U postgres -d postgres < "$migration"
 done < <(find supabase/migrations -type f -name '*.sql' -print | sort)
 
+expected_purchase_url='https://www.amazon.com/Becoming-Man-She-Can-Trust-ebook/dp/B0HG3F82J8/ref=sr_1_1?crid=248IIFWJJD84G&dib=eyJ2IjoiMSJ9.Q2WeUmKKql0XVwxmUugjwBPWoiAj40NiIl796yaMTIOH8retIOjTyBbeOBOs0l2F.A9I5QNNGnQl3pDEMwkFi8dcUvw0tO42kvBD-HjHfY4k&dib_tag=se&keywords=becoming+the+man+she+can+trust&qid=1787867145&sprefix=becoming+the+man+she+can+tr%2Caps%2C199&sr=8-1'
+configured_purchase_url="$(
+  docker exec "$container" psql -qAt -v ON_ERROR_STOP=1 -U postgres -d postgres \
+    -c "select setting_value from public.site_settings where setting_key = 'book_purchase_url';" \
+    | tr -d '\r'
+)"
+
+if [[ "$configured_purchase_url" != "$expected_purchase_url" ]]; then
+  echo "FAIL: book_purchase_url does not match the approved live Amazon destination."
+  exit 1
+fi
+
 docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U postgres -d postgres <<'SQL'
 insert into public.site_settings (setting_key, setting_value)
-values
-  ('book_purchase_url', 'https://example.test/book'),
-  ('internal_flag', 'private');
+values ('internal_flag', 'private');
 SQL
 
 assert_write_denied() {
@@ -76,4 +86,4 @@ for role in anon authenticated; do
     "delete from public.site_settings where setting_key = 'book_purchase_url';"
 done
 
-echo "PASS: site_settings migration, grants, and RLS restrict anon/authenticated to read-only book_purchase_url access."
+echo "PASS: site_settings contains the approved Amazon destination and restricts anon/authenticated to read-only book_purchase_url access."
