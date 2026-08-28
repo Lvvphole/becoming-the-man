@@ -158,6 +158,10 @@ const mobileEvaluation = await command("Runtime.evaluate", {
     const mobileBook = document.querySelector(".book-stage-mobile");
     const desktopBook = document.querySelector(".book-stage-desktop");
     const mobileBookRect = mobileBook.getBoundingClientRect();
+    const mobileBook3d = mobileBook.querySelector(".book-3d");
+    const mobileBookPages = mobileBook.querySelector(".book-pages");
+    const mobileBook3dStyle = getComputedStyle(mobileBook3d);
+    const mobileBookPagesStyle = getComputedStyle(mobileBookPages);
     const heading = document.querySelector(".hero-copy h1");
     const headingRect = heading.getBoundingClientRect();
     const descriptionRect = document.querySelector(".hero-description").getBoundingClientRect();
@@ -172,6 +176,13 @@ const mobileEvaluation = await command("Runtime.evaluate", {
       desktopNavDisplay: getComputedStyle(desktopNav).display,
       mobileBookDisplay: getComputedStyle(mobileBook).display,
       desktopBookDisplay: getComputedStyle(desktopBook).display,
+      mobileBookCssWidth: Number.parseFloat(mobileBook3dStyle.width),
+      mobileBookFilter: mobileBook3dStyle.filter,
+      mobileBookTransform: mobileBook3dStyle.transform,
+      mobileBookPagesTop: Number.parseFloat(mobileBookPagesStyle.top),
+      mobileBookPagesRight: Number.parseFloat(mobileBookPagesStyle.right),
+      mobileBookPagesBottom: Number.parseFloat(mobileBookPagesStyle.bottom),
+      mobileBookPagesWidth: Number.parseFloat(mobileBookPagesStyle.width),
       headingFontSize: Number.parseFloat(getComputedStyle(heading).fontSize),
       headingBottom: headingRect.bottom,
       mobileBookTop: mobileBookRect.top,
@@ -202,6 +213,27 @@ if (mobileLayout.desktopNavDisplay !== "none") {
 if (mobileLayout.mobileBookDisplay === "none" || mobileLayout.desktopBookDisplay !== "none") {
   throw new Error("Mobile Home must show only the mobile-positioned canonical book cover.");
 }
+if (mobileLayout.mobileBookCssWidth < 300) {
+  throw new Error(
+    `Canonical mobile 3D book rendering is undersized: ${mobileLayout.mobileBookCssWidth}px CSS width.`,
+  );
+}
+if (mobileLayout.mobileBookTransform === "none") {
+  throw new Error("Canonical mobile book lost its approved 3D transform.");
+}
+if (!mobileLayout.mobileBookFilter.includes("0px 24px 20px")) {
+  throw new Error(`Canonical mobile book shadow changed: ${mobileLayout.mobileBookFilter}.`);
+}
+if (
+  Math.abs(mobileLayout.mobileBookPagesTop - 10) > 0.5 ||
+  Math.abs(mobileLayout.mobileBookPagesRight + 20) > 0.5 ||
+  Math.abs(mobileLayout.mobileBookPagesBottom - 8) > 0.5 ||
+  Math.abs(mobileLayout.mobileBookPagesWidth - 24) > 0.5
+) {
+  throw new Error(
+    `Canonical mobile page depth changed: top ${mobileLayout.mobileBookPagesTop}, right ${mobileLayout.mobileBookPagesRight}, bottom ${mobileLayout.mobileBookPagesBottom}, width ${mobileLayout.mobileBookPagesWidth}.`,
+  );
+}
 if (mobileLayout.headingFontSize > 42) {
   throw new Error(`Mobile Home heading remains oversized at ${mobileLayout.headingFontSize}px.`);
 }
@@ -226,5 +258,5 @@ if (mobileLayout.scrollWidth > mobileLayout.viewportWidth + 1) {
 
 cleanup();
 process.stdout.write(
-  `PASS: Home responsive contract holds at 1101px and 390px; desktop hero ${desktopLayout.heroHeight}px, mobile header ${mobileLayout.headerHeight}px.\n`,
+  `PASS: Home responsive contract holds at 1101px and 390px; desktop hero ${desktopLayout.heroHeight}px, mobile canonical book ${mobileLayout.mobileBookCssWidth}px.\n`,
 );
