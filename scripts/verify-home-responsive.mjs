@@ -162,6 +162,11 @@ const mobileEvaluation = await command("Runtime.evaluate", {
     const mobileBookPages = mobileBook.querySelector(".book-pages");
     const mobileBook3dStyle = getComputedStyle(mobileBook3d);
     const mobileBookPagesStyle = getComputedStyle(mobileBookPages);
+    const canonicalTransformReference = document.createElement("div");
+    canonicalTransformReference.style.transform = "rotateY(-7deg) rotateZ(0.7deg)";
+    document.body.append(canonicalTransformReference);
+    const canonicalMobileBookTransform = getComputedStyle(canonicalTransformReference).transform;
+    canonicalTransformReference.remove();
     const heading = document.querySelector(".hero-copy h1");
     const headingRect = heading.getBoundingClientRect();
     const descriptionRect = document.querySelector(".hero-description").getBoundingClientRect();
@@ -179,6 +184,7 @@ const mobileEvaluation = await command("Runtime.evaluate", {
       mobileBookCssWidth: Number.parseFloat(mobileBook3dStyle.width),
       mobileBookFilter: mobileBook3dStyle.filter,
       mobileBookTransform: mobileBook3dStyle.transform,
+      canonicalMobileBookTransform,
       mobileBookPagesTop: Number.parseFloat(mobileBookPagesStyle.top),
       mobileBookPagesRight: Number.parseFloat(mobileBookPagesStyle.right),
       mobileBookPagesBottom: Number.parseFloat(mobileBookPagesStyle.bottom),
@@ -218,8 +224,10 @@ if (mobileLayout.mobileBookCssWidth < 300) {
     `Canonical mobile 3D book rendering is undersized: ${mobileLayout.mobileBookCssWidth}px CSS width.`,
   );
 }
-if (mobileLayout.mobileBookTransform === "none") {
-  throw new Error("Canonical mobile book lost its approved 3D transform.");
+if (mobileLayout.mobileBookTransform !== mobileLayout.canonicalMobileBookTransform) {
+  throw new Error(
+    `Canonical mobile book transform changed: expected ${mobileLayout.canonicalMobileBookTransform}, received ${mobileLayout.mobileBookTransform}.`,
+  );
 }
 if (!mobileLayout.mobileBookFilter.includes("0px 24px 20px")) {
   throw new Error(`Canonical mobile book shadow changed: ${mobileLayout.mobileBookFilter}.`);
