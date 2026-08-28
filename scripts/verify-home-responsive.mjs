@@ -5,7 +5,8 @@ import process from "node:process";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const pageUrl = process.argv[2] ?? "http://127.0.0.1:4173/";
-const viewport = { width: 1101, height: 900, deviceScaleFactor: 1, mobile: false };
+const desktopViewport = { width: 1101, height: 900, deviceScaleFactor: 1, mobile: false };
+const mobileViewport = { width: 390, height: 844, deviceScaleFactor: 1, mobile: true };
 const chromeNames = [
   process.env.CHROME_PATH,
   "google-chrome",
@@ -90,7 +91,7 @@ function command(method, params = {}) {
 }
 
 await command("Runtime.enable");
-await command("Emulation.setDeviceMetricsOverride", viewport);
+await command("Emulation.setDeviceMetricsOverride", desktopViewport);
 
 for (let attempt = 0; attempt < 50; attempt += 1) {
   const state = await command("Runtime.evaluate", {
@@ -106,7 +107,8 @@ await command("Runtime.evaluate", {
   expression: "document.fonts.ready.then(() => true)",
   awaitPromise: true,
 });
-const evaluation = await command("Runtime.evaluate", {
+
+const desktopEvaluation = await command("Runtime.evaluate", {
   expression: `(() => {
     const heroRect = document.querySelector(".home-hero").getBoundingClientRect();
     const ctaRect = document.querySelector(".primary-action").getBoundingClientRect();
@@ -123,21 +125,106 @@ const evaluation = await command("Runtime.evaluate", {
   returnByValue: true,
 });
 
-socket.close();
-const layout = evaluation.result.value;
-if (layout.heroHeight < 494) {
-  throw new Error(`Home hero is shorter than the approved 494px minimum: ${layout.heroHeight}px.`);
+const desktopLayout = desktopEvaluation.result.value;
+if (desktopLayout.heroHeight < 494) {
+  throw new Error(`Home hero is shorter than the approved 494px minimum: ${desktopLayout.heroHeight}px.`);
 }
-if (layout.ctaWidth <= 0 || layout.ctaHeight <= 0) {
+if (desktopLayout.ctaWidth <= 0 || desktopLayout.ctaHeight <= 0) {
   throw new Error("Primary purchase CTA has no rendered size.");
 }
-if (layout.ctaTop < layout.heroTop || layout.ctaBottom > layout.heroBottom + 0.5) {
+if (desktopLayout.ctaTop < desktopLayout.heroTop || desktopLayout.ctaBottom > desktopLayout.heroBottom + 0.5) {
   throw new Error(
-    `Primary purchase CTA is clipped at 1101px: CTA bottom ${layout.ctaBottom}px, hero bottom ${layout.heroBottom}px.`,
+    `Primary purchase CTA is clipped at 1101px: CTA bottom ${desktopLayout.ctaBottom}px, hero bottom ${desktopLayout.heroBottom}px.`,
+  );
+}
+
+await command("Emulation.setDeviceMetricsOverride", mobileViewport);
+for (let attempt = 0; attempt < 20; attempt += 1) {
+  const state = await command("Runtime.evaluate", {
+    expression: "({ width: window.innerWidth, ready: document.readyState })",
+    returnByValue: true,
+  });
+  if (state.result.value.ready === "complete" && state.result.value.width === mobileViewport.width) break;
+  if (attempt === 19) throw new Error("Timed out waiting for the mobile Home layout to settle.");
+  await sleep(100);
+}
+
+const mobileEvaluation = await command("Runtime.evaluate", {
+  expression: `(() => {
+    const headerRect = document.querySelector(".site-header").getBoundingClientRect();
+    const menu = document.querySelector(".mobile-nav summary");
+    const menuRect = menu.getBoundingClientRect();
+    const desktopNav = document.querySelector(".site-nav-desktop");
+    const mobileBook = document.querySelector(".book-stage-mobile");
+    const desktopBook = document.querySelector(".book-stage-desktop");
+    const mobileBookRect = mobileBook.getBoundingClientRect();
+    const heading = document.querySelector(".hero-copy h1");
+    const headingRect = heading.getBoundingClientRect();
+    const descriptionRect = document.querySelector(".hero-description").getBoundingClientRect();
+    const ctaRect = document.querySelector(".primary-action").getBoundingClientRect();
+    const quoteRect = document.querySelector(".communication-quote").getBoundingClientRect();
+    return {
+      viewportWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      headerHeight: headerRect.height,
+      menuWidth: menuRect.width,
+      menuHeight: menuRect.height,
+      desktopNavDisplay: getComputedStyle(desktopNav).display,
+      mobileBookDisplay: getComputedStyle(mobileBook).display,
+      desktopBookDisplay: getComputedStyle(desktopBook).display,
+      headingFontSize: Number.parseFloat(getComputedStyle(heading).fontSize),
+      headingBottom: headingRect.bottom,
+      mobileBookTop: mobileBookRect.top,
+      mobileBookBottom: mobileBookRect.bottom,
+      descriptionTop: descriptionRect.top,
+      descriptionBottom: descriptionRect.bottom,
+      ctaTop: ctaRect.top,
+      ctaBottom: ctaRect.bottom,
+      ctaWidth: ctaRect.width,
+      ctaHeight: ctaRect.height,
+      quoteTop: quoteRect.top,
+    };
+  })()`,
+  returnByValue: true,
+});
+
+socket.close();
+const mobileLayout = mobileEvaluation.result.value;
+if (mobileLayout.headerHeight > 80) {
+  throw new Error(`Mobile header is vertically jumbled: ${mobileLayout.headerHeight}px tall.`);
+}
+if (mobileLayout.menuWidth < 44 || mobileLayout.menuHeight < 44) {
+  throw new Error(`Mobile menu target is too small: ${mobileLayout.menuWidth}x${mobileLayout.menuHeight}px.`);
+}
+if (mobileLayout.desktopNavDisplay !== "none") {
+  throw new Error("Desktop navigation remains visible in the 390px mobile layout.");
+}
+if (mobileLayout.mobileBookDisplay === "none" || mobileLayout.desktopBookDisplay !== "none") {
+  throw new Error("Mobile Home must show only the mobile-positioned canonical book cover.");
+}
+if (mobileLayout.headingFontSize > 42) {
+  throw new Error(`Mobile Home heading remains oversized at ${mobileLayout.headingFontSize}px.`);
+}
+if (
+  !(
+    mobileLayout.headingBottom < mobileLayout.mobileBookTop &&
+    mobileLayout.mobileBookBottom < mobileLayout.descriptionTop &&
+    mobileLayout.descriptionBottom < mobileLayout.ctaTop &&
+    mobileLayout.ctaBottom < mobileLayout.quoteTop
+  )
+) {
+  throw new Error("Mobile Home hierarchy must remain heading -> book -> orientation -> buy -> quote.");
+}
+if (mobileLayout.ctaWidth < 330 || mobileLayout.ctaHeight < 44) {
+  throw new Error(`Mobile purchase CTA is not comfortably usable: ${mobileLayout.ctaWidth}x${mobileLayout.ctaHeight}px.`);
+}
+if (mobileLayout.scrollWidth > mobileLayout.viewportWidth + 1) {
+  throw new Error(
+    `Mobile Home has horizontal overflow: scroll width ${mobileLayout.scrollWidth}px for ${mobileLayout.viewportWidth}px viewport.`,
   );
 }
 
 cleanup();
 process.stdout.write(
-  `PASS: Home purchase CTA remains visible at 1101px; rendered hero height ${layout.heroHeight}px.\n`,
+  `PASS: Home responsive contract holds at 1101px and 390px; desktop hero ${desktopLayout.heroHeight}px, mobile header ${mobileLayout.headerHeight}px.\n`,
 );
