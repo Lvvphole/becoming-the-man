@@ -82,6 +82,15 @@ Do not introduce microservices, queues, Kubernetes, custom payment/order systems
 - Do not bypass required checks to obtain a green deployment.
 - `main` must require `PR Verification` and require the branch to be up to date before merge. Until repository rules enforce both, merge enforcement is incomplete.
 
+## Project Skills Router
+Project skills are subordinate workflows under `.claude/skills/<skill-name>/SKILL.md`; they never override this file or routed authorities.
+- Do not scan or preload `.claude/skills/`. Select from skill metadata, then read only the matching `SKILL.md`.
+- User asks to scout, survey, map, orient in, or determine the next repo step -> `scout-agent`. It is read-only and stops after its Scout Report.
+- User invokes `/plan`, supplies a Scout handoff, or asks for an implementation plan -> `plan`. It requires a user- or Scout-selected path and stops at `PLAN_READY` or `PLAN_BLOCKED`; it does not implement.
+- Load only a reference explicitly linked by the selected skill when the current step requires it.
+- Do not invoke a skill from inside another skill, re-invoke an unchanged skill in the same task, or use a skill to bypass a stop. New material evidence or explicit user direction is required to re-enter a completed workflow.
+- A skill cannot grant write, review, PASS, merge-readiness, or merge authority.
+
 ## Upstream Source Router
 Do not preload upstream specifications. Read only the smallest relevant authoritative section when the task requires it.
 - Product goal, governing UX, DoD, release intent/order, or product constraints -> **Website Governing Product Specification v1.0 — LOCKED**.
@@ -90,3 +99,4 @@ Do not preload upstream specifications. Read only the smallest relevant authorit
 - Public book identity or Twenty-Four Non-Negotiables -> published **Becoming the Man She Can Trust**.
 - Deeper relationship protocols, evidence calibration, or safety/referral rules -> **Master Relationship Operating System v1.4**.
 If the required authoritative source is not present in the repository or supplied task context, stop and request it. Do not substitute memory or guess.
+
