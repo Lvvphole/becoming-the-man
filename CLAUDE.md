@@ -19,4 +19,4 @@ Repository skills live in `.claude/skills/`. Each skill is a self-contained fold
 Available skills:
 - **scout-agent** — Read-only reconnaissance. Use before planning or implementation when the repo state relative to its DoD is unknown. Produces a single-path scout report.
 - **plan** — Turns a scout report or user handoff into the smallest sufficient implementation plan. Use after scouting, before building.
-- **engineering-rules** — The 51-rule engineering standard. Enforce while writing code; audit diffs and PRs against it. Includes `scripts/check.py` for mechanical gate checks.
+- **engineering-rules** — The 53-rule engineering standard. Enforce while writing code; audit diffs and PRs against it. Includes `scripts/check.py` for mechanical gate checks.
