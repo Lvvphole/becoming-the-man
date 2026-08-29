@@ -38,7 +38,8 @@ and your implementation design. Verify these against the repository and correct 
 
 When corrected evidence changes the gap or which design is admissible, update and
 continue. When it invalidates the goal, DoD, or Scout path itself, emit
-`PLAN_BLOCKED: INVALIDATED` and proceed to Step 14 to write the blocked artifact.
+`PLAN_BLOCKED` with condition `INVALIDATED` and proceed to Step 14 to write the
+blocked artifact.
 
 ## Two kinds of authority
 
@@ -133,8 +134,8 @@ prescribed, derive in the same way. Never overwrite an occupied path. Format:
 `references/plan-template.md`. Bind to the source revision, excluding the artifact
 path from the fingerprint so the plan does not invalidate its own baseline. Compute
 the fingerprint as: `commit=$(git rev-parse HEAD)`, `staged=$(git diff --cached |
-sha256sum)`, `unstaged=$(git diff | sha256sum)`, `untracked=$(git ls-files --others
---exclude-standard | sort | sha256sum)` — omitting the artifact path from each.
+sha256sum)`, `unstaged=$(git diff | sha256sum)`, `untracked=$(git ls-files --others --exclude-standard | sort | xargs -I{} sh -c
+'echo "{}"; cat "{}"' | sha256sum)` — omitting the artifact path from each.
 
 The artifact opens with exactly one of: `PLAN_READY`, `PLAN_BLOCKED`. When no legal
 repository path exists, deliver `PLAN_BLOCKED` outside the repository.
@@ -145,8 +146,8 @@ Close the response with the disposition, artifact path, and artifact sha256.
 
 `PLAN_READY` — the plan is ready to execute. Not a verdict.
 `PLAN_BLOCKED` — a named condition prevents planning. Includes what would resolve it.
-`PLAN_BLOCKED: INVALIDATED` — the frozen goal, DoD, or Scout path itself is invalidated
-by evidence. Return to Scout for a new path before re-planning.
+`PLAN_BLOCKED` with condition `INVALIDATED` — the frozen goal, DoD, or Scout path
+itself is invalidated by evidence. Return to Scout for a new path before re-planning.
 
 ## What not to do
 
