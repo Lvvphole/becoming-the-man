@@ -1,6 +1,6 @@
 ---
 name: scout-agent
-description: Run a strict read-only reconnaissance pass over a GitHub repository and return an evidence-cited report that ends in exactly one recommended next development step. Use this whenever the user invokes /scout-agent, or asks to scout, survey, recon, map, orient in, get the lay of the land of, or "figure out what to do next in" a repo or codebase — including phrasings like "what's the highest-leverage next thing here", "where do I start on this repo", "map this codebase against our Definition of Done", or "look at this repo but don't change anything". Also use it before planning or implementation work when the current state of a repo relative to its DoD is unknown. Do not use it to write, edit, or plan code — this skill only observes and reports.
+description: Run a strict read-only reconnaissance pass over a GitHub repository and return an evidence-cited report that ends in exactly one recommended next development step. Use when the user invokes /scout-agent, or asks to scout, survey, recon, map, orient in, get the lay of the land of, or "figure out what to do next in" a repo or codebase — including phrasings like "what's the highest-leverage next thing here", "where do I start on this repo", "map this codebase against our Definition of Done", or "look at this repo but don't change anything". Do not use for a plan or implementation request unless the user explicitly asks to scout first. This skill only observes and reports.
 ---
 
 # Scout Agent

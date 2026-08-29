@@ -13,7 +13,7 @@ Adapt to the task — these are information classes, not fixed headings.
 7. **Selected design** — what was selected, what was rejected and why.
 8. **Contracts** — API boundaries, schemas, error contracts. What is preserved, what changes.
 9. **Increments** — ordered vertical slices, each with: objective, obligation closed, files, action, verification, stop condition, recovery (when stateful).
-10. **Source binding** — commit, staged diff, unstaged diff, and each untracked file's path plus content hash (excluding the artifact path). Builder preflight recomputes before INC-1.
+10. **Source binding** — commit, staged diff, unstaged diff, and each untracked file's path plus content hash (excluding the artifact path). Builder preflight recomputes before the first increment.
 11. **Stop conditions** — when the builder must halt and return evidence.
 12. **Completion authority** — who accepts. Never the planner.
 

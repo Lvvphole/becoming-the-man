@@ -129,7 +129,8 @@ using a canonical slug from the goal and a numeric suffix. When no location is
 prescribed, derive in the same way. Never overwrite an occupied path. Format:
 `references/plan-template.md`. Bind to the source revision, staged diff, unstaged diff,
 and each untracked file's path plus content hash. Exclude the artifact path from the
-fingerprint so the plan does not invalidate its own baseline.
+fingerprint so the plan does not invalidate its own baseline. The builder recomputes
+the binding before the first implementation increment.
 
 The artifact opens with exactly one of: `PLAN_READY`, `PLAN_BLOCKED`. When no legal
 repository path exists, deliver `PLAN_BLOCKED` outside the repository.
