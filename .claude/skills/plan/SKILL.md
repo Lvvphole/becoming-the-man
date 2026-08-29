@@ -127,8 +127,9 @@ work is included; no blocking unknown remains. Any failure → `PLAN_BLOCKED`.
 that location holds unrelated work, do not overwrite — derive an alternative path
 using a canonical slug from the goal and a numeric suffix. When no location is
 prescribed, derive in the same way. Never overwrite an occupied path. Format:
-`references/plan-template.md`. Bind to the source revision, excluding the artifact
-path from the fingerprint so the plan does not invalidate its own baseline.
+`references/plan-template.md`. Bind to the source revision, staged diff, unstaged diff,
+and each untracked file's path plus content hash. Exclude the artifact path from the
+fingerprint so the plan does not invalidate its own baseline.
 
 The artifact opens with exactly one of: `PLAN_READY`, `PLAN_BLOCKED`. When no legal
 repository path exists, deliver `PLAN_BLOCKED` outside the repository.
@@ -151,4 +152,3 @@ Return to Scout — the frozen goal, DoD, or Scout path itself is invalidated by
 - Score past an invariant violation.
 - Build speculative structure for features nobody authorized.
 - Declare the feature complete — that is the verifier's job.
-

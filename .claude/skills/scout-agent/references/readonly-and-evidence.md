@@ -31,19 +31,9 @@ about uncommitted local work.
 
 ## Repo acquisition
 
-If the repo is named but not present locally and no connector is available, a **shallow
-read-only clone into a scratch directory** is permitted purely as an acquisition step:
-
-```bash
-git clone --depth 1 <url> /tmp/scout-<name>
-```
-
-Constraints: never clone into or over an existing working tree; never `fetch`, `pull`,
-`checkout`, or otherwise mutate afterward; disclose the clone in Sources examined. A
-shallow clone gives you no meaningful history, so note that limitation if commit history
-would have mattered.
-
-If the user's environment forbids even this, ask rather than proceed blind.
+If the repo is named but is not present locally and no connector is available, ask the
+user for an accessible clone path or repository access. Do not clone or create a scratch
+copy during scouting. Report the access gap rather than proceed blind.
 
 ## Permitted commands
 
@@ -165,4 +155,3 @@ known blind spots and the downstream agent should know which kind it got.
 Read the located units complete. Reading half of a function to save tokens
 produces a citation that looks grounded while the claim rests on lines you never
 saw — the worst outcome available, worse than declining to make the claim.
-

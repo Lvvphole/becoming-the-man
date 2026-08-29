@@ -83,10 +83,10 @@ Source the DoD in this order:
    guessed DoD is worse than no report — one targeted question is cheaper than a
    confidently misaimed recommendation.
 
-Governance files are the cheapest route to a checkable DoD, not a guarantee of a
-good one — a stale `AGENTS.md` that no longer matches CI is itself a finding, not
-an authority. When a governance file and the actual CI configuration disagree,
-cite both and treat the executable one as binding.
+Governance files establish authority; CI is executable evidence, not a replacement.
+When governance and CI disagree, cite both and report the discrepancy as a finding or
+blocker. Apply the repository's stated precedence and never let this skill or CI
+override `AGENTS.md` or an authority it routes.
 
 Close this step by stating the scope boundary: what is in scope for this inspection and
 what you are deliberately not looking at.
@@ -213,4 +213,3 @@ sign-off, no "let me know if you'd like me to". A worked example is in
   the scaffolding; a gap otherwise, and one to name explicitly either way.
 - **Silent tool failure.** If a read or search fails, say so in Sources examined. An
   unreported blind spot corrupts every downstream decision.
-
