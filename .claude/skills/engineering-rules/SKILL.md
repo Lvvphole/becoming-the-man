@@ -1,7 +1,7 @@
 ---
 name: engineering-rules
 description: >
-  Apply the canonical 51-rule engineering standard — enforce it while writing code,
+  Apply the canonical 53-rule engineering standard — enforce it while writing code,
   and audit existing code, diffs, and pull requests against it — returning corrected
   code plus a deterministic gate report from scripts/check.py. Use this skill whenever
   writing, refactoring, reviewing, repairing, or extending code in any language;
@@ -14,7 +14,7 @@ description: >
 
 # Engineering Rules
 
-The 51 rules below are the standard. This skill turns them into two behaviors: **enforce** them while producing code, and **audit** existing code against them. In both cases the deliverable is corrected code, not a lecture.
+The 53 rules below are the standard. This skill turns them into two behaviors: **enforce** them while producing code, and **audit** existing code against them. In both cases the deliverable is corrected code, not a lecture.
 
 ## Two modes
 
@@ -72,7 +72,7 @@ A high count on an unfamiliar codebase usually means scope, not rot. Type-gymnas
 
 You are the proposer. The proposer does not accept its own work (AE-002). This has concrete consequences for how you write the report:
 
-- Say what the gates returned. Do not say the code "is compliant," "meets the standard," or "passes all 51 rules."
+- Say what the gates returned. Do not say the code "is compliant," "meets the standard," or "passes all 53 rules."
 - The judgment rules — the ones no script can decide — are candidate claims. If you assert one, attach the evidence (`file:line`, the test that fails on the old baseline, the contract you checked). If you cannot attach evidence, say so instead of asserting.
 - A green gate report means the mechanical checks found nothing. It is not proof of correctness. Never convert gate results into a percentage or a grade (RT-009).
 
@@ -93,7 +93,7 @@ Recurring failure patterns worth checking explicitly, because they survive casua
 
 # Canonical Engineering Rule Inventory
 
-**Base and language engineering rules:** 41 · **Method and agentic overlays:** 10 · **Total admitted rules:** 51
+**Base and language engineering rules:** 41 · **Method and agentic overlays:** 12 · **Total admitted rules:** 53
 
 ## Activation
 
@@ -174,7 +174,7 @@ Recurring failure patterns worth checking explicitly, because they survive casua
 
 - **XP-001** [MUST WHEN XP PROFILE IS ACTIVE] — Keep each increment continuously integrable. Integrate small changes frequently and run the applicable automated build and verification after integration. Restore a failed integration before adding unrelated work.
 
-## Agentic Engineering Overlay (8)
+## Agentic Engineering Overlay (10)
 
 - **AE-001** [MUST] — Before changing repository artifacts, inspect the current governing instructions, repository state, relevant implementation, applicable tests, and affected interfaces. Do not substitute model memory, assumptions, or an isolated snippet for repository evidence.
 - **AE-002** [MUST] — Treat agent-generated code, tests, diagnoses, harness changes, and completion claims as candidates. Use the authoritative external verifier or an authorized human for acceptance or promotion. The proposer or executor must not self-certify.
@@ -184,3 +184,5 @@ Recurring failure patterns worth checking explicitly, because they survive casua
 - **AE-006** [MUST] — Give each retry loop, repair loop, recursion path, and subagent fan-out explicit stop conditions and finite resource budgets. If repeated work produces no new evidence or progress, stop, change strategy within budget, or hand off.
 - **AE-007** [CONDITIONAL] — When work uses multiple or recursive agents, define each unit's task, allowed scope, output contract, and termination condition. Parallelize only independent work. Otherwise, define synchronization and merge rules.
 - **AE-008** [MUST] — Evaluate an agentic system as a versioned configuration of model, instructions, tools, harness policy, budgets, environment, and verifier. Re-evaluate after a material configuration change before transferring a measured result.
+- **AE-009** [MUST] — Before executing a verifier (test suite, gate script, check harness, or acceptance runner), confirm that the execution is safe transitively: the verifier entry point and every wrapper, hook, fixture, configuration source, subprocess invocation, and network call it reaches must be within authorized scope and must not produce destructive side effects outside the verified artifact. Do not treat a verifier as safe because its entry point appears safe; inspect or constrain the transitive closure of its execution.
+- **AE-010** [MUST] — Before the first mutation in an increment, re-read each applicable governing source — task authorization, repository governance, architecture decisions, interface contracts, and upstream specifications — from its authoritative location. Do not rely on a prior session's cached content, model memory, or a stale copy when the authoritative source is accessible.
