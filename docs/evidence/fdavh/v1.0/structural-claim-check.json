@@ -1,0 +1,63 @@
+{
+  "spec_sha256": "e6228f669cc8b7d921b165752745a456eb7941ac43869985d1adfd7b64e38361",
+  "invariant_crosswalk_rows": 74,
+  "expected_invariant_count": 74,
+  "invariant_ids_missing": [],
+  "invariant_ids_extra": [],
+  "gate_count": 14,
+  "gate_ids": [
+    "G0",
+    "G1",
+    "G2",
+    "G3",
+    "G4",
+    "G5",
+    "G6",
+    "G7",
+    "G8",
+    "G9",
+    "G10",
+    "G11",
+    "G12",
+    "G13"
+  ],
+  "acceptance_case_count": 48,
+  "crosswalk_referenced_acceptance_case_count": 41,
+  "orphan_acceptance_cases": [
+    "AC-08",
+    "AC-10",
+    "AC-22",
+    "AC-23",
+    "AC-26",
+    "AC-39",
+    "AC-48"
+  ],
+  "acceptance_oracles_explicitly_containing_BLOCKED": [
+    "AC-01",
+    "AC-04",
+    "AC-07",
+    "AC-15",
+    "AC-16",
+    "AC-25",
+    "AC-27",
+    "AC-32",
+    "AC-36",
+    "AC-37",
+    "AC-41",
+    "AC-48"
+  ],
+  "acceptance_oracles_explicitly_containing_BLOCKED_count": 12,
+  "state_transition_rows": 23,
+  "awaiting_approval_state_present": false,
+  "explicit_provider_error_or_timeout_exit_from_INFERENCE_EXECUTING": false,
+  "zero_effect_direct_completion_path_from_PROPOSAL_ADMITTED": false,
+  "blocked_resume_rows": [
+    [
+      "BLOCKED",
+      "GOVERNANCE_ROUTED or DELEGATED",
+      "authenticated external unblock transition",
+      "new evidence/authority satisfies predefined transition; full revalidation"
+    ]
+  ],
+  "concurrency_term_occurrences": 0
+}
