@@ -37,7 +37,9 @@ implementation, gap measurements, assumptions, risks, Scout-transcribed governan
 and your implementation design. Verify these against the repository and correct them.
 
 When corrected evidence changes the gap or which design is admissible, update and
-continue. When it invalidates the goal, DoD, or Scout path itself, return to Scout.
+continue. When it invalidates the goal, DoD, or Scout path itself, return `PLAN_BLOCKED`
+with condition `Scout handoff invalidated by repository evidence`; resolution requires a
+fresh Scout run outside the current Plan workflow.
 
 ## Two kinds of authority
 
@@ -140,8 +142,9 @@ Close the response with the disposition, artifact path, and artifact sha256.
 ## Dispositions
 
 `PLAN_READY` — the plan is ready to execute. Not a verdict.
-`PLAN_BLOCKED` — a named condition prevents planning. Includes what would resolve it.
-Return to Scout — the frozen goal, DoD, or Scout path itself is invalidated by evidence.
+`PLAN_BLOCKED` — a named condition prevents planning. Includes what would resolve it;
+this includes repository evidence invalidating the frozen goal, DoD, or Scout path,
+which requires a fresh Scout run outside the current Plan workflow.
 
 ## What not to do
 
