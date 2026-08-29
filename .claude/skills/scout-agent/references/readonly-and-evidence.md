@@ -73,8 +73,11 @@ Two specific traps:
   or skip/xfail markers.
 - **Installing to inspect a dependency.** Read the lockfile and the manifest instead.
 
-If the user explicitly authorizes a specific state-changing command, that overrides this
-list for that command only — note the authorization in Sources examined.
+User authorization never relaxes the Scout read-only boundary. If a requested action can
+change repository, working-tree, dependency, cache, fixture, build, or external system
+state, do not run it in Scout. Defer it to a non-Scout workflow. If that action is required
+to produce a grounded Scout Report, report the evidence gap as blocked until the action is
+run outside Scout and its result is supplied as evidence.
 
 ## Evidence citation format
 
