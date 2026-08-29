@@ -94,9 +94,10 @@ Source the DoD in this order:
    confidently misaimed recommendation.
 
 Governance files are the cheapest route to a checkable DoD, not a guarantee of a
-good one — a stale `AGENTS.md` that no longer matches CI is itself a finding, not
-an authority. When a governance file and the actual CI configuration disagree,
-cite both and treat the executable one as binding.
+good one — a stale `AGENTS.md` that no longer matches CI is itself a finding.
+When a governance file and the actual CI configuration disagree, cite both and
+treat the governance file as authoritative; report the discrepancy as a finding,
+but do not demote governance requirements because CI omits or weakens them.
 
 Close this step by stating the scope boundary: what is in scope for this inspection and
 what you are deliberately not looking at.

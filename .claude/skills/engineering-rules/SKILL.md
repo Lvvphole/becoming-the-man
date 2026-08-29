@@ -28,18 +28,22 @@ Both modes end the same way — corrected code plus a short evidence line. The d
 
 1. **Read the actual artifacts first.** Governing instructions, current implementation, the tests that cover it, the interfaces it crosses. Never reason from a snippet or from memory of how the codebase probably looks (AE-001).
 2. **Determine scope.** Which language overlays apply. Whether TDD or XP profiles are active. Whether agentic artifacts are in play. `[CONDITIONAL]` rules only fire when their condition actually exists — do not manufacture applicability.
-3. **Run the gate script** on the files in question:
+3. **Run the gate script** on the files in question. The script lives at
+   `.claude/skills/engineering-rules/scripts/check.py` relative to the repo root:
    ```bash
-   python scripts/check.py <paths...>                  # scan files or directories
-   python scripts/check.py --changed                   # scan files changed vs git HEAD
-   python scripts/check.py <paths...> --intent fix     # feature | fix | refactor
-   python scripts/check.py <paths...> --checklist full # auto (default) | full | off
-   python scripts/check.py <paths...> --exclude '*/vendor/*'  # repeatable glob
-   python scripts/check.py <paths...> --profile tdd,xp --json
+   GATE=.claude/skills/engineering-rules/scripts/check.py
+
+   python "$GATE" <paths...>                  # scan files or directories
+   python "$GATE" --changed                   # scan files changed vs git HEAD
+   python "$GATE" --changed --base origin/main # diff against a base (PR review)
+   python "$GATE" <paths...> --intent fix     # feature | fix | refactor
+   python "$GATE" <paths...> --checklist full # auto (default) | full | off
+   python "$GATE" <paths...> --exclude '*/vendor/*'  # repeatable glob
+   python "$GATE" <paths...> --profile tdd,xp --json
    ```
    The script decides mechanically what can be decided mechanically (AE-005). Take its output as authority for those rules — do not re-argue a gate result from reading the code.
 
-   With `--changed`, findings are scoped to the changed lines (±2) — a two-line diff does not resurface pre-existing issues, and the header reports how many were suppressed.
+   With `--changed`, findings are scoped to the changed lines (±2) — a two-line diff does not resurface pre-existing issues, and the header reports how many were suppressed. Use `--base <ref>` to diff against a specific revision (e.g. `origin/main` for PR review on a clean checkout); without `--base`, the diff is against `HEAD`.
 
    The checklist is scoped, not fixed. In the default `auto` mode a rule appears only when a signal for it is present in the code — boundary rules when serialization or I/O is in scope, test rules when test artifacts are, agentic rules when harness or orchestration artifacts are. With `--changed`, scope is judged from the added lines only, so a two-line diff does not arrive with the whole inventory attached. Use `--checklist full` when you want the complete set regardless, and `off` when you only want the gates. Declare `--intent` when you know it: the refactoring and defect-fix rules cannot be scoped from code alone.
 4. **Fix everything the gates flag**, plus every judgment-rule violation you can see. Re-run the script after fixing.

@@ -73,11 +73,12 @@ def is_test_file(path: str) -> bool:
     )
 
 
-def collect_paths(inputs: list[str], changed: bool) -> list[str]:
+def collect_paths(inputs: list[str], changed: bool, base: str | None = None) -> list[str]:
     if changed:
+        ref = base or "HEAD"
         try:
             out = subprocess.run(
-                ["git", "diff", "--name-only", "HEAD"],
+                ["git", "diff", "--name-only", ref],
                 capture_output=True, text=True, check=True,
             ).stdout
         except (subprocess.CalledProcessError, FileNotFoundError) as exc:
@@ -147,7 +148,7 @@ def _is_bounded(loop: ast.While, src: str) -> bool:
         return True  # counter incremented and tested — a real attempt cap
     if clock_compare:
         return True  # compared against a clock — a deadline
-    return bool(BUDGET_HINT.search(ast.get_source_segment(src, loop) or ""))
+    return any(BUDGET_HINT.search(name) for name in compared)
 
 
 def check_python(path: str, src: str, findings: list[Finding], agentic: bool = False) -> None:
@@ -239,6 +240,7 @@ def check_python(path: str, src: str, findings: list[Finding], agentic: bool = F
 
 TS_ANY = re.compile(r":\s*any\b|<any>|\bArray<any>|\bany\[\]")
 TS_ASSERT = re.compile(r"\bas\s+any\b|\bas\s+unknown\s+as\b|@ts-ignore|@ts-expect-error")
+_QUOTED = re.compile(r"""(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)""")
 TS_EMPTY_CATCH = re.compile(r"catch\s*(\([^)]*\))?\s*\{\s*\}|\.catch\s*\(\s*\(\s*\w*\s*\)\s*=>\s*\{\s*\}\s*\)")
 TS_ONLY_SKIP = re.compile(r"\b(describe|it|test)\.(only|skip)\s*\(|\bx(it|describe)\s*\(")
 TS_NONDETERMINISM = [
@@ -275,6 +277,13 @@ def _block_after(src: str, start: int) -> str:
 TYPE_TEST = re.compile(r"expectTypeOf|toEqualTypeOf|assertType|\.test-d\.")
 
 
+def _inside_string(line: str, match: re.Match) -> bool:
+    for m in _QUOTED.finditer(line):
+        if m.start() < match.start() and match.end() <= m.end():
+            return True
+    return False
+
+
 def check_ts(path: str, src: str, findings: list[Finding]) -> None:
     testish = is_test_file(path)
     mocked = bool(MOCKING.search(src))
@@ -284,10 +293,12 @@ def check_ts(path: str, src: str, findings: list[Finding]) -> None:
             continue
         if TYPE_TEST.search(line) or TYPE_TEST.search(path):
             continue  # asserting a type IS any is the point of the test
-        if TS_ANY.search(line):
+        m = TS_ANY.search(line)
+        if m and not _inside_string(line, m):
             findings.append(Finding("TS-001", BLOCKING, path, i,
                                     "`any` bypasses uncertainty — use `unknown` and narrow"))
-        if TS_ASSERT.search(line):
+        m = TS_ASSERT.search(line)
+        if m and not _inside_string(line, m):
             findings.append(Finding("TS-003", BLOCKING, path, i,
                                     "assertion manufactures an unproven fact — validate at the boundary"))
         if TS_EMPTY_CATCH.search(line):
@@ -462,11 +473,12 @@ def build_checklist(signals: set, mode: str) -> list:
     return items
 
 
-def changed_line_map(paths: list[str]) -> dict:
-    """Map each file to the lines it adds versus HEAD. Empty when not in a repo."""
+def changed_line_map(paths: list[str], base: str | None = None) -> dict:
+    """Map each file to the lines it adds versus a base revision. Empty when not in a repo."""
+    ref = base or "HEAD"
     try:
         diff = subprocess.run(
-            ["git", "diff", "-U0", "HEAD", "--", *paths] if paths else ["git", "diff", "-U0", "HEAD"],
+            ["git", "diff", "-U0", ref, "--", *paths] if paths else ["git", "diff", "-U0", ref],
             capture_output=True, text=True, check=True,
         ).stdout
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -552,7 +564,8 @@ def render(report: Report) -> str:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Run engineering-rule gates and emit the checklist.")
     parser.add_argument("paths", nargs="*", help="files or directories to scan")
-    parser.add_argument("--changed", action="store_true", help="also scan files changed vs git HEAD")
+    parser.add_argument("--changed", action="store_true", help="also scan files changed vs a base revision (default HEAD; set with --base)")
+    parser.add_argument("--base", default=None, help="base revision to diff against when using --changed (e.g. origin/main)")
     parser.add_argument("--profile", default="", help="comma-separated active profiles: tdd,xp")
     parser.add_argument("--intent", default="unknown", choices=["unknown", "feature", "fix", "refactor"],
                         help="what the change is for; scopes the intent-dependent rules")
@@ -567,7 +580,7 @@ def main(argv: list[str]) -> int:
         parser.print_usage()
         return 2
 
-    files = collect_paths(args.paths, args.changed)
+    files = collect_paths(args.paths, args.changed, args.base)
     if args.exclude:
         files = [f for f in files if not any(fnmatch.fnmatch(f, g) for g in args.exclude)]
     if not files:
@@ -593,7 +606,7 @@ def main(argv: list[str]) -> int:
         check_duplication(path, src, report.findings)
 
     profiles = {p.strip().lower() for p in args.profile.split(",") if p.strip()}
-    changed_lines = changed_line_map(files) if args.changed else {}
+    changed_lines = changed_line_map(files, args.base) if args.changed else {}
     if changed_lines:
         report.findings, suppressed = scope_to_change(report.findings, changed_lines)
         report.pre_existing_suppressed = suppressed
