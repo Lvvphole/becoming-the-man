@@ -110,7 +110,7 @@ PY_NONDETERMINISM = [
     (re.compile(r"\bsocket\.(socket|create_connection)\("), "live socket"),
 ]
 PY_SKIP = re.compile(r"@(pytest\.mark\.(skip|xfail)(?!if)\b|unittest\.skip\b)|pytest\.skip\(")
-LOCAL_HOST = re.compile(r"localhost|127\.0\.0\.1|0\.0\.0\.0|::1|example\.com|httpbin\(")
+LOCAL_HOST = re.compile(r"localhost|127\.0\.0\.1|0\.0\.0\.0|::1|httpbin\(")
 MOCKING = re.compile(
     r"\b(responses|httpretty|requests_mock|respx|vcr|betamax|monkeypatch|unittest\.mock|"
     r"nock|msw|jest\.mock|sinon|fetch-mock|mock-adapter|MockAdapter|MockTransport|customFetch|fetchStub|createHttpTestServer|createTestServer|fetchCallCount|globalThis\.fetch\s*=|ASGITransport|WSGITransport|TestClient|httpserver|aioresponses)\b", re.I)
@@ -119,6 +119,25 @@ BUDGET_HINT = re.compile(
     re.I,
 )
 CLOCK_CALL = re.compile(r"\b(monotonic|perf_counter|time|now|utcnow)\b")
+
+
+def _comparison_controls_exit(loop: ast.While, names: set[str]) -> bool:
+    """Return True if a comparison involving any name in `names` guards a
+    terminating branch (break, return, raise) inside the loop body."""
+    for node in ast.walk(loop):
+        if not isinstance(node, ast.If):
+            continue
+        test_names: set[str] = set()
+        for sub in ast.walk(node.test):
+            if isinstance(sub, ast.Name):
+                test_names.add(sub.id)
+        if not (test_names & names):
+            continue
+        for branch in [*node.body, *node.orelse]:
+            for child in ast.walk(branch):
+                if isinstance(child, (ast.Break, ast.Return, ast.Raise)):
+                    return True
+    return False
 
 
 def _is_bounded(loop: ast.While, src: str) -> bool:
@@ -144,16 +163,33 @@ def _is_bounded(loop: ast.While, src: str) -> bool:
                 name = getattr(func, "attr", None) or getattr(func, "id", "")
                 if CLOCK_CALL.search(name or ""):
                     clock_compare = True
-    if incremented & compared:
-        return True  # counter incremented and tested — a real attempt cap
+    bounded_names = incremented & compared
+    if bounded_names and _comparison_controls_exit(loop, bounded_names):
+        return True
     if clock_compare:
         return True  # compared against a clock — a deadline
-    return any(BUDGET_HINT.search(name) for name in compared)
+    hint_names = {name for name in compared if BUDGET_HINT.search(name)}
+    return bool(hint_names) and _comparison_controls_exit(loop, hint_names)
+
+
+def _call_is_mocked(src: str, lineno: int) -> bool:
+    """Check whether a network call at `lineno` is inside a mocked context.
+    Walk backward from the call to find the enclosing function or decorator,
+    then check whether that function-level scope contains a mock setup."""
+    lines = src.splitlines()
+    start = max(0, lineno - 1)
+    func_start = 0
+    for i in range(start, -1, -1):
+        stripped = lines[i].lstrip()
+        if stripped.startswith(("def ", "async def ")):
+            func_start = i
+            break
+    func_block = "\n".join(lines[func_start:start + 1])
+    return bool(MOCKING.search(func_block))
 
 
 def check_python(path: str, src: str, findings: list[Finding], agentic: bool = False) -> None:
     testish = is_test_file(path)
-    mocked = bool(MOCKING.search(src))
     try:
         tree = ast.parse(src)
     except SyntaxError as exc:
@@ -223,8 +259,8 @@ def check_python(path: str, src: str, findings: list[Finding], agentic: bool = F
             for pattern, label in PY_NONDETERMINISM:
                 if not pattern.search(line):
                     continue
-                if label == "network" and (mocked or LOCAL_HOST.search(line)):
-                    continue  # a controlled local fixture is not uncontrolled network
+                if label == "network" and (LOCAL_HOST.search(line) or _call_is_mocked(src, i)):
+                    continue
                 severity = REVIEW if label == "network" else BLOCKING
                 findings.append(Finding("RT-007", severity, path, i,
                                         f"{label} inside a deterministic gate"))
@@ -277,28 +313,56 @@ def _block_after(src: str, start: int) -> str:
 TYPE_TEST = re.compile(r"expectTypeOf|toEqualTypeOf|assertType|\.test-d\.")
 
 
-def _inside_string(line: str, match: re.Match) -> bool:
+_BLOCK_COMMENT_INLINE = re.compile(r"/\*.*?\*/")
+
+
+def _inside_string_or_comment(line: str, match: re.Match) -> bool:
     for m in _QUOTED.finditer(line):
         if m.start() < match.start() and match.end() <= m.end():
             return True
+    for m in _BLOCK_COMMENT_INLINE.finditer(line):
+        if m.start() <= match.start() and match.end() <= m.end():
+            return True
+    return False
+
+
+def _ts_call_is_mocked(src: str, lineno: int) -> bool:
+    """Check whether a network call at `lineno` in a TS file is inside a mocked
+    scope. Walk backward to the enclosing test/describe/function block."""
+    lines = src.splitlines()
+    start = max(0, lineno - 1)
+    func_start = 0
+    for i in range(start, -1, -1):
+        stripped = lines[i].lstrip()
+        if re.match(r"(it|test|describe|function|const|async)\s", stripped):
+            func_start = i
+            break
+    func_block = "\n".join(lines[func_start:start + 1])
+    return bool(MOCKING.search(func_block))
+
+
+def _is_comment_line(stripped: str) -> bool:
+    if stripped.startswith("//") or stripped.startswith("*"):
+        return True
+    if stripped.startswith("/*"):
+        return not re.search(r"\*/.*\S", stripped.split("*/", 1)[-1]) if "*/" in stripped else True
     return False
 
 
 def check_ts(path: str, src: str, findings: list[Finding]) -> None:
     testish = is_test_file(path)
-    mocked = bool(MOCKING.search(src))
     for i, line in enumerate(src.splitlines(), 1):
         stripped = line.strip()
-        if stripped.startswith("//") or stripped.startswith("*"):
+        if _is_comment_line(stripped):
             continue
         if TYPE_TEST.search(line) or TYPE_TEST.search(path):
             continue  # asserting a type IS any is the point of the test
         m = TS_ANY.search(line)
-        if m and not _inside_string(line, m):
+        if m and not _inside_string_or_comment(line, m):
             findings.append(Finding("TS-001", BLOCKING, path, i,
                                     "`any` bypasses uncertainty — use `unknown` and narrow"))
         m = TS_ASSERT.search(line)
-        if m and not _inside_string(line, m):
+        if m and not _inside_string_or_comment(line, m):
             findings.append(Finding("TS-003", BLOCKING, path, i,
                                     "assertion manufactures an unproven fact — validate at the boundary"))
         if TS_EMPTY_CATCH.search(line):
@@ -308,7 +372,7 @@ def check_ts(path: str, src: str, findings: list[Finding]) -> None:
             for pattern, label in TS_NONDETERMINISM:
                 if not pattern.search(line):
                     continue
-                if label == "network" and (mocked or LOCAL_HOST.search(line)):
+                if label == "network" and (LOCAL_HOST.search(line) or _ts_call_is_mocked(src, i)):
                     continue
                 severity = REVIEW if label == "network" else BLOCKING
                 findings.append(Finding("RT-007", severity, path, i,
@@ -474,7 +538,9 @@ def build_checklist(signals: set, mode: str) -> list:
 
 
 def changed_line_map(paths: list[str], base: str | None = None) -> dict:
-    """Map each file to the lines it adds versus a base revision. Empty when not in a repo."""
+    """Map each file to the lines it adds or deletes versus a base revision.
+    Deletion positions are mapped to the corresponding new-file line so that
+    a deletion-only regression (e.g. removing a `break`) is not suppressed."""
     ref = base or "HEAD"
     try:
         diff = subprocess.run(
@@ -484,20 +550,23 @@ def changed_line_map(paths: list[str], base: str | None = None) -> dict:
     except (subprocess.CalledProcessError, FileNotFoundError):
         return {}
     added: dict = {}
-    current, lineno = None, 0
+    current = None
+    new_lineno = 0
     for line in diff.splitlines():
         if line.startswith("+++ b/"):
             current = line[6:]
             added.setdefault(current, {"text": [], "lines": set()})
         elif line.startswith("@@") and current:
-            match = re.search(r"\+(\d+)", line)
-            lineno = int(match.group(1)) if match else 0
+            m_new = re.search(r"\+(\d+)", line)
+            new_lineno = int(m_new.group(1)) if m_new else 0
         elif line.startswith("+") and not line.startswith("+++") and current:
             added[current]["text"].append(line[1:])
-            added[current]["lines"].add(lineno)
-            lineno += 1
-        elif not line.startswith("-") and current:
-            lineno += 1
+            added[current]["lines"].add(new_lineno)
+            new_lineno += 1
+        elif line.startswith("-") and not line.startswith("---") and current:
+            added[current]["lines"].add(new_lineno)
+        elif current:
+            new_lineno += 1
     return added
 
 
