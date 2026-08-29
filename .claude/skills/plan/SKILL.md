@@ -37,7 +37,8 @@ implementation, gap measurements, assumptions, risks, Scout-transcribed governan
 and your implementation design. Verify these against the repository and correct them.
 
 When corrected evidence changes the gap or which design is admissible, update and
-continue. When it invalidates the goal, DoD, or Scout path itself, return to Scout.
+continue. When it invalidates the goal, DoD, or Scout path itself, emit
+`PLAN_BLOCKED: INVALIDATED` and proceed to Step 14 to write the blocked artifact.
 
 ## Two kinds of authority
 
@@ -130,7 +131,10 @@ that location holds unrelated work, do not overwrite — derive an alternative p
 using a canonical slug from the goal and a numeric suffix. When no location is
 prescribed, derive in the same way. Never overwrite an occupied path. Format:
 `references/plan-template.md`. Bind to the source revision, excluding the artifact
-path from the fingerprint so the plan does not invalidate its own baseline.
+path from the fingerprint so the plan does not invalidate its own baseline. Compute
+the fingerprint as: `commit=$(git rev-parse HEAD)`, `staged=$(git diff --cached |
+sha256sum)`, `unstaged=$(git diff | sha256sum)`, `untracked=$(git ls-files --others
+--exclude-standard | sort | sha256sum)` — omitting the artifact path from each.
 
 The artifact opens with exactly one of: `PLAN_READY`, `PLAN_BLOCKED`. When no legal
 repository path exists, deliver `PLAN_BLOCKED` outside the repository.
