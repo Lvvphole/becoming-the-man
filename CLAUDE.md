@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+@AGENTS.md
+
 Read and follow [`AGENTS.md`](./AGENTS.md) before taking any action in this repository.
 
 `AGENTS.md` is the repository execution constitution and authority router. Use its **Upstream Source Router** to select and read only the smallest relevant authoritative governing section for the task.
