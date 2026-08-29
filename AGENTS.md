@@ -69,6 +69,7 @@ Use the locked single-repository shape when scaffolding:
 - `tests/` — unit, contract, integration, E2E, accessibility/SEO, AI tests as added.
 - `docs/evidence/` — non-sensitive verification evidence or stable references.
 - `scripts/` — bounded build, ingestion, release, or evidence utilities.
+- `.claude/skills/` — agent skills (scout-agent, plan, engineering-rules). Each skill folder contains a `SKILL.md` and optional `references/` or `scripts/`. Read `SKILL.md` on trigger; read references only when cited.
 Do not introduce microservices, queues, Kubernetes, custom payment/order systems, or duplicate provider systems of record without an approved architecture change.
 
 ## Security & Deployment
