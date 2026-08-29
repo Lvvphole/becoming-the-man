@@ -51,7 +51,8 @@ without an explicit exception → `PLAN_BLOCKED` naming both sides.
 Any step that reaches `PLAN_BLOCKED` terminates the procedure — skip to Step 14 and
 write the blocked artifact. Do not continue through design, contracts, or increments.
 
-**Step 0 — Dependencies.** Load `engineering-rules` before citing any rule ID it owns.
+**Step 0 — Dependencies.** If the repository contains `engineering-rules`, load it
+before citing any rule ID it owns; skip when the skill is not present.
 Establish repository access. Classify planning mode: GREENFIELD (no existing
 implementation for this capability) or BROWNFIELD (existing code, contracts, consumers,
 or state). Record the mode with evidence.
@@ -140,7 +141,8 @@ Close the response with the disposition, artifact path, and artifact sha256.
 
 `PLAN_READY` — the plan is ready to execute. Not a verdict.
 `PLAN_BLOCKED` — a named condition prevents planning. Includes what would resolve it.
-Return to Scout — the frozen goal, DoD, or Scout path itself is invalidated by evidence.
+`PLAN_BLOCKED: INVALIDATED` — the frozen goal, DoD, or Scout path itself is invalidated
+by evidence. Return to Scout for a new path before re-planning.
 
 ## What not to do
 

@@ -76,6 +76,7 @@ Completion: make verify + reviewer. Not the planner.
 ```
 PLAN_BLOCKED
 
+Source: main@abc1234
 Condition: DoD requires cross-tenant bulk import; docs/security.md forbids queries
   without a tenant filter. No ADR authorizes an exception.
 Evidence: DoD item D-X; docs/security.md:12-30; src/store/accounts.py:44-71.
