@@ -15,6 +15,7 @@ describe("approved Home visual contract", () => {
   const audience = new URL("../../public/audience-approved.avif", import.meta.url);
   const atmosphere = new URL("../../public/hero-atmosphere-approved.webp", import.meta.url);
   const cssPath = new URL("../../src/styles/home-approved.css", import.meta.url);
+  const homePath = new URL("../../src/routes/home.tsx", import.meta.url);
 
   it("binds runtime media to the approved canonical assets", () => {
     expect(gitBlobSha(cover)).toBe("91bf9d0e8c891f3d81bb5bceb1d579d8a2247c55");
@@ -24,6 +25,7 @@ describe("approved Home visual contract", () => {
 
   it("binds the approved urban Home composition without regenerating the cover", () => {
     const css = readFileSync(cssPath, "utf8");
+    const home = readFileSync(homePath, "utf8");
 
     expect(css).toContain("User-approved urban Home oracle: approved 2026-09-06");
     expect(css).toContain("--urban-gold: #d6a735");
@@ -31,7 +33,8 @@ describe("approved Home visual contract", () => {
     expect(css).toContain(".audience-section");
     expect(css).toContain(".community-section");
     expect(css).toContain('url("/hero-atmosphere-approved.webp")');
-    expect(css).toContain('url("/audience-approved.avif")');
     expect(css).not.toContain('url("/book-cover.webp")');
+    expect(home).toContain('src="/book-cover-canonical.avif"');
+    expect(home).toContain('src="/audience-approved.avif"');
   });
 });
