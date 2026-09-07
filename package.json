@@ -12,7 +12,8 @@
     "test": "vitest run",
     "build": "react-router build",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "verify:change-size": "bash scripts/check-change-size.sh"
+    "verify:change-size": "bash scripts/check-change-size.sh",
+    "scout:mobile": "node scripts/scout-mobile-ui.mjs"
   },
   "dependencies": {
     "@react-router/node": "7.18.2",
