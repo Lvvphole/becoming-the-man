@@ -20,11 +20,14 @@ describe("approved Home visual contract", () => {
     expect(gitBlobSha(atmosphere)).toBe("36a553642892a7a5bd78ee88aada7454feb3def1");
   });
 
-  it("preserves the approved desktop minimum while allowing the hero to grow", () => {
+  it("binds the approved urban Home composition without regenerating the cover", () => {
     const css = readFileSync(cssPath, "utf8");
 
-    expect(css).toContain("height: auto;\n    min-height: 494px;");
-    expect(css).toContain("width: 300px");
+    expect(css).toContain("User-approved urban Home oracle: approved 2026-09-06");
+    expect(css).toContain("--urban-gold: #d6a735");
+    expect(css).toContain(".learn-section");
+    expect(css).toContain(".audience-section");
+    expect(css).toContain(".community-section");
     expect(css).toContain('url("/hero-atmosphere-approved.webp")');
     expect(css).not.toContain('url("/book-cover.webp")');
   });

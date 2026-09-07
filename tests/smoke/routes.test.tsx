@@ -9,7 +9,7 @@ describe("R1-01 route rendering", () => {
       <HomePage purchase={{ status: "available", url: "https://example.test/book" }} />,
     );
 
-    expect(html).toContain("<h1>Becoming the Man She Can Trust</h1>");
+    expect(html).toContain("Becoming the Man She Can Trust");
     expect(html).toContain(
       "A SYSTEM FOR BUILDING THE LIFE, CHARACTER, AND LEADERSHIP THAT CREATE LASTING LOVE",
     );
@@ -17,14 +17,23 @@ describe("R1-01 route rendering", () => {
     expect(html).toContain('src="/book-cover.webp"');
     expect(html).toContain('class="book-3d"');
     expect(html).toContain("Character Before Chemistry");
+    expect(html).toContain("Purpose Before Partnership");
     expect(html).toContain("Trust Is Built Daily");
-    expect(html).toContain("Integrity Creates Predictability");
     expect(html).toContain("Communication Is Shared Meaning");
+    expect(html).toContain("Emotional Safety Comes Before Emotional Intensity");
+    expect(html).toContain("Love Is a Practice");
     expect(html).toContain("This is not a book about appearing better.");
     expect(html).toContain("It is a book about becoming better.");
+    expect(html).toContain("WHAT YOU’LL");
+    expect(html).toContain("build character before pursuing commitment");
+    expect(html).toContain("WHO’S");
+    expect(html).toContain("Men who want to become more trustworthy in love and life");
+    expect(html).toContain("Women who want to understand the kind of man they can trust");
+    expect(html).toContain("JOIN THE COMMUNITY");
+    expect(html).toContain("Community signup will be available soon.");
     expect(html).toContain('href="#non-negotiables"');
     expect(html).toContain('href="https://example.test/book"');
-    expect(html).toContain("Buy the book");
+    expect(html).toContain("Get Your Copy →");
   });
 
   it("does not render a false home buy path when purchase configuration is unavailable", () => {
@@ -33,7 +42,7 @@ describe("R1-01 route rendering", () => {
     );
 
     expect(html).toContain('data-purchase-status="unavailable"');
-    expect(html).not.toContain("Buy the book");
+    expect(html).toContain('href="#purchase"');
     expect(html).not.toContain("example.test");
   });
 
