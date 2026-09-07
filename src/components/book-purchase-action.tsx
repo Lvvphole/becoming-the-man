@@ -28,10 +28,14 @@ export function BookPurchaseAction({
   url,
   surface = "book",
   analytics = browserAnalytics,
+  label = "Buy the book",
+  className = "primary-action",
 }: {
   url: string;
   surface?: BookCtaSurface;
   analytics?: BrowserAnalytics;
+  label?: string;
+  className?: string;
 }) {
   useEffect(() => {
     recordBookCtaEvent(analytics, BOOK_CTA_EVENT.view, url, surface);
@@ -39,14 +43,14 @@ export function BookPurchaseAction({
 
   return (
     <a
-      className="primary-action"
+      className={className}
       href={url}
       rel="external"
       onClick={() => {
         recordBookCtaEvent(analytics, BOOK_CTA_EVENT.click, url, surface);
       }}
     >
-      Buy the book
+      {label}
     </a>
   );
 }
