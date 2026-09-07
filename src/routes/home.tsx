@@ -226,6 +226,7 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
           <a href="#community">Newsletter</a>
         </nav>
         <nav aria-label="Legal">
+          <a href="/disclaimer">Disclaimer</a>
           <span aria-disabled="true">Privacy</span>
           <span aria-disabled="true">Terms</span>
           <span aria-disabled="true">Accessibility</span>
