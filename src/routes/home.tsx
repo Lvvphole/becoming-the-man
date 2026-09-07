@@ -186,7 +186,15 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
               ))}
             </ul>
           </div>
-          <div className="audience-visual" aria-hidden="true" />
+          <img
+            className="audience-visual"
+            src="/audience-approved.avif"
+            width="481"
+            height="225"
+            alt=""
+            aria-hidden="true"
+            style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+          />
         </section>
 
         <section id="community" className="community-section" aria-labelledby="community-title">
