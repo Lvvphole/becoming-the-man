@@ -32,7 +32,9 @@ jobs:
         run: npm ci
       - name: Verify Supabase migration and RLS
         shell: bash
-        run: bash supabase/tests/site_settings_rls.sh
+        run: |
+          bash supabase/tests/site_settings_rls.sh
+          bash supabase/tests/legal_pages_rls.sh
       - name: Enforce bounded change size
         if: github.event_name == 'pull_request'
         shell: bash
@@ -52,7 +54,25 @@ jobs:
       - name: Verify first-response SSR and rendered Home journey
         shell: bash
         run: |
-          node --input-type=module -e 'import http from "node:http"; const body=JSON.stringify([{setting_value:"https://example.test/book"}]); http.createServer((_req,res)=>{res.writeHead(200,{"content-type":"application/json"});res.end(body);}).listen(54321,"127.0.0.1");' > /tmp/settings-fixture.log 2>&1 &
+          node --input-type=module <<'NODE' > /tmp/settings-fixture.log 2>&1 &
+          import http from "node:http";
+          const settingBody = JSON.stringify([{ setting_value: "https://example.test/book" }]);
+          const legalBody = JSON.stringify([{
+            slug: "disclaimer",
+            title: "Disclaimer",
+            body_jsonb: [
+              "Becoming the Man She Can Trust and the Love | Purpose | Flourish Relationship Operating System are educational frameworks designed to support reflection, communication, trust, responsibility, boundaries, repair, and healthier relationship behavior.",
+              "The information, principles, tools, examples, and guidance presented on this website are for educational and informational purposes only. They are not a substitute for individualized medical, mental-health, legal, therapeutic, or other professional advice, diagnosis, or treatment. When circumstances require professional support, readers and users should seek assistance from an appropriately qualified professional.",
+              "The framework does not guarantee reconciliation, attraction, commitment, sexual intimacy, relationship preservation, or any particular personal or relationship outcome. Individual circumstances differ, and users remain responsible for their own decisions, boundaries, safety, and actions.",
+              "Nothing in this framework should be used to justify manipulation, coercion, surveillance, retaliation, sexual entitlement, abuse, or control. When a situation involves violence, coercive control, stalking, threats, sexual assault, suicidality, severe crisis, or immediate danger, personal safety and qualified professional or emergency support take priority over ordinary relationship guidance."
+            ]
+          }]);
+          http.createServer((req, res) => {
+            const body = req.url?.startsWith("/rest/v1/legal_pages") ? legalBody : settingBody;
+            res.writeHead(200, { "content-type": "application/json" });
+            res.end(body);
+          }).listen(54321, "127.0.0.1");
+          NODE
           fixture_pid=$!
           for attempt in {1..20}; do
             if curl -fsS http://127.0.0.1:54321/health > /dev/null; then
@@ -70,11 +90,16 @@ jobs:
             sleep 1
           done
           curl -fsS http://127.0.0.1:4173/book > /tmp/book.html
+          curl -fsS http://127.0.0.1:4173/disclaimer > /tmp/disclaimer.html
           grep -F '<h1>Becoming the Man She Can Trust</h1>' /tmp/home.html
           grep -F 'href="/book"' /tmp/home.html
           grep -F 'href="https://example.test/book"' /tmp/home.html
+          grep -F 'href="/disclaimer"' /tmp/home.html
           grep -F 'BOOK ORIENTATION' /tmp/book.html
           grep -F 'href="/"' /tmp/book.html
+          grep -F '<h1 id="disclaimer-title">DISCLAIMER</h1>' /tmp/disclaimer.html
+          grep -F 'educational and informational purposes only' /tmp/disclaimer.html
+          grep -F 'personal safety and qualified professional or emergency support take priority' /tmp/disclaimer.html
           node scripts/verify-home-responsive.mjs http://127.0.0.1:4173/
       - name: Bind evidence to tested SHA
         shell: bash
