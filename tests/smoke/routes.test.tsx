@@ -42,7 +42,7 @@ describe("R1-01 route rendering", () => {
     );
 
     expect(html).toContain('data-purchase-status="unavailable"');
-    expect(html).not.toContain("Get Your Copy →");
+    expect(html).toContain('href="#purchase"');
     expect(html).not.toContain("example.test");
   });
 
