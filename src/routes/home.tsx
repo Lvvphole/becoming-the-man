@@ -74,10 +74,10 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
       </header>
 
       <main>
-        <section className="home-hero urban-hero" aria-labelledby="home-title">
+        <section className="home-hero urban-hero" aria-label="Becoming the Man She Can Trust">
           <div className="hero-copy">
             <p className="hero-brandline">LOVE | PURPOSE | FLOURISH</p>
-            <h1 id="home-title">Becoming the Man She Can Trust</h1>
+            <h1>Becoming the Man She Can Trust</h1>
             <div className="hero-symbol-rule" aria-hidden="true"><span>∞</span></div>
             <p className="hero-subtitle">
               A SYSTEM FOR BUILDING THE LIFE, CHARACTER, AND LEADERSHIP THAT CREATE LASTING LOVE
