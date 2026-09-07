@@ -1,9 +1,11 @@
+import { Buffer } from "node:buffer";
 import { spawn, spawnSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
 import { setTimeout as sleep } from "node:timers/promises";
+import { URL } from "node:url";
 import {
   DEFAULT_VIEWPORTS,
   GOVERNED_SELECTORS,
