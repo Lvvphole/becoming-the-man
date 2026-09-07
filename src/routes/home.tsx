@@ -82,7 +82,6 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
             <p className="hero-subtitle">
               A SYSTEM FOR BUILDING THE LIFE, CHARACTER, AND LEADERSHIP THAT CREATE LASTING LOVE
             </p>
-            <p className="hero-author">EMORY HARRIS</p>
             <div className="hero-actions" id="purchase">
               {purchase.status === "available" ? (
                 <BookPurchaseAction url={purchase.url} surface="home" label="Get Your Copy →" />
@@ -100,9 +99,9 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
               <span className="book-pages" aria-hidden="true" />
               <img
                 className="book-cover-image"
-                src="/book-cover.webp"
-                width="240"
-                height="365"
+                src="/book-cover-canonical.avif"
+                width="520"
+                height="786"
                 alt="Becoming the Man She Can Trust by Emory Harris"
               />
             </div>
@@ -121,7 +120,7 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
           {principles.map((principle, index) => (
             <article className="principle-item" key={principle.title}>
               <span className="principle-number" aria-hidden="true">
-                {index === 3 ? "XIV" : ["I", "II", "III"][index]}
+                {["I", "II", "III", "IV"][index]}
               </span>
               <h2>{principle.title}</h2>
               <p>{principle.body}</p>
