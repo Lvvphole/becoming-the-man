@@ -38,7 +38,7 @@ while IFS= read -r migration; do
   docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U postgres -d postgres < "$migration"
 done < <(find supabase/migrations -type f -name '*.sql' -print | sort)
 
-expected_purchase_url='https://www.amazon.com/Becoming-Man-She-Can-Trust-ebook/dp/B0HG3F82J8/ref=sr_1_1?crid=248IIFWJJD84G&dib=eyJ2IjoiMSJ9.Q2WeUmKKql0XVwxmUugjwBPWoiAj40NiIl796yaMTIOH8retIOjTyBbeOBOs0l2F.A9I5QNNGnQl3pDEMwkFi8dcUvw0tO42kvBD-HjHfY4k&dib_tag=se&keywords=becoming+the+man+she+can+trust&qid=1787867145&sprefix=becoming+the+man+she+can+tr%2Caps%2C199&sr=8-1'
+expected_purchase_url='https://a.co/d/0gtdzuED'
 configured_purchase_url="$(
   docker exec "$container" psql -qAt -v ON_ERROR_STOP=1 -U postgres -d postgres \
     -c "select setting_value from public.site_settings where setting_key = 'book_purchase_url';" \

@@ -13,13 +13,16 @@ describe("R1-01 route rendering", () => {
     expect(html).toContain(
       "A SYSTEM FOR BUILDING THE LIFE, CHARACTER, AND LEADERSHIP THAT CREATE LASTING LOVE",
     );
-    expect(html).toContain("EMORY HARRIS");
-    expect(html).toContain('src="/book-cover.webp"');
+    expect(html).not.toContain('class="hero-author"');
+    expect(html).toContain('src="/book-cover-canonical.avif"');
     expect(html).toContain('class="book-3d"');
     expect(html).toContain("Character Before Chemistry");
     expect(html).toContain("Purpose Before Partnership");
     expect(html).toContain("Trust Is Built Daily");
     expect(html).toContain("Communication Is Shared Meaning");
+    expect(html).toContain(
+      '<span class="principle-number" aria-hidden="true">IV</span><h2>Communication Is Shared Meaning</h2>',
+    );
     expect(html).toContain("Emotional Safety Comes Before Emotional Intensity");
     expect(html).toContain("Love Is a Practice");
     expect(html).toContain("This is not a book about appearing better.");
