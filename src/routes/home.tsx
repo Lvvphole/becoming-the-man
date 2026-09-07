@@ -27,12 +27,12 @@ const principles = [
     body: "Attraction may open the door, but character determines whether two people can build a life together.",
   },
   {
-    title: "Trust Is Built Daily",
-    body: "Trust is rarely earned in one dramatic act. It grows through consistent, dependable behavior.",
+    title: "Purpose Before Partnership",
+    body: "A relationship cannot permanently compensate for a lack of personal direction.",
   },
   {
-    title: "Integrity Creates Predictability",
-    body: "Words matter. Actions matter more. Alignment between them creates confidence.",
+    title: "Trust Is Built Daily",
+    body: "Trust is rarely earned in one dramatic act. It grows through consistent, dependable behavior.",
   },
   {
     title: "Communication Is Shared Meaning",
@@ -40,42 +40,58 @@ const principles = [
   },
 ] as const;
 
+const learnItems = [
+  "build character before pursuing commitment",
+  "lead with integrity, responsibility, and emotional steadiness",
+  "replace confusion and inconsistency with clarity and follow-through",
+  "create the kind of life, presence, and love that can be trusted",
+] as const;
+
+const audienceItems = [
+  "Men who want to become more trustworthy in love and life",
+  "Women who want to understand the kind of man they can trust",
+  "Readers pursuing emotional maturity, integrity, and self-control",
+  "Couples and partners who value communication and shared meaning",
+] as const;
+
 export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
   return (
-    <div className="site-page">
-      <header className="site-header">
-        <a className="brand-mark" href="/" aria-label="Love Purpose Flourish home">
-          LOVE | PURPOSE | FLOURISH
+    <div className="site-page urban-home">
+      <header className="site-header urban-header">
+        <a className="brand-mark brand-lockup" href="/" aria-label="Becoming the Man She Can Trust home">
+          <span>BECOMING</span>
+          <span>THE MAN SHE CAN TRUST</span>
+          <small>LOVE | PURPOSE | FLOURISH</small>
         </a>
         <nav className="site-nav" aria-label="Primary">
           <a href="/book">BOOK</a>
           <a href="#non-negotiables">THE 24 NON-NEGOTIABLES</a>
           <span aria-disabled="true">ABOUT</span>
           <span aria-disabled="true">CONTACT</span>
-          <span aria-disabled="true">NEWSLETTER</span>
+          <a href="#community">NEWSLETTER</a>
         </nav>
+        <a className="header-purchase-link" href="#purchase">Get Your Copy <span aria-hidden="true">→</span></a>
       </header>
 
       <main>
-        <section className="home-hero">
+        <section className="home-hero urban-hero" aria-labelledby="home-title">
           <div className="hero-copy">
-            <h1>Becoming the Man She Can Trust</h1>
-            <div className="accent-rule" aria-hidden="true" />
+            <p className="hero-brandline">LOVE | PURPOSE | FLOURISH</p>
+            <h1 id="home-title">Becoming the Man She Can Trust</h1>
+            <div className="hero-symbol-rule" aria-hidden="true"><span>∞</span></div>
             <p className="hero-subtitle">
               A SYSTEM FOR BUILDING THE LIFE, CHARACTER, AND LEADERSHIP THAT CREATE LASTING LOVE
             </p>
             <p className="hero-author">EMORY HARRIS</p>
-            <p className="hero-description">
-              In a world where charm is often mistaken for character, trust is built another way. <em>Becoming the Man She Can Trust</em> is a practical and thought-provoking guide for men who want to grow beyond inconsistency, ego, and emotional immaturity. It calls men to become steady, honest, disciplined, and safe, not through performance, but through transformation.
-            </p>
-            <div className="hero-action">
+            <div className="hero-actions" id="purchase">
               {purchase.status === "available" ? (
-                <BookPurchaseAction url={purchase.url} surface="home" />
+                <BookPurchaseAction url={purchase.url} surface="home" label="Get Your Copy →" />
               ) : (
                 <p className="purchase-unavailable" data-purchase-status="unavailable">
                   Purchase link is not available yet.
                 </p>
               )}
+              <a className="secondary-action" href="#community">Join the Community</a>
             </div>
           </div>
 
@@ -92,16 +108,21 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
             </div>
           </figure>
 
-          <blockquote className="communication-quote">
-            <p className="quote-principle">Communication Is Shared Meaning.</p>
-            <span className="quote-symbol" aria-hidden="true">∞</span>
-            <p>The goal is not merely to exchange words but to build understanding.</p>
-          </blockquote>
+          <aside className="hero-values" aria-label="Love Purpose Flourish values">
+            <span>CHARACTER</span>
+            <span>PURPOSE</span>
+            <span>TRUST</span>
+            <span>LOVE</span>
+            <span>FLOURISH</span>
+          </aside>
         </section>
 
         <section id="principles" className="principle-band" aria-label="Selected Non-Negotiables">
-          {principles.map((principle) => (
+          {principles.map((principle, index) => (
             <article className="principle-item" key={principle.title}>
+              <span className="principle-number" aria-hidden="true">
+                {index === 3 ? "XIV" : ["I", "II", "III"][index]}
+              </span>
               <h2>{principle.title}</h2>
               <p>{principle.body}</p>
             </article>
@@ -111,27 +132,27 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
         <section id="non-negotiables" className="framework-section" aria-labelledby="framework-title">
           <div className="framework-intro">
             <p className="section-eyebrow">THE 24 NON-NEGOTIABLES</p>
-            <h2 id="framework-title">The Standard That Changes Everything</h2>
-            <div className="accent-rule" aria-hidden="true" />
+            <h2 id="framework-title">A Framework for Lasting Love</h2>
             <p>
-              The framework names the principles a man must embody to become trustworthy in real relationships.
+              The Twenty-Four Non-Negotiables are not rules designed to eliminate every disagreement or hardship. They are commitments that healthy partners repeatedly make to themselves and to one another. They describe the kind of relationship worth building and the kind of person worth becoming.
             </p>
-            <a className="secondary-link" href="#framework-list">
+            <a className="framework-action" href="#framework-list">
               Explore the 24 Non-Negotiables <span aria-hidden="true">→</span>
             </a>
           </div>
 
-          <div id="framework-list" className="framework-card">
-            <p className="section-eyebrow">INSIDE THE FRAMEWORK</p>
+          <div id="framework-list" className="framework-card" aria-label="Selected items from the Twenty-Four Non-Negotiables">
             <ol>
               <li><span>1</span>Character Before Chemistry</li>
-              <li><span>2</span>Trust Is Built Daily</li>
-              <li><span>3</span>Integrity Creates Predictability</li>
+              <li><span>2</span>Purpose Before Partnership</li>
+              <li><span>3</span>Trust Is Built Daily</li>
+              <li><span>4</span>Emotional Safety Comes Before Emotional Intensity</li>
+              <li><span>5</span>Integrity Creates Predictability</li>
               <li className="framework-ellipsis" aria-hidden="true">•••</li>
-              <li><span>14</span>Communication Is Shared Meaning</li>
+              <li><span>24</span>Love Is a Practice</li>
             </ol>
             <a className="secondary-link" href="#principles">
-              View the framework <span aria-hidden="true">→</span>
+              View selected principles <span aria-hidden="true">→</span>
             </a>
           </div>
 
@@ -140,14 +161,67 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
             <p>It is a book about becoming better.</p>
           </blockquote>
         </section>
+
+        <section className="learn-section" aria-labelledby="learn-title">
+          <div className="section-heading display-heading" id="learn-title">
+            <span>WHAT YOU’LL</span> <strong>LEARN</strong>
+          </div>
+          <div className="paper-card learn-card">
+            <h2>Inside This Book You’ll Discover:</h2>
+            <ul>
+              {learnItems.map((item) => (
+                <li key={item}><span aria-hidden="true">✓</span>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="audience-section" aria-labelledby="audience-title">
+          <div className="audience-copy">
+            <div className="section-heading display-heading" id="audience-title">
+              <span>WHO’S</span> <strong>THIS FOR</strong>
+            </div>
+            <ul>
+              {audienceItems.map((item) => (
+                <li key={item}><span aria-hidden="true">✓</span>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="audience-visual" aria-hidden="true" />
+        </section>
+
+        <section id="community" className="community-section" aria-labelledby="community-title">
+          <p className="community-eyebrow">STAY CONNECTED</p>
+          <h2 id="community-title">JOIN THE COMMUNITY</h2>
+          <p>
+            Stay connected to <em>Becoming the Man She Can Trust</em> and receive future communications from the author.
+          </p>
+          <div className="community-form" aria-describedby="community-status">
+            <label className="sr-only" htmlFor="community-email">Email address</label>
+            <input id="community-email" type="email" placeholder="Your email address" disabled />
+            <button type="button" disabled>Join the Community</button>
+          </div>
+          <p className="community-note" id="community-status">Community signup will be available soon.</p>
+        </section>
       </main>
 
-      <footer className="site-footer">
-        <span>LOVE | PURPOSE | FLOURISH</span>
+      <footer className="site-footer urban-footer">
+        <div className="footer-brand">
+          <strong>BECOMING<br />THE MAN SHE CAN TRUST</strong>
+          <span>LOVE | PURPOSE | FLOURISH</span>
+          <small>© 2026 Emory Harris. All rights reserved.</small>
+        </div>
+        <nav aria-label="Footer">
+          <a href="/book">Book</a>
+          <a href="#non-negotiables">The 24 Non-Negotiables</a>
+          <span aria-disabled="true">About</span>
+          <span aria-disabled="true">Contact</span>
+          <a href="#community">Newsletter</a>
+        </nav>
         <nav aria-label="Legal">
-          <span aria-disabled="true">PRIVACY</span>
-          <span aria-disabled="true">TERMS</span>
-          <span aria-disabled="true">ACCESSIBILITY</span>
+          <span aria-disabled="true">Privacy</span>
+          <span aria-disabled="true">Terms</span>
+          <span aria-disabled="true">Accessibility</span>
         </nav>
       </footer>
     </div>
