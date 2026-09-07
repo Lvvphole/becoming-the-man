@@ -9,7 +9,7 @@ describe("R1-01 route rendering", () => {
       <HomePage purchase={{ status: "available", url: "https://example.test/book" }} />,
     );
 
-    expect(html).toContain("<h1 id=\"home-title\">Becoming the Man She Can Trust</h1>");
+    expect(html).toContain("<h1>Becoming the Man She Can Trust</h1>");
     expect(html).toContain(
       "A SYSTEM FOR BUILDING THE LIFE, CHARACTER, AND LEADERSHIP THAT CREATE LASTING LOVE",
     );
