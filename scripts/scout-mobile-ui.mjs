@@ -250,7 +250,10 @@ function snapshotExpression(viewport) {
 
     const sections = Object.fromEntries(governedSelectors.map((selector) => [selector, inspect(selector)]));
     const orientation = Object.fromEntries(orientationSelectors.map((selector) => [selector, inspect(selector)]));
+    const header = document.querySelector(".site-header");
     const primaryNav = document.querySelector(".site-nav");
+    const mobileNavTrigger = document.querySelector(".mobile-nav > summary");
+    const mobileNavPanel = document.querySelector(".mobile-nav nav");
     const replacementCandidates = document.querySelectorAll(
       ".mobile-nav, .menu-toggle, [aria-label*='menu' i], button[aria-expanded]",
     );
@@ -297,11 +300,14 @@ function snapshotExpression(viewport) {
       documentHeight: document.documentElement.scrollHeight,
       sections,
       orientation,
+      headerRect: header ? rectOf(header) : null,
       primaryNavVisible: isVisible(primaryNav),
       primaryNavigationItems: navigationItems(".site-nav > a, .site-nav > span[aria-disabled='true']"),
       footerPrimaryNavigationItems: navigationItems(".site-footer nav[aria-label='Footer'] > a, .site-footer nav[aria-label='Footer'] > span[aria-disabled='true']"),
       mobileNavReplacementVisible: [...replacementCandidates].some(isVisible),
       mobileNavigationItems: navigationItems(".mobile-nav nav > a, .mobile-nav nav > span[aria-disabled='true']"),
+      mobileNavTriggerRect: mobileNavTrigger ? rectOf(mobileNavTrigger) : null,
+      mobileNavPanelRect: mobileNavPanel ? rectOf(mobileNavPanel) : null,
       horizontalOverflows,
       clippedText,
       smallTouchTargets,
