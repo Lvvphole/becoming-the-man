@@ -135,6 +135,15 @@ jobs:
             if (JSON.stringify(normalize(snapshot.mobileNavigationItems)) !== JSON.stringify(expected)) {
               throw new Error(`Mobile navigation content drifted at ${snapshot.viewport.width}px.`);
             }
+            if (!snapshot.headerRect || !snapshot.mobileNavTriggerRect || !snapshot.mobileNavPanelRect) {
+              throw new Error(`Mobile navigation geometry is missing at ${snapshot.viewport.width}px.`);
+            }
+            if (Math.abs(snapshot.headerRect.right - snapshot.mobileNavTriggerRect.right) > 1) {
+              throw new Error(`Mobile navigation trigger is not anchored to the header right edge at ${snapshot.viewport.width}px.`);
+            }
+            if (snapshot.mobileNavPanelRect.left < -1 || snapshot.mobileNavPanelRect.right > snapshot.viewport.width + 1) {
+              throw new Error(`Mobile navigation panel overflows the viewport at ${snapshot.viewport.width}px.`);
+            }
           }
           console.log("PASS: Mobile header navigation replaces the removed footer navigation at all governed phone widths.");
           NODE
