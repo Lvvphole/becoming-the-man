@@ -5,6 +5,14 @@ import {
   summarizeFindings,
 } from "../../scripts/mobile-ui-scout-core.mjs";
 
+const PRIMARY_NAVIGATION_ITEMS = Object.freeze([
+  Object.freeze({ text: "BOOK", href: "/book", disabled: false }),
+  Object.freeze({ text: "THE 24 NON-NEGOTIABLES", href: "#non-negotiables", disabled: false }),
+  Object.freeze({ text: "ABOUT", href: null, disabled: true }),
+  Object.freeze({ text: "CONTACT", href: null, disabled: true }),
+  Object.freeze({ text: "NEWSLETTER", href: "#community", disabled: false }),
+]);
+
 function visibleState() {
   return {
     exists: true,
@@ -18,6 +26,7 @@ function baseline() {
   return {
     sections: Object.fromEntries(GOVERNED_SELECTORS.map((selector) => [selector, visibleState()])),
     primaryNavVisible: true,
+    primaryNavigationItems: PRIMARY_NAVIGATION_ITEMS,
   };
 }
 
@@ -32,7 +41,9 @@ function snapshot() {
       ),
     ),
     primaryNavVisible: false,
+    primaryNavigationItems: PRIMARY_NAVIGATION_ITEMS,
     mobileNavReplacementVisible: true,
+    mobileNavigationItems: PRIMARY_NAVIGATION_ITEMS,
     horizontalOverflows: [],
     clippedText: [],
     smallTouchTargets: [],
@@ -61,6 +72,16 @@ describe("mobile UI scout classifier", () => {
     const findings = classifyMobileSnapshot(mobile, baseline());
     expect(findings).toContainEqual(
       expect.objectContaining({ code: "NAVIGATION_HIDDEN_WITHOUT_REPLACEMENT", severity: "warning" }),
+    );
+  });
+
+  it("flags a mobile replacement whose navigation items do not match desktop", () => {
+    const mobile = snapshot();
+    mobile.mobileNavigationItems = PRIMARY_NAVIGATION_ITEMS.slice(0, -1);
+
+    const findings = classifyMobileSnapshot(mobile, baseline());
+    expect(findings).toContainEqual(
+      expect.objectContaining({ code: "MOBILE_NAVIGATION_CONTENT_MISMATCH", severity: "warning" }),
     );
   });
 
