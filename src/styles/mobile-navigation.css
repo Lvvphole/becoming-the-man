@@ -3,11 +3,17 @@
 }
 
 @media (max-width: 760px) {
+  .urban-home .site-header {
+    flex-direction: row;
+    align-items: center;
+  }
+
   .urban-home .mobile-nav {
     position: relative;
     z-index: 30;
     display: block;
     flex: 0 0 auto;
+    margin-left: auto;
   }
 
   .urban-home .mobile-nav > summary {
