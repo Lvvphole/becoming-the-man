@@ -186,6 +186,19 @@ async function waitForRenderedPage(command) {
   );
 }
 
+async function openMobileNavigation(command) {
+  return evaluateValue(
+    command,
+    `(() => {
+      const details = document.querySelector(".mobile-nav");
+      const summary = details?.querySelector(":scope > summary");
+      if (!(details instanceof HTMLDetailsElement) || !summary) return false;
+      if (!details.open) summary.click();
+      return details.open;
+    })()`,
+  );
+}
+
 function snapshotExpression(viewport) {
   return `(() => {
     const governedSelectors = ${JSON.stringify(GOVERNED_SELECTORS)};
@@ -217,6 +230,12 @@ function snapshotExpression(viewport) {
       return element.tagName.toLowerCase() + classes;
     };
 
+    const navigationItems = (selector) => [...document.querySelectorAll(selector)].map((element) => ({
+      text: element.textContent.trim().replace(/\\s+/g, " "),
+      href: element.tagName === "A" ? element.getAttribute("href") : null,
+      disabled: element.getAttribute("aria-disabled") === "true",
+    }));
+
     const inspect = (selector) => {
       const element = document.querySelector(selector);
       if (!element) return { exists: false, visible: false };
@@ -231,7 +250,10 @@ function snapshotExpression(viewport) {
 
     const sections = Object.fromEntries(governedSelectors.map((selector) => [selector, inspect(selector)]));
     const orientation = Object.fromEntries(orientationSelectors.map((selector) => [selector, inspect(selector)]));
+    const header = document.querySelector(".site-header");
     const primaryNav = document.querySelector(".site-nav");
+    const mobileNavTrigger = document.querySelector(".mobile-nav > summary");
+    const mobileNavPanel = document.querySelector(".mobile-nav nav");
     const replacementCandidates = document.querySelectorAll(
       ".mobile-nav, .menu-toggle, [aria-label*='menu' i], button[aria-expanded]",
     );
@@ -243,7 +265,7 @@ function snapshotExpression(viewport) {
       .slice(0, 25)
       .map(({ element, rect }) => ({ selector: describe(element), rect }));
 
-    const clippedText = [...document.querySelectorAll("h1,h2,h3,p,li,a,button,span,label")]
+    const clippedText = [...document.querySelectorAll("h1,h2,h3,p,li,a,button,summary,span,label")]
       .filter((element) => isVisible(element) && element.textContent.trim().length > 0)
       .filter((element) => {
         const style = getComputedStyle(element);
@@ -263,7 +285,7 @@ function snapshotExpression(viewport) {
       }));
 
     const smallTouchTargets = [...document.querySelectorAll(
-      "a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[role='button']:not([aria-disabled='true'])",
+      "a[href],button:not([disabled]),summary,input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[role='button']:not([aria-disabled='true'])",
     )]
       .filter(isVisible)
       .map((element) => ({ element, rect: rectOf(element) }))
@@ -278,8 +300,14 @@ function snapshotExpression(viewport) {
       documentHeight: document.documentElement.scrollHeight,
       sections,
       orientation,
+      headerRect: header ? rectOf(header) : null,
       primaryNavVisible: isVisible(primaryNav),
+      primaryNavigationItems: navigationItems(".site-nav > a, .site-nav > span[aria-disabled='true']"),
+      footerPrimaryNavigationItems: navigationItems(".site-footer nav[aria-label='Footer'] > a, .site-footer nav[aria-label='Footer'] > span[aria-disabled='true']"),
       mobileNavReplacementVisible: [...replacementCandidates].some(isVisible),
+      mobileNavigationItems: navigationItems(".mobile-nav nav > a, .mobile-nav nav > span[aria-disabled='true']"),
+      mobileNavTriggerRect: mobileNavTrigger ? rectOf(mobileNavTrigger) : null,
+      mobileNavPanelRect: mobileNavPanel ? rectOf(mobileNavPanel) : null,
       horizontalOverflows,
       clippedText,
       smallTouchTargets,
@@ -294,10 +322,16 @@ async function captureSnapshot(command, pageUrl, viewport, mobile) {
     deviceScaleFactor: viewport.deviceScaleFactor,
     mobile,
   });
-  await command("Emulation.setTouchEmulationEnabled", { enabled: mobile, maxTouchPoints: mobile ? 5 : 0 });
+  await command(
+    "Emulation.setTouchEmulationEnabled",
+    mobile ? { enabled: true, maxTouchPoints: 5 } : { enabled: false },
+  );
   await command("Page.navigate", { url: pageUrl });
   await waitForRenderedPage(command);
-  return evaluateValue(command, snapshotExpression(viewport));
+  const mobileNavigationOpened = mobile ? await openMobileNavigation(command) : false;
+  if (mobileNavigationOpened) await sleep(50);
+  const snapshot = await evaluateValue(command, snapshotExpression(viewport));
+  return { ...snapshot, mobileNavigationOpened };
 }
 
 async function captureScreenshot(command, filePath) {

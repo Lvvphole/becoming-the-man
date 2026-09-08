@@ -70,6 +70,18 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
           <span aria-disabled="true">CONTACT</span>
           <a href="#community">NEWSLETTER</a>
         </nav>
+        <details className="mobile-nav">
+          <summary aria-label="Navigation menu">
+            <span className="mobile-nav-icon" aria-hidden="true" />
+          </summary>
+          <nav aria-label="Mobile primary">
+            <a href="/book">Book</a>
+            <a href="#non-negotiables">The 24 Non-Negotiables</a>
+            <span aria-disabled="true">About</span>
+            <span aria-disabled="true">Contact</span>
+            <a href="#community">Newsletter</a>
+          </nav>
+        </details>
         <a className="header-purchase-link" href="#purchase">Get Your Copy <span aria-hidden="true">→</span></a>
       </header>
 
@@ -218,13 +230,6 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
           <span>LOVE | PURPOSE | FLOURISH</span>
           <small>© 2026 Emory Harris. All rights reserved.</small>
         </div>
-        <nav aria-label="Footer">
-          <a href="/book">Book</a>
-          <a href="#non-negotiables">The 24 Non-Negotiables</a>
-          <span aria-disabled="true">About</span>
-          <span aria-disabled="true">Contact</span>
-          <a href="#community">Newsletter</a>
-        </nav>
         <nav aria-label="Legal">
           <a href="/disclaimer">Disclaimer</a>
           <span aria-disabled="true">Privacy</span>

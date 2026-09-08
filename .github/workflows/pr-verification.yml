@@ -101,6 +101,52 @@ jobs:
           grep -F 'educational and informational purposes only' /tmp/disclaimer.html
           grep -F 'personal safety and qualified professional or emergency support take priority' /tmp/disclaimer.html
           node scripts/verify-home-responsive.mjs http://127.0.0.1:4173/
+          npm run scout:mobile -- http://127.0.0.1:4173/ --out-dir /tmp/mobile-scout --no-screenshots
+          node --input-type=module <<'NODE'
+          import { readFile } from "node:fs/promises";
+
+          const report = JSON.parse(await readFile("/tmp/mobile-scout/mobile-scout-report.json", "utf8"));
+          const normalize = (items) => items.map((item) => ({
+            text: item.text.trim().replace(/\s+/g, " ").toUpperCase(),
+            href: item.href,
+            disabled: item.disabled === true,
+          }));
+          const expected = [
+            { text: "BOOK", href: "/book", disabled: false },
+            { text: "THE 24 NON-NEGOTIABLES", href: "#non-negotiables", disabled: false },
+            { text: "ABOUT", href: null, disabled: true },
+            { text: "CONTACT", href: null, disabled: true },
+            { text: "NEWSLETTER", href: "#community", disabled: false },
+          ];
+
+          if (JSON.stringify(normalize(report.desktopBaseline.primaryNavigationItems)) !== JSON.stringify(expected)) {
+            throw new Error("Desktop primary navigation changed from the governed five-item contract.");
+          }
+          if (report.desktopBaseline.footerPrimaryNavigationItems.length !== 0) {
+            throw new Error("Primary navigation remains in the footer.");
+          }
+          for (const snapshot of report.mobileSnapshots) {
+            if (!snapshot.mobileNavReplacementVisible || !snapshot.mobileNavigationOpened) {
+              throw new Error(`Mobile navigation did not render and open at ${snapshot.viewport.width}px.`);
+            }
+            if (snapshot.footerPrimaryNavigationItems.length !== 0) {
+              throw new Error(`Footer primary navigation remains at ${snapshot.viewport.width}px.`);
+            }
+            if (JSON.stringify(normalize(snapshot.mobileNavigationItems)) !== JSON.stringify(expected)) {
+              throw new Error(`Mobile navigation content drifted at ${snapshot.viewport.width}px.`);
+            }
+            if (!snapshot.headerRect || !snapshot.mobileNavTriggerRect || !snapshot.mobileNavPanelRect) {
+              throw new Error(`Mobile navigation geometry is missing at ${snapshot.viewport.width}px.`);
+            }
+            if (Math.abs(snapshot.headerRect.right - snapshot.mobileNavTriggerRect.right) > 1) {
+              throw new Error(`Mobile navigation trigger is not anchored to the header right edge at ${snapshot.viewport.width}px.`);
+            }
+            if (snapshot.mobileNavPanelRect.left < -1 || snapshot.mobileNavPanelRect.right > snapshot.viewport.width + 1) {
+              throw new Error(`Mobile navigation panel overflows the viewport at ${snapshot.viewport.width}px.`);
+            }
+          }
+          console.log("PASS: Mobile header navigation replaces the removed footer navigation at all governed phone widths.");
+          NODE
       - name: Bind evidence to tested SHA
         shell: bash
         env:
