@@ -18,6 +18,24 @@ function finding(severity, code, viewport, message, evidence = {}) {
   return { severity, code, viewport, message, evidence };
 }
 
+function normalizeNavigationItems(items) {
+  return (Array.isArray(items) ? items : []).map((item) => ({
+    text:
+      typeof item?.text === "string"
+        ? item.text.trim().replace(/\s+/g, " ").toUpperCase()
+        : "",
+    href: typeof item?.href === "string" ? item.href : null,
+    disabled: item?.disabled === true,
+  }));
+}
+
+function navigationItemsMatch(expected, actual) {
+  return (
+    JSON.stringify(normalizeNavigationItems(expected)) ===
+    JSON.stringify(normalizeNavigationItems(actual))
+  );
+}
+
 export function classifyMobileSnapshot(snapshot, desktopBaseline) {
   const findings = [];
   const viewport = snapshot.viewport.name;
@@ -63,6 +81,26 @@ export function classifyMobileSnapshot(snapshot, desktopBaseline) {
         "NAVIGATION_HIDDEN_WITHOUT_REPLACEMENT",
         viewport,
         "Primary navigation is hidden on mobile and no visible menu replacement was detected.",
+      ),
+    );
+  }
+
+  if (
+    desktopBaseline.primaryNavVisible &&
+    !snapshot.primaryNavVisible &&
+    snapshot.mobileNavReplacementVisible &&
+    !navigationItemsMatch(desktopBaseline.primaryNavigationItems, snapshot.mobileNavigationItems)
+  ) {
+    findings.push(
+      finding(
+        "warning",
+        "MOBILE_NAVIGATION_CONTENT_MISMATCH",
+        viewport,
+        "Mobile navigation does not preserve the desktop primary-navigation items.",
+        {
+          desktop: normalizeNavigationItems(desktopBaseline.primaryNavigationItems),
+          mobile: normalizeNavigationItems(snapshot.mobileNavigationItems),
+        },
       ),
     );
   }
