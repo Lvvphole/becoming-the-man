@@ -1,0 +1,96 @@
+.urban-home .mobile-nav {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .urban-home .mobile-nav {
+    position: relative;
+    z-index: 30;
+    display: block;
+    flex: 0 0 auto;
+  }
+
+  .urban-home .mobile-nav > summary {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    list-style: none;
+    cursor: pointer;
+    color: var(--urban-navy);
+  }
+
+  .urban-home .mobile-nav > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .urban-home .mobile-nav > summary:focus-visible {
+    outline: 3px solid #0a6c7a;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .urban-home .mobile-nav-icon,
+  .urban-home .mobile-nav-icon::before,
+  .urban-home .mobile-nav-icon::after {
+    width: 24px;
+    height: 2px;
+    display: block;
+    background: var(--urban-navy);
+  }
+
+  .urban-home .mobile-nav-icon {
+    position: relative;
+  }
+
+  .urban-home .mobile-nav-icon::before,
+  .urban-home .mobile-nav-icon::after {
+    content: "";
+    position: absolute;
+    left: 0;
+  }
+
+  .urban-home .mobile-nav-icon::before {
+    top: -7px;
+  }
+
+  .urban-home .mobile-nav-icon::after {
+    top: 7px;
+  }
+
+  .urban-home .mobile-nav nav {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 12px);
+    right: 0;
+    width: min(300px, calc(100vw - 28px));
+    padding: 10px 14px;
+    display: grid;
+    border: 1px solid rgb(7 31 56 / 0.16);
+    border-radius: 3px;
+    background: #ffffff;
+    box-shadow: 0 16px 36px rgb(7 31 56 / 0.16);
+  }
+
+  .urban-home .mobile-nav nav a,
+  .urban-home .mobile-nav nav span[aria-disabled="true"] {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgb(7 31 56 / 0.12);
+    color: var(--urban-navy);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+    text-decoration: none;
+  }
+
+  .urban-home .mobile-nav nav > :last-child {
+    border-bottom: 0;
+  }
+
+  .urban-home .mobile-nav nav span[aria-disabled="true"] {
+    color: #7f8790;
+    cursor: default;
+  }
+}
