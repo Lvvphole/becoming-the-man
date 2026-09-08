@@ -316,7 +316,10 @@ async function captureSnapshot(command, pageUrl, viewport, mobile) {
     deviceScaleFactor: viewport.deviceScaleFactor,
     mobile,
   });
-  await command("Emulation.setTouchEmulationEnabled", { enabled: mobile, maxTouchPoints: mobile ? 5 : 0 });
+  await command(
+    "Emulation.setTouchEmulationEnabled",
+    mobile ? { enabled: true, maxTouchPoints: 5 } : { enabled: false },
+  );
   await command("Page.navigate", { url: pageUrl });
   await waitForRenderedPage(command);
   const mobileNavigationOpened = mobile ? await openMobileNavigation(command) : false;
