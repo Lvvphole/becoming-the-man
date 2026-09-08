@@ -3,6 +3,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import "./styles/global.css";
 import "./styles/home-approved.css";
 import "./styles/disclaimer.css";
+import "./styles/mobile-navigation.css";
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
