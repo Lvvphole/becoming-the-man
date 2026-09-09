@@ -90,6 +90,9 @@ jobs:
             fi
             sleep 1
           done
+          subscribe_status="$(curl -sS -o /tmp/subscribe.json -w '%{http_code}' -X POST http://127.0.0.1:4173/api/subscribe -H 'content-type: application/json' -d '{}')"
+          test "$subscribe_status" = "400"
+          grep -F '"code":"INVALID_REQUEST"' /tmp/subscribe.json
           curl -fsS http://127.0.0.1:4173/book > /tmp/book.html
           curl -fsS http://127.0.0.1:4173/disclaimer > /tmp/disclaimer.html
           grep -F '<h1>Becoming the Man She Can Trust</h1>' /tmp/home.html
@@ -103,6 +106,7 @@ jobs:
           grep -F 'personal safety and qualified professional or emergency support take priority' /tmp/disclaimer.html
           node scripts/verify-home-responsive.mjs http://127.0.0.1:4173/
           npm run scout:mobile -- http://127.0.0.1:4173/ --out-dir /tmp/mobile-scout --no-screenshots
+          node scripts/verify-community-mobile.mjs /tmp/mobile-scout/mobile-scout-report.json
           node --input-type=module <<'NODE'
           import { readFile } from "node:fs/promises";
 
