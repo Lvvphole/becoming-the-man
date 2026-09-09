@@ -1,5 +1,3 @@
-create extension if not exists pgcrypto;
-
 create table public.subscribers (
   id uuid primary key default gen_random_uuid(),
   email text not null unique,
@@ -117,10 +115,12 @@ begin
     raise exception using errcode = '22023', message = 'invalid_subscription_request';
   end if;
 
-  v_hash := encode(
-    extensions.digest(
-      v_email || '|' || coalesce(v_first_name, '') || '|' || v_source || '|' || v_consent_version,
-      'sha256'
+  v_hash := pg_catalog.encode(
+    pg_catalog.sha256(
+      pg_catalog.convert_to(
+        v_email || '|' || coalesce(v_first_name, '') || '|' || v_source || '|' || v_consent_version,
+        'UTF8'
+      )
     ),
     'hex'
   );
