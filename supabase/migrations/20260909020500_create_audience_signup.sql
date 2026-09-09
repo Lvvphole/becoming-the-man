@@ -41,7 +41,7 @@ create table public.consent_events (
   consent_version text not null,
   source text not null,
   created_at timestamptz not null default now(),
-  unique (request_id, purpose, action)
+  constraint consent_events_request_purpose_action_key unique (request_id, purpose, action)
 );
 
 alter table public.subscribers enable row level security;
@@ -117,7 +117,7 @@ begin
     request_id, subscriber_id, purpose, action, consent_version, source
   ) values (
     p_request_id, v_subscriber_id, 'marketing', 'grant', v_consent_version, v_source
-  ) on conflict (request_id, purpose, action) do nothing;
+  ) on conflict on constraint consent_events_request_purpose_action_key do nothing;
 
   return query select p_request_id, v_subscriber_id, v_provider_status;
 end;
