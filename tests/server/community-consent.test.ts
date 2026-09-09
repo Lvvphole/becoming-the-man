@@ -27,4 +27,31 @@ describe("community subscription consent boundary", () => {
     expect(persist).not.toHaveBeenCalled();
     expect(syncContact).not.toHaveBeenCalled();
   });
+
+  it("persists consent-bearing input before provider synchronization", async () => {
+    const effects: string[] = [];
+    const repository: CommunitySubscriptionRepository = {
+      async persist() {
+        effects.push("persist");
+      },
+    };
+    const contactProvider: CommunityContactProvider = {
+      async syncContact() {
+        effects.push("sync");
+      },
+    };
+
+    const result = await subscribeToCommunity(
+      {
+        requestId: "2ba8af50-4d55-49ad-a10c-c28aa6698d27",
+        email: "reader@example.com",
+        firstName: "Reader",
+        marketingConsent: true,
+      },
+      { repository, contactProvider },
+    );
+
+    expect(result.status).toBe("subscribed");
+    expect(effects).toEqual(["persist", "sync"]);
+  });
 });
