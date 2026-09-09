@@ -26,7 +26,7 @@ export function createResendCommunityProvider(options: Options = {}): CommunityA
   const fetchImpl = options.fetchImpl ?? fetch;
 
   return {
-    async syncEligibleContact({ email, firstName, idempotencyKey }) {
+    async syncEligibleContact({ email, firstName }) {
       const apiKey = env.RESEND_API_KEY;
       const segmentId = env.RESEND_COMMUNITY_SEGMENT_ID;
       if (!apiKey || !segmentId) return { ok: false, code: "PROVIDER_CONFIGURATION_UNAVAILABLE" };
@@ -35,7 +35,6 @@ export function createResendCommunityProvider(options: Options = {}): CommunityA
         authorization: `Bearer ${apiKey}`,
         "content-type": "application/json",
         "user-agent": "becoming-the-man/1.0",
-        "idempotency-key": idempotencyKey,
       };
 
       let response: Response;
