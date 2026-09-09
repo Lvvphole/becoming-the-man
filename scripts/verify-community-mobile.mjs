@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
+import { argv, stdout } from "node:process";
 
-const reportPath = process.argv[2];
+const reportPath = argv[2];
 if (!reportPath) throw new Error("Usage: node scripts/verify-community-mobile.mjs <mobile-scout-report.json>");
 
 const report = JSON.parse(await readFile(reportPath, "utf8"));
@@ -29,4 +30,4 @@ for (const snapshot of report.mobileSnapshots) {
   }
 }
 
-console.log("PASS: Community signup controls remain ordered and mobile-safe at all governed phone widths.");
+stdout.write("PASS: Community signup controls remain ordered and mobile-safe at all governed phone widths.\n");
