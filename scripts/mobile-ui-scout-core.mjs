@@ -15,6 +15,7 @@ export const GOVERNED_SELECTORS = Object.freeze([
   "#community-first-name",
   "#community-email",
   ".community-consent",
+  ".community-consent input",
   ".community-form button",
   ".community-note",
   ".site-footer",
