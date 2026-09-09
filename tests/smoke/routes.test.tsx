@@ -4,7 +4,7 @@ import { BookPage } from "../../src/routes/book";
 import { HomePage } from "../../src/routes/home";
 
 describe("R1-01 route rendering", () => {
-  it("renders the approved home orientation, canonical principles, and purchase action", () => {
+  it("renders the approved home orientation, canonical principles, purchase action, and community consent form", () => {
     const html = renderToStaticMarkup(
       <HomePage purchase={{ status: "available", url: "https://example.test/book" }} />,
     );
@@ -33,7 +33,11 @@ describe("R1-01 route rendering", () => {
     expect(html).toContain("Men who want to become more trustworthy in love and life");
     expect(html).toContain("Women who want to understand the kind of man they can trust");
     expect(html).toContain("JOIN THE COMMUNITY");
-    expect(html).toContain("Community signup will be available soon.");
+    expect(html).toContain('name="first_name"');
+    expect(html).toContain('name="email"');
+    expect(html).toContain('name="marketing_consent"');
+    expect(html).toContain("I agree to receive marketing emails and future communications from Emory Harris.");
+    expect(html).not.toContain("Community signup will be available soon.");
     expect(html).toContain('href="#non-negotiables"');
     expect(html).toContain('href="/disclaimer"');
     expect(html).toContain('href="https://example.test/book"');
