@@ -1,6 +1,7 @@
 import { useLoaderData } from "react-router";
 import type { BookPurchaseDestination } from "../../server/domain/book-purchase";
 import { BookPurchaseAction } from "../components/book-purchase-action";
+import { CommunitySignup } from "../components/community-signup";
 
 export function meta() {
   return [
@@ -18,7 +19,10 @@ export async function loader() {
     "../../server/adapters/supabase-site-settings.server"
   );
 
-  return { purchase: await loadBookPurchaseDestination() };
+  return {
+    purchase: await loadBookPurchaseDestination(),
+    turnstileSiteKey: process.env.TURNSTILE_SITE_KEY,
+  };
 }
 
 const principles = [
@@ -54,7 +58,13 @@ const audienceItems = [
   "Couples and partners who value communication and shared meaning",
 ] as const;
 
-export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
+export function HomePage({
+  purchase,
+  turnstileSiteKey,
+}: {
+  purchase: BookPurchaseDestination;
+  turnstileSiteKey?: string;
+}) {
   return (
     <div className="site-page urban-home">
       <header className="site-header urban-header">
@@ -215,12 +225,7 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
           <p>
             Stay connected to <em>Becoming the Man She Can Trust</em> and receive future communications from the author.
           </p>
-          <div className="community-form" aria-describedby="community-status">
-            <label className="sr-only" htmlFor="community-email">Email address</label>
-            <input id="community-email" type="email" placeholder="Your email address" disabled />
-            <button type="button" disabled>Join the Community</button>
-          </div>
-          <p className="community-note" id="community-status">Community signup will be available soon.</p>
+          <CommunitySignup turnstileSiteKey={turnstileSiteKey} />
         </section>
       </main>
 
@@ -242,6 +247,6 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
 }
 
 export default function HomeRoute() {
-  const { purchase } = useLoaderData<typeof loader>();
-  return <HomePage purchase={purchase} />;
+  const { purchase, turnstileSiteKey } = useLoaderData<typeof loader>();
+  return <HomePage purchase={purchase} turnstileSiteKey={turnstileSiteKey} />;
 }
