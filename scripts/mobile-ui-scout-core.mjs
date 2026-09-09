@@ -11,6 +11,12 @@ export const GOVERNED_SELECTORS = Object.freeze([
   ".learn-section",
   ".audience-section",
   ".community-section",
+  ".community-form",
+  "#community-first-name",
+  "#community-email",
+  ".community-consent",
+  ".community-form button",
+  ".community-note",
   ".site-footer",
 ]);
 
