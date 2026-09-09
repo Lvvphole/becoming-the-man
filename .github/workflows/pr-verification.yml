@@ -35,6 +35,7 @@ jobs:
         run: |
           bash supabase/tests/site_settings_rls.sh
           bash supabase/tests/legal_pages_rls.sh
+          bash supabase/tests/audience_signup_rls.sh
       - name: Enforce bounded change size
         if: github.event_name == 'pull_request'
         shell: bash
