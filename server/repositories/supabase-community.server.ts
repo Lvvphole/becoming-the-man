@@ -15,6 +15,10 @@ function row(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null ? value as Record<string, unknown> : null;
 }
 
+function isProviderStatus(value: unknown): value is CommunityProviderStatus {
+  return value === "not_synced" || value === "pending" || value === "reachable";
+}
+
 function configured(env: Environment): { url: string; key: string } {
   const url = env.SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
@@ -68,13 +72,9 @@ export function createSupabaseCommunityRepository(options: Options = {}): Commun
       if (
         typeof requestId !== "string" ||
         typeof subscriberId !== "string" ||
-        !["not_synced", "pending", "reachable"].includes(String(providerStatus))
+        !isProviderStatus(providerStatus)
       ) throw new Error("PERSISTENCE_INVALID_RESPONSE");
-      return {
-        requestId,
-        subscriberId,
-        providerStatus: providerStatus as CommunityProviderStatus,
-      };
+      return { requestId, subscriberId, providerStatus };
     },
 
     async markProviderReachable({ subscriberId, providerContactId }) {
