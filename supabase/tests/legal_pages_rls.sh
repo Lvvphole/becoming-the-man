@@ -15,7 +15,8 @@ docker run --rm -d \
 
 ready=false
 for _ in {1..30}; do
-  if docker exec "$container" psql -qAt -v ON_ERROR_STOP=1 -U postgres -d postgres \
+  if docker exec "$container" sh -c 'test "$(cat /proc/1/comm)" = "postgres"' >/dev/null 2>&1 \
+    && docker exec "$container" psql -qAt -v ON_ERROR_STOP=1 -U postgres -d postgres \
       -c 'select 1' 2>/dev/null | grep -qx '1'; then
     ready=true
     break
