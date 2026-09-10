@@ -1,3 +1,4 @@
+import console from "node:console";
 import { spawn, spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -23,7 +24,9 @@ function findChrome() {
 }
 
 const profileDir = join(tmpdir(), `btm-home-render-${process.pid}`);
-const chrome = spawn(findChrome(), [
+const chromePath = findChrome();
+console.error("[home-browser] startup", JSON.stringify({ chromePath, profileDir, pageUrl }));
+const chrome = spawn(chromePath, [
   "--headless=new",
   "--no-sandbox",
   "--disable-gpu",
@@ -31,7 +34,13 @@ const chrome = spawn(findChrome(), [
   "--remote-debugging-port=9222",
   `--user-data-dir=${profileDir}`,
   pageUrl,
-], { stdio: "ignore" });
+], { stdio: ["ignore", "ignore", "inherit"] });
+chrome.on("error", (error) => {
+  console.error("[home-browser] spawn error", error);
+});
+chrome.on("exit", (code, signal) => {
+  console.error("[home-browser] exit", JSON.stringify({ code, signal }));
+});
 
 function cleanup() {
   if (chrome.exitCode === null) chrome.kill("SIGTERM");
@@ -42,22 +51,30 @@ process.on("SIGINT", () => process.exit(130));
 process.on("SIGTERM", () => process.exit(143));
 
 async function findPageTarget() {
+  let lastDiscovery = "No discovery response received.";
   for (let attempt = 0; attempt < 150; attempt += 1) {
     if (chrome.exitCode !== null) {
+      console.error("[home-browser] last discovery", lastDiscovery);
       throw new Error(`Headless Chrome exited early with code ${chrome.exitCode}.`);
     }
     try {
       const response = await globalThis.fetch("http://127.0.0.1:9222/json/list");
+      lastDiscovery = `HTTP ${response.status}`;
       if (response.ok) {
         const targets = await response.json();
+        lastDiscovery = JSON.stringify(targets.map(({ id, type, url }) => ({ id, type, url })));
         const target = targets.find((item) => item.type === "page" && item.url.startsWith("http"));
-        if (target) return target;
+        if (target) {
+          console.error("[home-browser] selected target", JSON.stringify({ id: target.id, type: target.type, url: target.url }));
+          return target;
+        }
       }
-    } catch {
-      // Chrome is still starting.
+    } catch (error) {
+      lastDiscovery = error instanceof Error ? `${error.message}; cause: ${error.cause}` : String(error);
     }
     await sleep(100);
   }
+  console.error("[home-browser] discovery exhausted", JSON.stringify({ attempts: 150, lastDiscovery, pid: chrome.pid, exitCode: chrome.exitCode, signalCode: chrome.signalCode }));
   throw new Error("Timed out waiting for the rendered Home page.");
 }
 
