@@ -19,3 +19,8 @@ Physical mapping: UUID identifiers, normalized unique text email, required nonbl
 community_runtime is a non-login permission group, separate from migration owner, with SELECT/INSERT and selected UPDATE columns. Consent has no UPDATE. No runtime DELETE/TRUNCATE/DDL or public table access. CI tests use an inheriting login and distinguish SQLSTATE 42501 from other errors.
 
 This change establishes storage only. Cache expiration, atomic replay and concurrency behavior are not established merely by the columns. These remain required before full prerequisite acceptance. Public signup, provider synchronization and DOD-01 remain incomplete. Exact-head CI and independent review are required; no merge authority is implied.
+
+## I2 atomic idempotency and TTL task list
+
+- [ ] INC-1 — Establish real-PostgreSQL RED for atomic claim, pending duplicate, replay, conflict, TTL reclaim, concurrency, and execute privileges.
+- [ ] INC-2 — Add the security-invoker claim migration and establish GREEN plus all existing regression gates.
