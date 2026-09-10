@@ -54,4 +54,30 @@ describe("community subscription consent boundary", () => {
     expect(result.status).toBe("subscribed");
     expect(effects).toEqual(["persist", "sync"]);
   });
+  it.each(["", "   ", "\t\n"])("rejects blank first name %j before side effects", async (firstName) => {
+    const persist = vi.fn<CommunitySubscriptionRepository["persist"]>();
+    const syncContact = vi.fn<CommunityContactProvider["syncContact"]>();
+    const result = await subscribeToCommunity(
+      { requestId: "name-required", email: "reader@example.com", firstName, marketingConsent: true },
+      { repository: { persist }, contactProvider: { syncContact } },
+    );
+    expect(result.status).toBe("error");
+    expect(persist).not.toHaveBeenCalled();
+    expect(syncContact).not.toHaveBeenCalled();
+  });
+
+  it("rejects an omitted first name before side effects", async () => {
+    const persist = vi.fn<CommunitySubscriptionRepository["persist"]>();
+    const syncContact = vi.fn<CommunityContactProvider["syncContact"]>();
+    const input = { requestId: "name-missing", email: "reader@example.com", marketingConsent: true };
+    const result = await subscribeToCommunity(
+      // @ts-expect-error First name is required; exercise an untyped caller at runtime.
+      input,
+      { repository: { persist }, contactProvider: { syncContact } },
+    );
+    expect(result.status).toBe("error");
+    expect(persist).not.toHaveBeenCalled();
+    expect(syncContact).not.toHaveBeenCalled();
+  });
+
 });

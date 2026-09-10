@@ -1,7 +1,7 @@
 export interface CommunitySubscriptionInput {
   requestId: string;
   email: string;
-  firstName?: string;
+  firstName: string;
   marketingConsent: boolean;
 }
 
@@ -26,7 +26,11 @@ export async function subscribeToCommunity(
   input: CommunitySubscriptionInput,
   dependencies: CommunitySubscriptionDependencies,
 ): Promise<CommunitySubscriptionResult> {
-  if (!input.marketingConsent) {
+  if (
+    !input.marketingConsent ||
+    typeof input.firstName !== "string" ||
+    input.firstName.trim().length === 0
+  ) {
     return { status: "error" };
   }
 
