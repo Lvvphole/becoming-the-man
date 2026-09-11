@@ -1,0 +1,4 @@
+FROM docker.io/library/node@sha256:2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553
+ARG REVISION
+LABEL org.opencontainers.image.source="https://github.com/Lvvphole/becoming-the-man"
+LABEL org.opencontainers.image.revision="$REVISION"
