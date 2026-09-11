@@ -96,6 +96,7 @@ Do not preload upstream specifications. Read only the smallest relevant authorit
 - Product goal, governing UX, DoD, release intent/order, or product constraints -> **Website Governing Product Specification v1.0 — LOCKED**.
 - Exact user/operator behavior, journey, requirement, or acceptance criterion -> **Website Product Specification v1.0 — LOCKED**.
 - Repository boundary, runtime, data ownership, API/provider contract, security, AI grounding/evals, CI/CD, or recovery -> **Website System Architecture v1.0 — LOCKED**, as amended by approved versioned architecture amendments.
+  - Its architectural requirements bind. Its implementation-state and bootstrap-sequencing statements, including `Implementation remains NOT STARTED` and creating this file as the next control artifact, record the 26 August 2026 approval context and not current repository state. This file states current implementation state.
 - Public book identity or Twenty-Four Non-Negotiables -> published **Becoming the Man She Can Trust**.
 - Deeper relationship protocols, evidence calibration, or safety/referral rules -> **Master Relationship Operating System v1.4**.
 If the required authoritative source is not present in the repository or supplied task context, stop and request it. Do not substitute memory or guess.
