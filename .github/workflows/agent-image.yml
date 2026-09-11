@@ -11,12 +11,7 @@
       "steps": [
         {"uses": "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683", "with": {"ref": "${{ github.event.pull_request.head.sha || github.sha }}", "fetch-depth": 0, "persist-credentials": false}},
         {"run": "python3 -B scripts/agent_image_policy.py\npython3 -B tests/agent_image_test.py", "shell": "bash"},
-        {"id": "build", "uses": "docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83", "with": {
-          "context": ".", "file": "Dockerfile.agent", "platforms": "linux/amd64",
-          "push": false, "load": true, "provenance": false, "sbom": false,
-          "tags": "ghcr.io/lvvphole/becoming-the-man-agent:validation",
-          "build-args": "REVISION=${{ github.event.pull_request.head.sha || github.sha }}"
-        }},
+        {"id": "build", "uses": "docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83", "with": {"context": ".", "file": "Dockerfile.agent", "platforms": "linux/amd64", "push": false, "load": true, "provenance": false, "sbom": false, "tags": "ghcr.io/lvvphole/becoming-the-man-agent:validation", "build-args": "REVISION=${{ github.event.pull_request.head.sha || github.sha }}"}},
         {"run": "test \"$(docker run --rm ghcr.io/lvvphole/becoming-the-man-agent:validation node --version)\" = \"v24.21.0\"\ntest \"$(docker image inspect ghcr.io/lvvphole/becoming-the-man-agent:validation --format '{{.Os}}/{{.Architecture}}')\" = \"linux/amd64\"", "shell": "bash"}
       ]
     },
@@ -26,23 +21,16 @@
       "runs-on": "ubuntu-latest",
       "timeout-minutes": 20,
       "permissions": {"contents": "read", "packages": "write", "id-token": "write", "attestations": "write"},
-      "outputs": {"digest": "${{ steps.build.outputs.digest }}"},
+      "outputs": {"digest": "${{ steps.build.outputs.digest || steps.tag.outputs.digest }}"},
       "steps": [
         {"uses": "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683", "with": {"ref": "${{ github.event.pull_request.head.sha || github.sha }}", "fetch-depth": 0, "persist-credentials": false}},
         {"run": "python3 -B scripts/agent_image_policy.py\npython3 -B tests/agent_image_test.py", "shell": "bash"},
         {"run": "python3 -B scripts/agent_image_remote.py base", "shell": "bash"},
         {"uses": "docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1", "with": {"registry": "ghcr.io", "username": "${{ github.actor }}", "password": "${{ secrets.GITHUB_TOKEN }}"}},
-        {"run": "python3 -B scripts/agent_image_remote.py tag-absent", "shell": "bash", "env": {"GH_TOKEN": "${{ secrets.GITHUB_TOKEN }}", "SOURCE_SHA": "${{ github.sha }}"}},
-        {"id": "build", "uses": "docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83", "with": {
-          "context": ".", "file": "Dockerfile.agent", "platforms": "linux/amd64",
-          "push": true, "load": false, "provenance": false, "sbom": false,
-          "tags": "ghcr.io/lvvphole/becoming-the-man-agent:${{ github.sha }}",
-          "build-args": "REVISION=${{ github.event.pull_request.head.sha || github.sha }}"
-        }},
-        {"run": "python3 -B scripts/agent_image_remote.py registry", "shell": "bash", "env": {"IMAGE_DIGEST": "${{ steps.build.outputs.digest }}"}},
-        {"uses": "actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a", "with": {
-          "subject-name": "ghcr.io/lvvphole/becoming-the-man-agent", "subject-digest": "${{ steps.build.outputs.digest }}", "push-to-registry": true
-        }}
+        {"run": "python3 -B scripts/agent_image_remote.py commit-tag", "shell": "bash", "env": {"GH_TOKEN": "${{ secrets.GITHUB_TOKEN }}", "SOURCE_SHA": "${{ github.sha }}"}, "id": "tag"},
+        {"id": "build", "uses": "docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83", "with": {"context": ".", "file": "Dockerfile.agent", "platforms": "linux/amd64", "push": true, "load": false, "provenance": false, "sbom": false, "tags": "ghcr.io/lvvphole/becoming-the-man-agent:${{ github.sha }}", "build-args": "REVISION=${{ github.event.pull_request.head.sha || github.sha }}"}, "if": "${{ steps.tag.outputs.digest == '' }}"},
+        {"run": "python3 -B scripts/agent_image_remote.py registry", "shell": "bash", "env": {"IMAGE_DIGEST": "${{ steps.build.outputs.digest || steps.tag.outputs.digest }}"}},
+        {"uses": "actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a", "with": {"subject-name": "ghcr.io/lvvphole/becoming-the-man-agent", "subject-digest": "${{ steps.build.outputs.digest || steps.tag.outputs.digest }}", "push-to-registry": true}}
       ]
     },
     "verify": {
