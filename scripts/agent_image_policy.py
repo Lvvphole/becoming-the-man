@@ -149,7 +149,7 @@ def set_as_list(data: dict) -> list:
 
 
 def docker_policy(text: str) -> None:
-    require(re.search(r'^\\s*#\\s*(syntax|escape|check)\\s*=', text, re.I | re.M) is None,
+    require(re.search(r'^\s*#\s*(syntax|escape|check)\s*=', text, re.I | re.M) is None,
             'DOCKER_DIRECTIVE')
     lines = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith('#')]
     require(bool(lines), 'MISSING_FROM')
@@ -173,13 +173,13 @@ def check_tree(root: Path) -> None:
     for path in FILES:
         require(not (root / path).is_symlink(), 'SYMLINK')
     docker_policy((root / 'Dockerfile.agent').read_text())
-    exact((root / '.dockerignore').read_text(), '**\\n!Dockerfile.agent\\n', 'BUILD_CONTEXT')
+    exact((root / '.dockerignore').read_text(), '**\n!Dockerfile.agent\n', 'BUILD_CONTEXT')
     require(not (root / 'Dockerfile.agent.dockerignore').exists(), 'BUILD_CONTEXT')
     surface = {p.name for p in (root / '.github/workflows').iterdir()}
     exact(sorted(surface), ['agent-image.yml', 'pr-verification.yml'], 'WORKFLOW_SURFACE')
     workflow_policy(parse((root / WORKFLOW).read_text()))
     original = (root / '.github/workflows/pr-verification.yml').read_bytes()
-    blob = hashlib.sha1(b'blob ' + str(len(original)).encode() + b'\\0' + original).hexdigest()
+    blob = hashlib.sha1(b'blob ' + str(len(original)).encode() + b'\0' + original).hexdigest()
     require(blob == CI_BLOB, 'FROZEN_CI')
 
 
