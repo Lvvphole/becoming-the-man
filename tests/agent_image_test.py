@@ -174,6 +174,19 @@ class ImagePolicyTests(unittest.TestCase):
             remote.resume_digest({'Docker-Content-Digest': ''})
         with self.assertRaisesRegex(policy.PolicyError, 'DIGEST_FORMAT'):
             remote.resume_digest({'Docker-Content-Digest': 'latest'})
+        layer = 'sha256:' + 'c' * 64
+        source = 'a' * 40
+        labels = {'org.opencontainers.image.source':
+                  'https://github.com/Lvvphole/becoming-the-man',
+                  'org.opencontainers.image.revision': source}
+        local = remote.image_identity(
+            'linux', 'amd64', ['NODE_VERSION=24.21.0'], labels, [layer])
+        remote.resume_digest({'Docker-Content-Digest': 'sha256:' + 'b' * 64})
+        with self.assertRaisesRegex(policy.PolicyError, 'IMAGE_EQUIVALENCE'):
+            remote.require_equivalent(local, {**local, 'diff_ids': ['sha256:' + 'd' * 64]}, source)
+        with self.assertRaisesRegex(policy.PolicyError, 'IMAGE_EQUIVALENCE'):
+            remote.require_equivalent(local, local, 'f' * 40)
+        remote.require_equivalent(local, dict(local), source)
 
     def test_mutated_checkers(self):
         source = (ROOT / 'scripts/agent_image_policy.py').read_text()
