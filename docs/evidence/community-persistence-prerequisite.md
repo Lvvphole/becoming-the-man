@@ -80,3 +80,46 @@ This change establishes the I2 claim and expiry contract only. Public signup, pr
 synchronization, Resend and DOD-01 remain incomplete. No staging or production database was
 contacted. Independent Codex review on the exact final head is required; no merge authority is
 implied.
+
+## I2 Codex review cycle 1 repair
+
+Reviewed commit: b20d8f95349c48845d20fb49a93c59d9d2b355c8. Codex returned two P2 findings; both were
+reproduced against real PostgreSQL before any code changed.
+
+Finding 1 — the claim operation captured `statement_timestamp()` once, then reused it after waits that
+the suite itself measures at over five seconds, so expiry was decided and written on a stale clock.
+Reproduced on the unrepaired function: a lease seeded to expire two seconds out, with the row lock held
+five seconds, returned `REPLAY` to a caller that acquired the lock after expiry; and a reclaim whose
+caller-supplied deadline elapsed during the same wait returned `CLAIMED` while storing
+`expires_at` already in the past (`already_expired=true`), which would let a second caller reclaim and
+execute alongside the first.
+
+Finding 2 — the concurrency helper read the caller's stdout to EOF before applying
+`PROCESS_TIMEOUT_SECONDS`, so the declared bound never applied. Reproduced with the pre-repair
+ordering against a twelve-second lock hold: the read returned after 11.75 s under a declared 2 s bound.
+After the repair the same setup raises the timeout error at 2.00 s.
+
+Repair — the operation now reads `clock_timestamp()` and re-reads it after each wait, before the value
+decides or is written: after a conflicting insert resolves, and after the row lock is acquired. A
+caller-supplied deadline that elapsed during the wait is refused with SQLSTATE 22023 on both write
+paths rather than stored. Hash discrimination still precedes the expiry branch, and `CONFLICT`,
+`IN_PROGRESS` and `REPLAY` are unchanged because none of them reads or writes the caller's deadline.
+The helper passes each statement as a `-c` argument with no stdin pipe and collects through
+`communicate(timeout=PROCESS_TIMEOUT_SECONDS)`; the existing minimum-wait assertion continues to prove
+the concurrent callers still race rather than serialize.
+
+Two regression cases cover the mechanism: a lease that expires during contention must be reclaimed
+rather than replayed, and a deadline that elapses during contention must be refused without mutating
+the stored record. Both fail on the unrepaired function and pass after it.
+
+The suite ran three times against fresh disposable PostgreSQL clusters and produced identical
+118-case summaries, apart from the two values the oracle deliberately leaves free: the observed wait
+duration and which payload wins the mixed-hash race. The observed contention waits were 5.54 s, 5.56 s
+and 5.54 s.
+
+This repair is a substantive implementation and verification-logic change. It invalidates the cycle-1
+review and requires fresh exact-head CI followed by the next permitted Codex review cycle. Locked
+Architecture section 19 and its idempotency contract, now present in the repository, were re-read
+against this implementation: duplicates map to the same logical result and return the prior result
+without a duplicate record or send, reuse of a key with a different request hash is rejected, and no
+TTL duration is specified by authority. Merge authority remains separate and is not implied.

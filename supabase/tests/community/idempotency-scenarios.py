@@ -20,10 +20,15 @@ INVALID_EXPIRY_KEY = '00000000-0000-0000-0000-0000000000b4'
 RACE_KEY = '00000000-0000-0000-0000-0000000000b5'
 LOCK_KEY = '00000000-0000-0000-0000-0000000000b6'
 MIXED_KEY = '00000000-0000-0000-0000-0000000000b7'
+EXPIRING_KEY = '00000000-0000-0000-0000-0000000000b8'
+ELAPSED_DEADLINE_KEY = '00000000-0000-0000-0000-0000000000b9'
 RACE_CALLERS = 8
 LOCK_HOLD_SECONDS = 6
 LOCK_PROBE_DELAY = 0.5
 LOCK_MIN_WAIT_SECONDS = 1.0
+CONTENTION_HOLD_SECONDS = 5
+CONTENTION_PROBE_DELAY = 0.3
+CONTENTION_LEASE_SECONDS = 2
 PROCESS_TIMEOUT_SECONDS = 30
 
 
@@ -34,9 +39,13 @@ def call(key: str, request_hash: str, expires_at: str) -> str:
             f"'{SCOPE}','{key}','{request_hash}','{expires_at}');")
 
 
-def decision(key: str, request_hash: str, expires_at: str) -> str:
+def decision_at(key: str, request_hash: str, expires_expr: str) -> str:
     return ("SET TimeZone='UTC'; SELECT decision FROM public.claim_idempotency_key("
-            f"'{SCOPE}','{key}','{request_hash}','{expires_at}');")
+            f"'{SCOPE}','{key}','{request_hash}',{expires_expr});")
+
+
+def decision(key: str, request_hash: str, expires_at: str) -> str:
+    return decision_at(key, request_hash, f"'{expires_at}'")
 
 
 def snapshot(key: str) -> str:
@@ -53,27 +62,40 @@ def seed(key: str, request_hash: str) -> str:
             f"'{PAST_CREATED}','{PAST_EXPIRES}');")
 
 
+def seed_expiring(key: str, request_hash: str, lease_seconds: int) -> str:
+    return ('INSERT INTO public.idempotency_keys'
+            '(scope,key,request_hash,status,result_reference,result_jsonb,created_at,expires_at) '
+            f"VALUES ('{SCOPE}','{key}','{request_hash}','completed','{REQUEST}','{RESULT}',"
+            f"clock_timestamp(),clock_timestamp() + interval '{lease_seconds} seconds');")
+
+
+def hold(key: str, seconds: int) -> str:
+    # Holds the row lock through a permitted no-op column update; the claim operation is not called.
+    return ('BEGIN; UPDATE public.idempotency_keys SET status=status '
+            f"WHERE scope='{SCOPE}' AND key='{key}'; SELECT pg_sleep({seconds}); COMMIT;")
+
+
 def start(container: str, role: str, statement: str) -> subprocess.Popen[str]:
-    process = subprocess.Popen(
-        ['docker', 'exec', '-i', container, 'psql', '-X', '-qAt',
-         '-v', 'ON_ERROR_STOP=1', '-v', 'VERBOSITY=verbose', '-U', role, '-d', 'postgres'],
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    process.stdin.write(statement)
-    process.stdin.close()
-    return process
+    # The statement is an argument rather than piped input so the caller starts working at spawn
+    # and no stdin pipe can block the timed read in collect().
+    return subprocess.Popen(
+        ['docker', 'exec', container, 'psql', '-X', '-qAt',
+         '-v', 'ON_ERROR_STOP=1', '-v', 'VERBOSITY=verbose', '-U', role, '-d', 'postgres',
+         '-c', statement],
+        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
 def collect(name: str, process: subprocess.Popen[str]) -> list[str]:
     try:
-        output = process.stdout.read()
-        errors = process.stderr.read()
-        code = process.wait(timeout=PROCESS_TIMEOUT_SECONDS)
+        output, errors = process.communicate(timeout=PROCESS_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         process.kill()
+        process.communicate()
         raise RuntimeError(f'{name}: concurrent caller exceeded {PROCESS_TIMEOUT_SECONDS}s; '
                            'a blocked caller is failure evidence, never success') from None
-    if code:
-        raise RuntimeError(f'{name}: concurrent caller failed exit={code}: {errors.strip()}')
+    if process.returncode:
+        raise RuntimeError(f'{name}: concurrent caller failed '
+                           f'exit={process.returncode}: {errors.strip()}')
     return [line for line in output.splitlines() if line.strip()]
 
 
@@ -215,6 +237,33 @@ def concurrent(container: str, expect) -> None:
                                f'expected one of {allowed}')
 
 
+def contention(container: str, expect) -> None:
+    # The expiry authority must be the database clock as read after waiting, not at statement start.
+    expect(container, 'lease expiring during contention fixture', 'community_test_login',
+           seed_expiring(EXPIRING_KEY, HASH_A, CONTENTION_LEASE_SECONDS))
+    holder = start(container, 'community_test_login', hold(EXPIRING_KEY, CONTENTION_HOLD_SECONDS))
+    time.sleep(CONTENTION_PROBE_DELAY)
+    name = 'lease that expires during contention is reclaimed, not replayed'
+    expect(container, name, 'community_test_login',
+           decision(EXPIRING_KEY, HASH_A, FUTURE), expected_output='CLAIMED')
+    collect(name, holder)
+
+    expect(container, 'elapsed deadline fixture', 'community_test_login',
+           seed(ELAPSED_DEADLINE_KEY, HASH_A))
+    holder = start(container, 'community_test_login',
+                   hold(ELAPSED_DEADLINE_KEY, CONTENTION_HOLD_SECONDS))
+    time.sleep(CONTENTION_PROBE_DELAY)
+    name = 'deadline that elapses during contention is refused'
+    expect(container, name, 'community_test_login',
+           decision_at(ELAPSED_DEADLINE_KEY, HASH_A,
+                       f"clock_timestamp() + interval '{CONTENTION_LEASE_SECONDS} seconds'"),
+           '22023')
+    collect(name, holder)
+    expect(container, 'refused reclaim leaves the expired record intact', 'community_test_login',
+           snapshot(ELAPSED_DEADLINE_KEY),
+           expected_output=f'{HASH_A}|completed|{REQUEST}|{RESULT}|{PAST_EXPIRES_TEXT}')
+
+
 def run(container: str, sql, expect) -> bool:
     absent = sql(container, 'postgres',
                  f"SELECT (to_regprocedure('{SIGNATURE}') IS NULL)::text;")
@@ -226,5 +275,6 @@ def run(container: str, sql, expect) -> bool:
     sequential(container, expect)
     privileges(container, expect)
     concurrent(container, expect)
+    contention(container, expect)
     print('GREEN_IDEMPOTENCY_CLAIM_CONTRACT', flush=True)
     return True

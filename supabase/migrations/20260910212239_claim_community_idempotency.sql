@@ -13,7 +13,7 @@ SECURITY INVOKER
 SET search_path = pg_catalog, public
 AS $$
 DECLARE
- v_now timestamptz := statement_timestamp();
+ v_now timestamptz := clock_timestamp();
  v_request_hash text;
  v_status text;
  v_result_reference uuid;
@@ -22,7 +22,7 @@ DECLARE
 BEGIN
  -- The caller supplies the deadline; authority defines expiry, not a duration.
  IF p_expires_at IS NULL OR p_expires_at <= v_now THEN
-  RAISE EXCEPTION 'idempotency expiry must be later than the current statement time'
+  RAISE EXCEPTION 'idempotency expiry must be later than the current database clock'
    USING ERRCODE = '22023';
  END IF;
 
@@ -31,6 +31,12 @@ BEGIN
  VALUES (p_scope,p_key,p_request_hash,'pending',NULL,NULL,v_now,p_expires_at)
  ON CONFLICT (scope,key) DO NOTHING;
  IF FOUND THEN
+  -- A conflicting inserter can hold this statement past the supplied deadline; re-read the clock.
+  v_now := clock_timestamp();
+  IF p_expires_at <= v_now THEN
+   RAISE EXCEPTION 'idempotency expiry elapsed before the claim was established'
+    USING ERRCODE = '22023';
+  END IF;
   RETURN QUERY SELECT 'CLAIMED'::text,'pending'::text,NULL::uuid,NULL::jsonb,p_expires_at;
   RETURN;
  END IF;
@@ -44,6 +50,10 @@ BEGIN
   RAISE EXCEPTION 'idempotency record disappeared during claim' USING ERRCODE = '55000';
  END IF;
 
+ -- The row lock can be held for an unbounded time, so expiry is decided on the clock read after
+ -- the wait, never on the value captured when this statement started.
+ v_now := clock_timestamp();
+
  -- Hash discrimination precedes expiry: a differing payload is rejected in every expiry state.
  IF v_request_hash IS DISTINCT FROM p_request_hash THEN
   RETURN QUERY SELECT 'CONFLICT'::text,NULL::text,NULL::uuid,NULL::jsonb,NULL::timestamptz;
@@ -51,6 +61,10 @@ BEGIN
  END IF;
 
  IF v_expires_at <= v_now THEN
+  IF p_expires_at <= v_now THEN
+   RAISE EXCEPTION 'idempotency expiry elapsed before the reclaim was established'
+    USING ERRCODE = '22023';
+  END IF;
   UPDATE public.idempotency_keys k
    SET status='pending',result_reference=NULL,result_jsonb=NULL,
     created_at=v_now,expires_at=p_expires_at
