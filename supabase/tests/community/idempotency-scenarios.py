@@ -21,7 +21,7 @@ RACE_KEY = '00000000-0000-0000-0000-0000000000b5'
 LOCK_KEY = '00000000-0000-0000-0000-0000000000b6'
 MIXED_KEY = '00000000-0000-0000-0000-0000000000b7'
 EXPIRING_KEY = '00000000-0000-0000-0000-0000000000b8'
-ELAPSED_DEADLINE_KEY = '00000000-0000-0000-0000-0000000000b9'
+EXPIRED_PENDING_KEY = '00000000-0000-0000-0000-0000000000b9'
 RACE_CALLERS = 8
 LOCK_HOLD_SECONDS = 6
 LOCK_PROBE_DELAY = 0.5
@@ -60,6 +60,18 @@ def seed(key: str, request_hash: str) -> str:
             '(scope,key,request_hash,status,result_reference,result_jsonb,created_at,expires_at) '
             f"VALUES ('{SCOPE}','{key}','{request_hash}','completed','{REQUEST}','{RESULT}',"
             f"'{PAST_CREATED}','{PAST_EXPIRES}');")
+
+
+def seed_pending(key: str, request_hash: str) -> str:
+    return ('INSERT INTO public.idempotency_keys'
+            '(scope,key,request_hash,status,result_reference,result_jsonb,created_at,expires_at) '
+            f"VALUES ('{SCOPE}','{key}','{request_hash}','pending',NULL,NULL,"
+            f"'{PAST_CREATED}','{PAST_EXPIRES}');")
+
+
+def stored_status(key: str) -> str:
+    return ('SELECT status FROM public.idempotency_keys '
+            f"WHERE scope='{SCOPE}' AND key='{key}';")
 
 
 def seed_expiring(key: str, request_hash: str, lease_seconds: int) -> str:
@@ -127,15 +139,12 @@ def sequential(container: str, expect) -> None:
            snapshot(CLAIM_KEY),
            expected_output=f'{HASH_A}|completed|{REQUEST}|{RESULT}|{FUTURE_TEXT}')
     expect(container, 'expired record fixture', 'community_test_login', seed(RECLAIM_KEY, HASH_A))
-    expect(container, 'expired same hash reclaims execution', 'community_test_login',
-           call(RECLAIM_KEY, HASH_A, FUTURE), expected_output=f'CLAIMED|pending|||{FUTURE_TEXT}')
-    expect(container, 'reclaim clears the cached result and stores the supplied expiry',
-           'community_test_login', snapshot(RECLAIM_KEY),
-           expected_output=f'{HASH_A}|pending|||{FUTURE_TEXT}')
-    expect(container, 'reclaim resets the creation deadline', 'community_test_login',
-           f"SELECT (created_at > '{PAST_EXPIRES}'::timestamptz)::text "
-           f"FROM public.idempotency_keys WHERE scope='{SCOPE}' AND key='{RECLAIM_KEY}';",
-           expected_output='true')
+    expect(container, 'expired same hash replays instead of reclaiming', 'community_test_login',
+           call(RECLAIM_KEY, HASH_A, FUTURE),
+           expected_output=f'REPLAY|completed|{REQUEST}|{RESULT}|{PAST_EXPIRES_TEXT}')
+    expect(container, 'an expired record is never mutated by a duplicate', 'community_test_login',
+           snapshot(RECLAIM_KEY),
+           expected_output=f'{HASH_A}|completed|{REQUEST}|{RESULT}|{PAST_EXPIRES_TEXT}')
     expect(container, 'expired conflict fixture', 'community_test_login',
            seed(EXPIRED_CONFLICT_KEY, HASH_A))
     expect(container, 'different request hash is rejected after expiry', 'community_test_login',
@@ -171,17 +180,13 @@ def privileges(container: str, expect) -> None:
            'FROM information_schema.column_privileges '
            "WHERE grantee='community_runtime' AND table_schema='public' "
            "AND table_name='idempotency_keys' AND privilege_type='UPDATE';",
-           expected_output='created_at,expires_at,result_jsonb,result_reference,status')
-    for column in ('scope', 'key', 'request_hash'):
+           expected_output='result_jsonb,result_reference,status')
+    # created_at and expires_at join the immutable set: with no reclaim, nothing the runtime may do
+    # can move a lease, so it is granted no privilege to try.
+    for column in ('scope', 'key', 'request_hash', 'created_at', 'expires_at'):
         expect(container, f'identity column idempotency_keys.{column} stays immutable',
                'community_test_login',
                f'UPDATE public.idempotency_keys SET {column}={column};', '42501')
-    expect(container, 'runtime may set the approved expiry timestamps', 'community_test_login',
-           'UPDATE public.idempotency_keys SET created_at=created_at,expires_at=expires_at '
-           f"WHERE scope='{SCOPE}' AND key='{CLAIM_KEY}';")
-    expect(container, 'expiry must still follow creation', 'community_test_login',
-           f"UPDATE public.idempotency_keys SET expires_at='{PAST_EXPIRES}' "
-           f"WHERE scope='{SCOPE}' AND key='{CLAIM_KEY}';", '23514')
 
 
 def concurrent(container: str, expect) -> None:
@@ -238,30 +243,32 @@ def concurrent(container: str, expect) -> None:
 
 
 def contention(container: str, expect) -> None:
-    # The expiry authority must be the database clock as read after waiting, not at statement start.
+    # Expiry never transfers execution ownership. A caller that waits out the row lock and finds the
+    # lease dead must still refuse to own execution, because the previous owner may still be running
+    # and nothing in the completion path can tell a stale owner from a replacement.
     expect(container, 'lease expiring during contention fixture', 'community_test_login',
            seed_expiring(EXPIRING_KEY, HASH_A, CONTENTION_LEASE_SECONDS))
     holder = start(container, 'community_test_login', hold(EXPIRING_KEY, CONTENTION_HOLD_SECONDS))
     time.sleep(CONTENTION_PROBE_DELAY)
-    name = 'lease that expires during contention is reclaimed, not replayed'
+    name = 'lease that expires during contention is never reclaimed'
     expect(container, name, 'community_test_login',
-           decision(EXPIRING_KEY, HASH_A, FUTURE), expected_output='CLAIMED')
+           decision(EXPIRING_KEY, HASH_A, FUTURE), expected_output='REPLAY')
     collect(name, holder)
+    expect(container, 'expired lease keeps its stored completion', 'community_test_login',
+           stored_status(EXPIRING_KEY), expected_output='completed')
 
-    expect(container, 'elapsed deadline fixture', 'community_test_login',
-           seed(ELAPSED_DEADLINE_KEY, HASH_A))
+    expect(container, 'expired pending fixture', 'community_test_login',
+           seed_pending(EXPIRED_PENDING_KEY, HASH_A))
     holder = start(container, 'community_test_login',
-                   hold(ELAPSED_DEADLINE_KEY, CONTENTION_HOLD_SECONDS))
+                   hold(EXPIRED_PENDING_KEY, CONTENTION_HOLD_SECONDS))
     time.sleep(CONTENTION_PROBE_DELAY)
-    name = 'deadline that elapses during contention is refused'
+    name = 'expired pending record under contention never grants ownership'
     expect(container, name, 'community_test_login',
-           decision_at(ELAPSED_DEADLINE_KEY, HASH_A,
-                       f"clock_timestamp() + interval '{CONTENTION_LEASE_SECONDS} seconds'"),
-           '22023')
+           decision(EXPIRED_PENDING_KEY, HASH_A, FUTURE), expected_output='IN_PROGRESS')
     collect(name, holder)
-    expect(container, 'refused reclaim leaves the expired record intact', 'community_test_login',
-           snapshot(ELAPSED_DEADLINE_KEY),
-           expected_output=f'{HASH_A}|completed|{REQUEST}|{RESULT}|{PAST_EXPIRES_TEXT}')
+    expect(container, 'expired pending record is left untouched', 'community_test_login',
+           snapshot(EXPIRED_PENDING_KEY),
+           expected_output=f'{HASH_A}|pending|||{PAST_EXPIRES_TEXT}')
 
 
 def run(container: str, sql, expect) -> bool:

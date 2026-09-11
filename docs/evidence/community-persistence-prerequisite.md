@@ -123,3 +123,53 @@ Architecture section 19 and its idempotency contract, now present in the reposit
 against this implementation: duplicates map to the same logical result and return the prior result
 without a duplicate record or send, reuse of a key with a different request hash is rejected, and no
 TTL duration is specified by authority. Merge authority remains separate and is not implied.
+
+## Codex cycle 2 — expiry reclaim removed (reduction, not repair)
+
+Cycle 2 reported one actionable P2: a reclaimed lease carries no fencing token, so the previous owner
+can keep running, complete through the unconditional completion update, and overwrite a replacement
+owner's `pending` state while both perform the duplicate-sensitive work.
+
+Reproduced before changing anything. A record seeded to expire two seconds out, with its row lock held
+five seconds by another transaction, returned `CLAIMED` to the caller that acquired the lock after
+expiry — a second owner elected for work the first may still be executing.
+
+The finding cannot be closed inside this increment. Both owners issue byte-identical completion
+updates, so the database cannot distinguish them unless the caller carries a fence; any real fix
+changes the completion call signature, which this increment does not deliver. Under Bug Fix & Repair,
+a new defect class arising from the same mechanism as the previous cycle's finding — lease expiry —
+requires `STOP -> REDUCE OR REDESIGN -> VERIFY`. This is the reduction.
+
+The expiry branch, its elapsed-deadline error path, and the now-dead post-lock clock re-read are
+removed, along with the `GRANT UPDATE (created_at,expires_at)` that existed only to let a reclaim move
+a lease. An existing record now decides on stored status alone: `CONFLICT` on a differing hash in any
+expiry state, otherwise `IN_PROGRESS` while pending, otherwise `REPLAY`. Expiry is stored and reported,
+never an ownership trigger. The entry validation of the caller's deadline and the clock re-read after a
+conflicting insert are retained, so the cycle-1 repair remains load-bearing on the path that still
+writes that deadline.
+
+Locked Architecture section 19 requires that `idempotency_keys` store expiry, that reuse with a
+differing request hash be rejected, and that a duplicate return the prior result with no duplicate
+record or send. It does not require that an expired record transfer execution ownership. Reclaim was an
+elaboration this increment introduced, and unfenced it permits the duplicate send that section 19
+forbids, so removing it moves the implementation toward authority rather than away from it.
+
+Accepted trade-off, recorded deliberately: an owner that dies leaves its key returning `IN_PROGRESS`
+until the row is cleared. The blast radius is a single `request_id` — a resubmission carries a new key.
+Safety is preserved; liveness for a stuck key is deferred to the increment that delivers completion,
+which is where a fencing token belongs. Reclaim plus fencing is a prerequisite for that increment.
+
+Two contention cases now assert that ownership is never transferred: an expiring completed lease under
+contention must return `REPLAY` and keep its stored completion, and an expired pending record under
+contention must return `IN_PROGRESS` and be left untouched. The first fails on the pre-reduction
+function, returning `CLAIMED`, and passes after it. Runtime privilege narrows accordingly:
+`created_at` and `expires_at` join `scope`, `key` and `request_hash` as columns the runtime cannot
+update, leaving exactly `status,result_reference,result_jsonb`.
+
+The suite ran twice against fresh disposable PostgreSQL clusters with identical results, and the
+minimum-wait assertion continued to observe a real race at 5.55 s both times, confirming the callers
+still contend rather than serialize.
+
+This is a substantive implementation and verification-logic change. It invalidates the cycle-2 review
+and requires fresh exact-head CI followed by Codex cycle 3, the last permitted cycle. Merge authority
+remains separate and is not implied.

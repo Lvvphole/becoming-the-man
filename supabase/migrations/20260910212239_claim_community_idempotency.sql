@@ -1,9 +1,9 @@
 -- EXC-DOD01-DB-PREREQ-01: atomic idempotency claim for the audience prerequisite.
 -- Run as the migration owner. Runtime must never own these objects.
 BEGIN;
--- The claim operation resets expiry state on a same-hash reclaim under the invoker's own rights.
-GRANT UPDATE (created_at,expires_at) ON public.idempotency_keys TO community_runtime;
-
+-- Expiry is stored and reported; it never transfers execution ownership. A reclaim would hand a
+-- second caller a lease the first may still be executing under, and the completion path cannot
+-- distinguish them, so the runtime is deliberately given no privilege to reset expiry state.
 CREATE FUNCTION public.claim_idempotency_key(
  p_scope text, p_key uuid, p_request_hash text, p_expires_at timestamptz)
 RETURNS TABLE (decision text, status text, result_reference uuid,
@@ -50,29 +50,16 @@ BEGIN
   RAISE EXCEPTION 'idempotency record disappeared during claim' USING ERRCODE = '55000';
  END IF;
 
- -- The row lock can be held for an unbounded time, so expiry is decided on the clock read after
- -- the wait, never on the value captured when this statement started.
- v_now := clock_timestamp();
-
- -- Hash discrimination precedes expiry: a differing payload is rejected in every expiry state.
+ -- Hash discrimination precedes every other outcome: a differing payload is rejected in every
+ -- expiry state.
  IF v_request_hash IS DISTINCT FROM p_request_hash THEN
   RETURN QUERY SELECT 'CONFLICT'::text,NULL::text,NULL::uuid,NULL::jsonb,NULL::timestamptz;
   RETURN;
  END IF;
 
- IF v_expires_at <= v_now THEN
-  IF p_expires_at <= v_now THEN
-   RAISE EXCEPTION 'idempotency expiry elapsed before the reclaim was established'
-    USING ERRCODE = '22023';
-  END IF;
-  UPDATE public.idempotency_keys k
-   SET status='pending',result_reference=NULL,result_jsonb=NULL,
-    created_at=v_now,expires_at=p_expires_at
-   WHERE k.scope = p_scope AND k.key = p_key;
-  RETURN QUERY SELECT 'CLAIMED'::text,'pending'::text,NULL::uuid,NULL::jsonb,p_expires_at;
-  RETURN;
- END IF;
-
+ -- An existing record decides on its stored status alone. An expired lease is never reclaimed:
+ -- the prior owner may still be executing, and because completion is an unconditional update it
+ -- could overwrite a replacement owner's state, letting both perform the duplicate-sensitive work.
  IF v_status = 'pending' THEN
   RETURN QUERY SELECT 'IN_PROGRESS'::text,v_status,v_result_reference,v_result_jsonb,v_expires_at;
  ELSE
