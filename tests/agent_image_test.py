@@ -160,13 +160,20 @@ class ImagePolicyTests(unittest.TestCase):
             self.assertEqual(remote.rejected_identity(result, 'SourceRepositoryDigest'), expected)
 
     def test_commit_tag_is_write_once(self):
-        remote.tag_lookup_status(404)
-        with self.assertRaisesRegex(policy.PolicyError, 'COMMIT_TAG_ALREADY_EXISTS'):
-            remote.tag_lookup_status(200)
+        self.assertEqual(remote.tag_lookup_status(404), 'absent')
+        self.assertEqual(remote.tag_lookup_status(200), 'present')
         for status in [0, 401, 403, 429, 500, 503]:
             with self.subTest(status=status):
                 with self.assertRaisesRegex(policy.PolicyError, 'TAG_LOOKUP_FAILED'):
                     remote.tag_lookup_status(status)
+        digest = 'sha256:' + 'a' * 64
+        self.assertEqual(remote.resume_digest({'Docker-Content-Digest': digest}), digest)
+        with self.assertRaisesRegex(policy.PolicyError, 'TAG_LOOKUP_FAILED'):
+            remote.resume_digest({})
+        with self.assertRaisesRegex(policy.PolicyError, 'TAG_LOOKUP_FAILED'):
+            remote.resume_digest({'Docker-Content-Digest': ''})
+        with self.assertRaisesRegex(policy.PolicyError, 'DIGEST_FORMAT'):
+            remote.resume_digest({'Docker-Content-Digest': 'latest'})
 
     def test_mutated_checkers(self):
         source = (ROOT / 'scripts/agent_image_policy.py').read_text()
