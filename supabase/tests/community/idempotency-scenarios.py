@@ -24,12 +24,12 @@ EXPIRING_KEY = '00000000-0000-0000-0000-0000000000b8'
 EXPIRED_PENDING_KEY = '00000000-0000-0000-0000-0000000000b9'
 RACE_CALLERS = 8
 LOCK_HOLD_SECONDS = 6
-LOCK_PROBE_DELAY = 0.5
 LOCK_MIN_WAIT_SECONDS = 1.0
 CONTENTION_HOLD_SECONDS = 5
-CONTENTION_PROBE_DELAY = 0.3
 CONTENTION_LEASE_SECONDS = 2
 PROCESS_TIMEOUT_SECONDS = 30
+HOLDER_READY_TIMEOUT_SECONDS = 15
+HOLDER_POLL_INTERVAL = 0.05
 
 
 def call(key: str, request_hash: str, expires_at: str) -> str:
@@ -85,6 +85,22 @@ def hold(key: str, seconds: int) -> str:
     # Holds the row lock through a permitted no-op column update; the claim operation is not called.
     return ('BEGIN; UPDATE public.idempotency_keys SET status=status '
             f"WHERE scope='{SCOPE}' AND key='{key}'; SELECT pg_sleep({seconds}); COMMIT;")
+
+
+def await_holder(container: str, sql) -> None:
+    # Every holder statement runs its UPDATE or claim before pg_sleep, inside one transaction, so an
+    # active pg_sleep in another backend proves the row lock is already held. A fixed delay proves
+    # nothing: on a loaded runner the probe could run first and pass without exercising contention,
+    # letting a faulty implementation through.
+    probe = ("SELECT count(*)::text FROM pg_stat_activity "
+             "WHERE state='active' AND pid <> pg_backend_pid() AND query LIKE '%pg_sleep%';")
+    deadline = time.monotonic() + HOLDER_READY_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        result = sql(container, 'community_test_login', probe)
+        if result.returncode == 0 and result.stdout.strip() not in ('', '0'):
+            return
+        time.sleep(HOLDER_POLL_INTERVAL)
+    raise RuntimeError('holder never acquired the row lock; contention was not exercised')
 
 
 def start(container: str, role: str, statement: str) -> subprocess.Popen[str]:
@@ -189,7 +205,7 @@ def privileges(container: str, expect) -> None:
                f'UPDATE public.idempotency_keys SET {column}={column};', '42501')
 
 
-def concurrent(container: str, expect) -> None:
+def concurrent(container: str, sql, expect) -> None:
     name = 'concurrent same-hash callers elect exactly one owner'
     processes = [start(container, 'community_test_login', decision(RACE_KEY, HASH_A, FUTURE))
                  for _ in range(RACE_CALLERS)]
@@ -205,7 +221,7 @@ def concurrent(container: str, expect) -> None:
     holder = start(container, 'community_test_login',
                    'BEGIN; ' + decision(LOCK_KEY, HASH_A, FUTURE)
                    + f' SELECT pg_sleep({LOCK_HOLD_SECONDS}); COMMIT;')
-    time.sleep(LOCK_PROBE_DELAY)
+    await_holder(container, sql)
     started = time.monotonic()
     probe = start(container, 'community_test_login', decision(LOCK_KEY, HASH_A, FUTURE))
     probe_decisions = collect(name, probe)
@@ -242,14 +258,14 @@ def concurrent(container: str, expect) -> None:
                                f'expected one of {allowed}')
 
 
-def contention(container: str, expect) -> None:
+def contention(container: str, sql, expect) -> None:
     # Expiry never transfers execution ownership. A caller that waits out the row lock and finds the
     # lease dead must still refuse to own execution, because the previous owner may still be running
     # and nothing in the completion path can tell a stale owner from a replacement.
     expect(container, 'lease expiring during contention fixture', 'community_test_login',
            seed_expiring(EXPIRING_KEY, HASH_A, CONTENTION_LEASE_SECONDS))
     holder = start(container, 'community_test_login', hold(EXPIRING_KEY, CONTENTION_HOLD_SECONDS))
-    time.sleep(CONTENTION_PROBE_DELAY)
+    await_holder(container, sql)
     name = 'lease that expires during contention is never reclaimed'
     expect(container, name, 'community_test_login',
            decision(EXPIRING_KEY, HASH_A, FUTURE), expected_output='REPLAY')
@@ -261,7 +277,7 @@ def contention(container: str, expect) -> None:
            seed_pending(EXPIRED_PENDING_KEY, HASH_A))
     holder = start(container, 'community_test_login',
                    hold(EXPIRED_PENDING_KEY, CONTENTION_HOLD_SECONDS))
-    time.sleep(CONTENTION_PROBE_DELAY)
+    await_holder(container, sql)
     name = 'expired pending record under contention never grants ownership'
     expect(container, name, 'community_test_login',
            decision(EXPIRED_PENDING_KEY, HASH_A, FUTURE), expected_output='IN_PROGRESS')
@@ -281,7 +297,7 @@ def run(container: str, sql, expect) -> bool:
         return False
     sequential(container, expect)
     privileges(container, expect)
-    concurrent(container, expect)
-    contention(container, expect)
+    concurrent(container, sql, expect)
+    contention(container, sql, expect)
     print('GREEN_IDEMPOTENCY_CLAIM_CONTRACT', flush=True)
     return True

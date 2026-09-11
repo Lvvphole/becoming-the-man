@@ -136,19 +136,48 @@ describe("supabase community repository", () => {
     expect(calls[0].body?.p_scope).toBe("subscribe");
   });
 
-  it.each(["IN_PROGRESS", "REPLAY"])(
-    "treats a %s decision as a duplicate and writes nothing further",
-    async (decision) => {
-      const { calls, fetchImpl } = harness([
-        { match: "/rpc/claim_idempotency_key", json: [{ decision }] },
-      ]);
+  it("treats a REPLAY decision as a duplicate and writes nothing further", async () => {
+    const { calls, fetchImpl } = harness([
+      { match: "/rpc/claim_idempotency_key", json: [{ decision: "REPLAY" }] },
+    ]);
 
-      const result = await repository(fetchImpl).persist(INPUT);
+    const result = await repository(fetchImpl).persist(INPUT);
 
-      expect(result).toEqual({ ok: true, duplicate: true });
-      expect(calls).toHaveLength(1);
-    },
-  );
+    expect(result).toEqual({ ok: true, duplicate: true });
+    expect(calls).toHaveLength(1);
+  });
+
+  it("refuses an IN_PROGRESS claim rather than reporting it as persisted", async () => {
+    // A claim that never completed — a concurrent caller mid-flight, or an earlier attempt that
+    // failed between its writes. There is no stored result, so this is not a duplicate.
+    const { calls, fetchImpl } = harness([
+      { match: "/rpc/claim_idempotency_key", json: [{ decision: "IN_PROGRESS" }] },
+    ]);
+
+    const result = await repository(fetchImpl).persist(INPUT);
+
+    expect(result).toEqual({ ok: false, code: COMMUNITY_ERROR_CODE.requestInProgress });
+    expect(calls).toHaveLength(1);
+  });
+
+  it("does not report a subscription when a partial write is retried on the same request id", async () => {
+    // First attempt claims the key, writes the subscriber, then fails on email_requests.
+    const first = harness([
+      { match: "/rpc/claim_idempotency_key", json: [{ decision: "CLAIMED" }] },
+      { match: "/subscribers", json: [{ id: "sub-1" }] },
+      { match: "/email_requests", status: 500, json: {} },
+    ]);
+    const firstResult = await repository(first.fetchImpl).persist(INPUT);
+    expect(firstResult).toEqual({ ok: false, code: COMMUNITY_ERROR_CODE.storageUnavailable });
+
+    // The abandoned claim is still pending, so a retry on the same id must not claim success.
+    const retry = harness([
+      { match: "/rpc/claim_idempotency_key", json: [{ decision: "IN_PROGRESS" }] },
+    ]);
+    const retryResult = await repository(retry.fetchImpl).persist(INPUT);
+
+    expect(retryResult).toEqual({ ok: false, code: COMMUNITY_ERROR_CODE.requestInProgress });
+  });
 
   it("reports a differing payload under the same key as a conflict", async () => {
     const { calls, fetchImpl } = harness([
@@ -213,14 +242,44 @@ describe("supabase community repository", () => {
       { match: "/subscribers", json: [{}] },
     ]);
 
-    await repository(fetchImpl).recordProviderOutcome({
+    const result = await repository(fetchImpl).recordProviderOutcome({
       subscriberId: "sub-1",
       emailRequestId: "req-1",
       outcome: "synced",
     });
 
+    expect(result).toEqual({ ok: true });
     expect(calls).toHaveLength(2);
     expect(calls[0].body).toMatchObject({ delivery_status: "synced", error_code: null });
     expect(calls[1].body).toMatchObject({ audience_state: "subscribed" });
+  });
+
+  it("reports failure when the audience-state transition does not land", async () => {
+    const { fetchImpl } = harness([
+      { match: "/email_requests", json: [{}] },
+      { match: "/subscribers", status: 503, json: {} },
+    ]);
+
+    const result = await repository(fetchImpl).recordProviderOutcome({
+      subscriberId: "sub-1",
+      emailRequestId: "req-1",
+      outcome: "synced",
+    });
+
+    // Silently returning ok here is what let a stale `pending` row be reported as subscribed.
+    expect(result).toEqual({ ok: false });
+  });
+
+  it("reports failure when the delivery-status write does not land", async () => {
+    const { calls, fetchImpl } = harness([{ match: "/email_requests", status: 500, json: {} }]);
+
+    const result = await repository(fetchImpl).recordProviderOutcome({
+      subscriberId: "sub-1",
+      emailRequestId: "req-1",
+      outcome: "synced",
+    });
+
+    expect(result).toEqual({ ok: false });
+    expect(calls).toHaveLength(1);
   });
 });

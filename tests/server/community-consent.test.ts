@@ -48,6 +48,7 @@ describe("community subscription consent boundary", () => {
       },
       async recordProviderOutcome() {
         effects.push("record");
+        return { ok: true };
       },
     };
     const contactProvider: CommunityContactProvider = {
@@ -122,7 +123,9 @@ describe("community subscription consent boundary", () => {
   });
 
   it("reports a failed provider sync as pending rather than a reachable subscription", async () => {
-    const recordProviderOutcome = vi.fn<CommunitySubscriptionRepository["recordProviderOutcome"]>();
+    const recordProviderOutcome = vi
+      .fn<CommunitySubscriptionRepository["recordProviderOutcome"]>()
+      .mockResolvedValue({ ok: true });
 
     const result = await subscribeToCommunity(
       {
@@ -148,6 +151,36 @@ describe("community subscription consent boundary", () => {
     );
   });
 
+  it("reports pending when the provider synced but the state change was not recorded", async () => {
+    // The database is authoritative for audience membership: an unrecorded transition leaves the
+    // subscriber pending there, so the visitor must not be told the signup completed.
+    const result = await subscribeToCommunity(
+      {
+        requestId: "0a4f5b2e-4444-4000-8000-000000000006",
+        email: "reader@example.com",
+        firstName: "Reader",
+        marketingConsent: true,
+      },
+      {
+        repository: {
+          async persist() {
+            return persistedOk();
+          },
+          async recordProviderOutcome() {
+            return { ok: false };
+          },
+        },
+        contactProvider: {
+          async syncContact() {
+            return { ok: true };
+          },
+        },
+      },
+    );
+
+    expect(result.status).toBe("pending_provider");
+  });
+
   it("does not persist when storage is unavailable", async () => {
     const syncContact = vi.fn<CommunityContactProvider["syncContact"]>();
 
@@ -163,7 +196,9 @@ describe("community subscription consent boundary", () => {
           async persist() {
             return { ok: false, code: COMMUNITY_ERROR_CODE.storageUnavailable };
           },
-          async recordProviderOutcome() {},
+          async recordProviderOutcome() {
+            return { ok: true };
+          },
         },
         contactProvider: { syncContact },
       },

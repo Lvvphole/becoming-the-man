@@ -23,6 +23,8 @@ const MESSAGES: Readonly<Record<CommunityErrorCode, string>> = {
   [COMMUNITY_ERROR_CODE.firstNameRequired]: "Enter your first name.",
   [COMMUNITY_ERROR_CODE.fieldTooLong]: "That entry is too long.",
   [COMMUNITY_ERROR_CODE.requestConflict]: "That request was already used with different details.",
+  [COMMUNITY_ERROR_CODE.requestInProgress]:
+    "This signup is still being processed. Please try again in a moment.",
   [COMMUNITY_ERROR_CODE.storageUnavailable]: "We could not save your request. Please try again.",
   [COMMUNITY_ERROR_CODE.providerUnavailable]: "We could not complete signup. Please try again.",
   [COMMUNITY_ERROR_CODE.rejected]: "We could not process that submission.",
@@ -35,9 +37,10 @@ function statusMessage(state: FormState): string {
     case "subscribed":
       return "You are on the list. Watch your inbox.";
     // Consent is saved but the provider has not accepted the contact, so this must not be
-    // presented as a reachable subscription (Architecture section 19).
+    // presented as a reachable subscription (Architecture section 19). No automatic retry exists
+    // yet, so the message offers the action the visitor can actually take instead of promising one.
     case "pending_provider":
-      return "We saved your request but could not finish signup. We will retry shortly.";
+      return "We saved your request but could not finish signup. Please try again in a few minutes.";
     case "error":
       return MESSAGES[state.code];
     default:
@@ -53,13 +56,15 @@ export function CommunitySignupForm({
   const [state, setState] = useState<FormState>({ kind: "idle" });
   const [requestId, setRequestId] = useState("");
 
-  // Generated after hydration so the server-rendered markup stays deterministic. The endpoint
-  // creates an id when this is absent, so a no-script submission still works.
-  useEffect(() => {
+  function rotateRequestId() {
     if (typeof globalThis.crypto?.randomUUID === "function") {
       setRequestId(globalThis.crypto.randomUUID());
     }
-  }, []);
+  }
+
+  // Generated after hydration so the server-rendered markup stays deterministic. The endpoint
+  // creates an id when this is absent, so a no-script submission still works.
+  useEffect(rotateRequestId, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -90,6 +95,10 @@ export function CommunitySignupForm({
       analytics.capture(
         createSignupAnalyticsEvent(SIGNUP_EVENT.error, { error_code: body.code }),
       );
+      // An attempt that failed partway leaves its claim unfinished, and with no reclaim path that
+      // key would answer IN_PROGRESS forever. Retrying is a new logical request, so it gets a new
+      // id rather than colliding with the abandoned claim.
+      rotateRequestId();
       return;
     }
 
@@ -98,10 +107,8 @@ export function CommunitySignupForm({
       createSignupAnalyticsEvent(SIGNUP_EVENT.complete, { outcome: body.status }),
     );
     form.reset();
-    if (typeof globalThis.crypto?.randomUUID === "function") {
-      // A new logical request for the next submission, so a later signup is not treated as a replay.
-      setRequestId(globalThis.crypto.randomUUID());
-    }
+    // A new logical request for the next submission, so a later signup is not treated as a replay.
+    rotateRequestId();
   }
 
   const submitting = state.kind === "submitting";

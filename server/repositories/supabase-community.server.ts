@@ -10,6 +10,7 @@ import {
 import type {
   CommunityPersistResult,
   CommunityProviderOutcomeInput,
+  CommunityProviderOutcomeResult,
   CommunitySubscriptionInput,
   CommunitySubscriptionRepository,
 } from "../domain/community-subscription";
@@ -147,7 +148,7 @@ export function createSupabaseCommunityRepository(
   async function claim(
     connection: Connection,
     input: CommunitySubscriptionInput,
-  ): Promise<"claimed" | "duplicate" | "conflict" | "unavailable"> {
+  ): Promise<"claimed" | "replay" | "in_progress" | "conflict" | "unavailable"> {
     const response = await send(connection, "/rest/v1/rpc/claim_idempotency_key", {
       method: "POST",
       body: JSON.stringify({
@@ -166,9 +167,15 @@ export function createSupabaseCommunityRepository(
     if (decision === "CLAIMED") {
       return "claimed";
     }
-    // IN_PROGRESS and REPLAY both mean this logical request is already owned or already answered.
-    if (decision === "IN_PROGRESS" || decision === "REPLAY") {
-      return "duplicate";
+    // REPLAY means the prior attempt finished and its result is stored, so it is safe to report.
+    if (decision === "REPLAY") {
+      return "replay";
+    }
+    // IN_PROGRESS means a claim exists that never completed — another caller is mid-flight, or an
+    // earlier attempt failed partway through its writes. Either way there is no result to return
+    // and the work is not done, so it must never be reported as a finished subscription.
+    if (decision === "IN_PROGRESS") {
+      return "in_progress";
     }
     if (decision === "CONFLICT") {
       return "conflict";
@@ -268,8 +275,14 @@ export function createSupabaseCommunityRepository(
       if (decision === "unavailable") {
         return { ok: false, code: COMMUNITY_ERROR_CODE.storageUnavailable };
       }
-      if (decision === "duplicate") {
+      // Only a completed prior attempt has a result to stand in for this one.
+      if (decision === "replay") {
         return { ok: true, duplicate: true };
+      }
+      // An unfinished claim is not a subscription. Reporting it as one would tell a visitor they
+      // are on the list when the consent grant or the provider sync may never have happened.
+      if (decision === "in_progress") {
+        return { ok: false, code: COMMUNITY_ERROR_CODE.requestInProgress };
       }
 
       const timestamp = now().toISOString();
@@ -324,16 +337,18 @@ export function createSupabaseCommunityRepository(
       return { ok: true, duplicate: false, subscriberId, emailRequestId };
     },
 
-    async recordProviderOutcome(input: CommunityProviderOutcomeInput): Promise<void> {
+    async recordProviderOutcome(
+      input: CommunityProviderOutcomeInput,
+    ): Promise<CommunityProviderOutcomeResult> {
       const connection = resolveConnection(env, fetchImpl);
       if (!connection) {
-        return;
+        return { ok: false };
       }
 
       const timestamp = now().toISOString();
       const synced = input.outcome === "synced";
 
-      await send(connection, "/rest/v1/email_requests", {
+      const request = await send(connection, "/rest/v1/email_requests", {
         method: "PATCH",
         searchParams: { id: `eq.${input.emailRequestId}` },
         body: JSON.stringify({
@@ -343,18 +358,29 @@ export function createSupabaseCommunityRepository(
         }),
       });
 
+      if (!request?.ok) {
+        return { ok: false };
+      }
+
       // Only a contact the provider accepted is reachable, so audience_state advances on success
       // alone. A failed sync leaves the subscriber pending for a retry to pick up.
-      if (synced) {
-        await send(connection, "/rest/v1/subscribers", {
-          method: "PATCH",
-          searchParams: { id: `eq.${input.subscriberId}` },
-          body: JSON.stringify({
-            audience_state: AUDIENCE_STATE.subscribed,
-            updated_at: timestamp,
-          }),
-        });
+      if (!synced) {
+        return { ok: true };
       }
+
+      const subscriber = await send(connection, "/rest/v1/subscribers", {
+        method: "PATCH",
+        searchParams: { id: `eq.${input.subscriberId}` },
+        body: JSON.stringify({
+          audience_state: AUDIENCE_STATE.subscribed,
+          updated_at: timestamp,
+        }),
+      });
+
+      // The database is authoritative for audience membership. If this transition did not land the
+      // subscriber is still pending there and would be skipped by later audience operations, so the
+      // caller must not be told the signup completed.
+      return { ok: Boolean(subscriber?.ok) };
     },
   };
 }

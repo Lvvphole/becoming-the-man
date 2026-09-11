@@ -30,6 +30,7 @@ export const COMMUNITY_ERROR_CODE = {
   firstNameRequired: "first_name_required",
   fieldTooLong: "field_too_long",
   requestConflict: "request_conflict",
+  requestInProgress: "request_in_progress",
   storageUnavailable: "storage_unavailable",
   providerUnavailable: "provider_unavailable",
   rejected: "rejected",

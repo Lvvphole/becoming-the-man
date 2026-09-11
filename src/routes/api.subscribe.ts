@@ -23,6 +23,7 @@ const STATUS_BY_CODE: Readonly<Record<CommunityErrorCode, number>> = {
   [COMMUNITY_ERROR_CODE.firstNameRequired]: 422,
   [COMMUNITY_ERROR_CODE.fieldTooLong]: 422,
   [COMMUNITY_ERROR_CODE.requestConflict]: 409,
+  [COMMUNITY_ERROR_CODE.requestInProgress]: 409,
   [COMMUNITY_ERROR_CODE.storageUnavailable]: 503,
   [COMMUNITY_ERROR_CODE.providerUnavailable]: 503,
   [COMMUNITY_ERROR_CODE.rejected]: 400,
