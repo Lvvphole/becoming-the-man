@@ -108,17 +108,33 @@ def success(argv: list[str]) -> bytes:
     return result.stdout
 
 
-def tag_lookup_status(status: int) -> None:
-    """Only an authoritative not-found response permits first publication."""
+def tag_lookup_status(status: int) -> str:
+    """Classify an authenticated tag lookup; only 200 and 404 are authoritative."""
     if status == 404:
-        return
+        return 'absent'
     if status == 200:
-        raise PolicyError('COMMIT_TAG_ALREADY_EXISTS')
+        return 'present'
     raise PolicyError('TAG_LOOKUP_FAILED')
 
 
-def require_commit_tag_absent() -> None:
-    """Fail closed before push so a commit-addressable tag is never rewritten."""
+def resume_digest(headers) -> str:
+    """Reuse an existing commit tag only when its digest is registry-authoritative."""
+    digest = headers.get('Docker-Content-Digest')
+    require(isinstance(digest, str) and bool(digest), 'TAG_LOOKUP_FAILED')
+    digest_identity(digest, digest)
+    return digest
+
+
+def write_github_output(name: str, value: str) -> None:
+    path = os.environ.get('GITHUB_OUTPUT')
+    if not path:
+        return
+    with open(path, 'a', encoding='utf-8') as handle:
+        handle.write(name + '=' + value + '\n')
+
+
+def resolve_commit_tag() -> None:
+    """Permit first publication on 404; resume on an existing digest without rewrite."""
     source = os.environ['GITHUB_SHA']
     require(source == os.environ['SOURCE_SHA'] and
             re.fullmatch('[0-9a-f]{40}', source) is not None, 'SOURCE_MISMATCH')
@@ -136,13 +152,22 @@ def require_commit_tag_absent() -> None:
         'https://ghcr.io/v2/lvvphole/becoming-the-man-agent/manifests/' + source,
         headers={'Authorization': 'Bearer ' + token,
                  'Accept': 'application/vnd.oci.image.index.v1+json, '
-                           'application/vnd.docker.distribution.manifest.list.v2+json'},
-        method='HEAD')
+                           'application/vnd.oci.image.manifest.v1+json, '
+                           'application/vnd.docker.distribution.manifest.list.v2+json, '
+                           'application/vnd.docker.distribution.manifest.v2+json'})
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
-            tag_lookup_status(response.status)
+            require(tag_lookup_status(response.status) == 'present', 'TAG_LOOKUP_FAILED')
+            data = response.read(8_000_001)
+            require(len(data) <= 8_000_000, 'RESPONSE_LIMIT')
+            digest = resume_digest(response.headers)
+            registry_bytes(data, digest)
+            write_github_output('digest', digest)
+            print('COMMIT_TAG_REUSED')
+            return
     except urllib.error.HTTPError as exc:
-        tag_lookup_status(exc.code)
+        require(tag_lookup_status(exc.code) == 'absent', 'TAG_LOOKUP_FAILED')
+    write_github_output('digest', '')
     print('COMMIT_TAG_AUTHORITATIVELY_ABSENT')
 
 
@@ -212,11 +237,11 @@ def verify(digest: str) -> None:
 if __name__ == '__main__':
     try:
         require(len(sys.argv) == 2 and sys.argv[1] in
-                {'base', 'tag-absent', 'registry', 'verify'}, 'COMMAND')
+                {'base', 'commit-tag', 'registry', 'verify'}, 'COMMAND')
         if sys.argv[1] == 'base':
             check_base()
-        elif sys.argv[1] == 'tag-absent':
-            require_commit_tag_absent()
+        elif sys.argv[1] == 'commit-tag':
+            resolve_commit_tag()
         elif sys.argv[1] == 'registry':
             check_registry(os.environ['IMAGE_DIGEST'])
         else:
