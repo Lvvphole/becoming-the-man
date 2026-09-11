@@ -12,7 +12,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from agent_image_policy import (BASE, CHILD, IMAGE, REPO, WORKFLOW,
-                                PolicyError, digest_identity, registry_bytes, require)
+                                PolicyError, digest_identity, exact,
+                                registry_bytes, require)
 
 
 def fetch(url: str, headers: dict | None = None) -> bytes:
@@ -118,11 +119,66 @@ def tag_lookup_status(status: int) -> str:
 
 
 def resume_digest(headers) -> str:
-    """Reuse an existing commit tag only when its digest is registry-authoritative."""
+    """Return the registry digest for an existing tag; not an attestation grant."""
     digest = headers.get('Docker-Content-Digest')
     require(isinstance(digest, str) and bool(digest), 'TAG_LOOKUP_FAILED')
     digest_identity(digest, digest)
     return digest
+
+
+SOURCE_LABEL = 'org.opencontainers.image.source'
+REVISION_LABEL = 'org.opencontainers.image.revision'
+
+
+def image_identity(os_name: object, architecture: object, env: object,
+                   labels: object, diff_ids: object) -> dict:
+    """Canonical filesystem and label identity used for resume equivalence."""
+    require(os_name == 'linux' and architecture == 'amd64', 'IMAGE_EQUIVALENCE')
+    require(isinstance(env, list) and 'NODE_VERSION=24.21.0' in env,
+            'IMAGE_EQUIVALENCE')
+    require(isinstance(labels, dict), 'IMAGE_EQUIVALENCE')
+    require(labels.get(SOURCE_LABEL) == 'https://github.com/' + REPO,
+            'IMAGE_EQUIVALENCE')
+    revision = labels.get(REVISION_LABEL)
+    require(isinstance(revision, str) and
+            re.fullmatch('[0-9a-f]{40}', revision) is not None,
+            'IMAGE_EQUIVALENCE')
+    require(isinstance(diff_ids, list) and bool(diff_ids), 'IMAGE_EQUIVALENCE')
+    for item in diff_ids:
+        require(isinstance(item, str), 'IMAGE_EQUIVALENCE')
+        digest_identity(item, item)
+    return {'os': os_name, 'architecture': architecture, 'node': '24.21.0',
+            'source': labels[SOURCE_LABEL], 'revision': revision,
+            'diff_ids': list(diff_ids)}
+
+
+def identity_from_oci(config: dict) -> dict:
+    """Map an OCI image config JSON object to image_identity()."""
+    cfg = config.get('config') if isinstance(config, dict) else None
+    rootfs = config.get('rootfs') if isinstance(config, dict) else None
+    require(isinstance(cfg, dict) and isinstance(rootfs, dict),
+            'IMAGE_EQUIVALENCE')
+    return image_identity(config.get('os'), config.get('architecture'),
+                          cfg.get('Env'), cfg.get('Labels'),
+                          rootfs.get('diff_ids'))
+
+
+def identity_from_inspect(inspect: dict) -> dict:
+    """Map `docker image inspect` JSON to image_identity()."""
+    require(isinstance(inspect, dict), 'IMAGE_EQUIVALENCE')
+    cfg = inspect.get('Config')
+    rootfs = inspect.get('RootFS')
+    require(isinstance(cfg, dict) and isinstance(rootfs, dict),
+            'IMAGE_EQUIVALENCE')
+    return image_identity(inspect.get('Os'), inspect.get('Architecture'),
+                          cfg.get('Env'), cfg.get('Labels'),
+                          rootfs.get('Layers'))
+
+
+def require_equivalent(local: dict, remote: dict, source: str) -> None:
+    """Resume only when the existing image matches this run's built image."""
+    require(local.get('revision') == source, 'IMAGE_EQUIVALENCE')
+    exact(local, remote, 'IMAGE_EQUIVALENCE')
 
 
 def write_github_output(name: str, value: str) -> None:
@@ -133,11 +189,50 @@ def write_github_output(name: str, value: str) -> None:
         handle.write(name + '=' + value + '\n')
 
 
+def _ghcr_headers(token: str) -> dict:
+    return {'Authorization': 'Bearer ' + token,
+            'Accept': 'application/vnd.oci.image.index.v1+json, '
+                      'application/vnd.oci.image.manifest.v1+json, '
+                      'application/vnd.docker.distribution.manifest.list.v2+json, '
+                      'application/vnd.docker.distribution.manifest.v2+json'}
+
+
+def _oci_image_config(manifest: dict, token: str) -> dict:
+    """Return the linux/amd64 image config for a manifest or index."""
+    require(isinstance(manifest, dict), 'IMAGE_EQUIVALENCE')
+    if 'manifests' in manifest:
+        matches = [item for item in manifest['manifests']
+                   if isinstance(item, dict) and
+                   item.get('platform') == {'os': 'linux', 'architecture': 'amd64'}]
+        require(len(matches) == 1 and isinstance(matches[0].get('digest'), str),
+                'IMAGE_EQUIVALENCE')
+        child = fetch('https://ghcr.io/v2/lvvphole/becoming-the-man-agent/manifests/'
+                      + matches[0]['digest'], _ghcr_headers(token))
+        registry_bytes(child, matches[0]['digest'])
+        manifest = json.loads(child)
+        require(isinstance(manifest, dict), 'IMAGE_EQUIVALENCE')
+    config_digest = manifest.get('config', {}).get('digest') if isinstance(
+        manifest.get('config'), dict) else None
+    require(isinstance(config_digest, str), 'IMAGE_EQUIVALENCE')
+    digest_identity(config_digest, config_digest)
+    raw = fetch('https://ghcr.io/v2/lvvphole/becoming-the-man-agent/blobs/'
+                + config_digest, _ghcr_headers(token))
+    registry_bytes(raw, config_digest)
+    config = json.loads(raw)
+    require(isinstance(config, dict), 'IMAGE_EQUIVALENCE')
+    return config
+
+
 def resolve_commit_tag() -> None:
-    """Permit first publication on 404; resume on an existing digest without rewrite."""
+    """Publish on 404; resume only when an existing tag matches this build."""
     source = os.environ['GITHUB_SHA']
     require(source == os.environ['SOURCE_SHA'] and
             re.fullmatch('[0-9a-f]{40}', source) is not None, 'SOURCE_MISMATCH')
+    local_ref = os.environ['LOCAL_IMAGE']
+    require(local_ref == IMAGE + ':local', 'LOCAL_IMAGE')
+    inspect = json.loads(success(['docker', 'image', 'inspect', local_ref]))
+    require(isinstance(inspect, list) and len(inspect) == 1, 'IMAGE_EQUIVALENCE')
+    local_identity = identity_from_inspect(inspect[0])
     credentials = base64.b64encode(
         (os.environ['GITHUB_ACTOR'] + ':' + os.environ['GH_TOKEN']).encode()).decode()
     query = urllib.parse.urlencode({
@@ -150,25 +245,31 @@ def resolve_commit_tag() -> None:
     require(isinstance(token, str) and bool(token), 'TAG_LOOKUP_FAILED')
     request = urllib.request.Request(
         'https://ghcr.io/v2/lvvphole/becoming-the-man-agent/manifests/' + source,
-        headers={'Authorization': 'Bearer ' + token,
-                 'Accept': 'application/vnd.oci.image.index.v1+json, '
-                           'application/vnd.oci.image.manifest.v1+json, '
-                           'application/vnd.docker.distribution.manifest.list.v2+json, '
-                           'application/vnd.docker.distribution.manifest.v2+json'})
+        headers=_ghcr_headers(token))
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
-            require(tag_lookup_status(response.status) == 'present', 'TAG_LOOKUP_FAILED')
+            require(tag_lookup_status(response.status) == 'present',
+                    'TAG_LOOKUP_FAILED')
             data = response.read(8_000_001)
             require(len(data) <= 8_000_000, 'RESPONSE_LIMIT')
             digest = resume_digest(response.headers)
             registry_bytes(data, digest)
+            remote_identity = identity_from_oci(_oci_image_config(json.loads(data), token))
+            require_equivalent(local_identity, remote_identity, source)
             write_github_output('digest', digest)
             print('COMMIT_TAG_REUSED')
             return
     except urllib.error.HTTPError as exc:
         require(tag_lookup_status(exc.code) == 'absent', 'TAG_LOOKUP_FAILED')
-    write_github_output('digest', '')
-    print('COMMIT_TAG_AUTHORITATIVELY_ABSENT')
+    require_equivalent(local_identity, local_identity, source)
+    target = IMAGE + ':' + source
+    success(['docker', 'tag', local_ref, target])
+    success(['docker', 'push', target])
+    observed = success(['docker', 'buildx', 'imagetools', 'inspect', target,
+                        '--format', '{{.Manifest.Digest}}']).decode().strip()
+    digest_identity(observed, observed)
+    write_github_output('digest', observed)
+    print('COMMIT_TAG_PUBLISHED')
 
 
 def check_registry(digest: str) -> bytes:
