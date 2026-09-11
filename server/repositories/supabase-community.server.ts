@@ -140,7 +140,8 @@ function resolveConnection(
   fetchImpl: CommunityFetch,
 ): Connection | null {
   const baseUrl = env.SUPABASE_URL;
-  // Server-only credential: the write path runs as community_runtime, which anon can never reach.
+  // Server-only credential. PostgREST runs this JWT as service_role; that role is a member of
+  // community_runtime so the claim RPC and table writes are authorized. anon cannot reach them.
   const credential = env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!baseUrl || !credential) {
