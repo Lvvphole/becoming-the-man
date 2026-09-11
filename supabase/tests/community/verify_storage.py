@@ -116,7 +116,13 @@ def suite(container: str) -> bool:
            "'pending','2020-01-01T00:00:00Z'::timestamptz,'2020-01-02T00:00:00Z'::timestamptz FROM generate_series(1,2);",
            '23505')
     print('GREEN_DRAFT_STORAGE_CHECKS_ONLY', flush=True)
-    return idempotency_suite(container)
+    if not idempotency_suite(container):
+        return False
+    # The production write sequence against real constraints, using the shipped constants.
+    expect(container, 'subscribe write path persists under the runtime role', 'community_test_login',
+           (ROOT / 'subscribe-write-path.sql').read_text(),
+           expected_output='BDD_SUBSCRIBE_WRITE_PATH_OK')
+    return True
 
 
 def idempotency_suite(container: str) -> bool:
