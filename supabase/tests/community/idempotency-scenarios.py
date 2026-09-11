@@ -188,6 +188,10 @@ def privileges(container: str, expect) -> None:
            'AND NOT EXISTS (SELECT 1 FROM aclexplode(p.proacl) entry WHERE entry.grantee = 0))::text '
            f"FROM pg_proc p WHERE p.oid = to_regprocedure('{SIGNATURE}');",
            expected_output='true')
+    expect(container, 'service_role inherits claim execute', 'postgres',
+           f"SELECT (pg_has_role('service_role','community_runtime','USAGE') "
+           f"AND has_function_privilege('service_role','{SIGNATURE}','EXECUTE'))::text;",
+           expected_output='true')
     for role in ('anon', 'authenticated'):
         expect(container, f'public role denies claim execution for {role}', role,
                decision(CLAIM_KEY, HASH_A, FUTURE), '42501')
