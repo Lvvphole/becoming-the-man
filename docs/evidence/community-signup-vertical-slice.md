@@ -65,8 +65,11 @@ committed Docker harness unchanged.
    change the schema a fourth time. **The shipped product contradicts FR-103 on this point.**
 2. **No Turnstile on a public form.** The `/api/subscribe` contract row does not name Turnstile, but
    the public-form abuse control row (Architecture line 453) does. This slice ships the controls that
-   need no vendor — schema and length ceilings, a honeypot, and the idempotency key. Turnstile is a
-   **pre-production gap** and must land before public launch.
+   need no vendor — schema and length ceilings, a honeypot, and an affirmative-consent requirement.
+   The idempotency key is **not** among them: it bounds duplicates of one logical request and places
+   no ceiling on distinct requests, so a client supplying a fresh UUID each time is unconstrained by
+   it. Nothing here is a rate limit. Turnstile plus a hash-based rate limiter is a **pre-production
+   gap** and must land before public launch.
 
 ## What this does NOT establish
 
