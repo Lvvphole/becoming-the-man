@@ -74,18 +74,15 @@ def command(run: str, env: dict | None = None, step_id: str | None = None) -> di
     return step
 
 
-DIGEST = '${{ steps.build.outputs.digest || steps.tag.outputs.digest }}'
+DIGEST = '${{ steps.tag.outputs.digest }}'
 
 
-def build(push: bool) -> dict:
-    step = {'id': 'build', 'uses': PINS['build'], 'with': {
+def build(tag: str) -> dict:
+    return {'id': 'build', 'uses': PINS['build'], 'with': {
         'context': '.', 'file': 'Dockerfile.agent', 'platforms': 'linux/amd64',
-        'push': push, 'load': not push, 'provenance': False, 'sbom': False,
-        'tags': IMAGE + (':${{ github.sha }}' if push else ':validation'),
+        'push': False, 'load': True, 'provenance': False, 'sbom': False,
+        'tags': IMAGE + ':' + tag,
         'build-args': 'REVISION=' + HEAD}}
-    if push:
-        step['if'] = "${{ steps.tag.outputs.digest == '' }}"
-    return step
 
 
 def login() -> dict:
@@ -98,15 +95,17 @@ def steps(job: str) -> list:
     common = [checkout(), command('python3 -B scripts/agent_image_policy.py\n'
                                  'python3 -B tests/agent_image_test.py')]
     if job == 'validate':
-        return common + [build(False), command(
+        return common + [build('validation'), command(
             'test "$(docker run --rm ' + IMAGE + ':validation node --version)" = "v24.21.0"\n'
             'test "$(docker image inspect ' + IMAGE + ':validation --format \'{{.Os}}/{{.Architecture}}\')" = "linux/amd64"')]
     if job == 'publish':
         return common + [command('python3 -B scripts/agent_image_remote.py base'), login(),
+            build('local'),
             command('python3 -B scripts/agent_image_remote.py commit-tag', {
                 'GH_TOKEN': '${{ secrets.GITHUB_TOKEN }}',
-                'SOURCE_SHA': '${{ github.sha }}'}, 'tag'),
-            build(True), command('python3 -B scripts/agent_image_remote.py registry', {
+                'SOURCE_SHA': '${{ github.sha }}',
+                'LOCAL_IMAGE': IMAGE + ':local'}, 'tag'),
+            command('python3 -B scripts/agent_image_remote.py registry', {
                 'IMAGE_DIGEST': DIGEST}),
             {'uses': PINS['attest'], 'with': {'subject-name': IMAGE,
                 'subject-digest': DIGEST, 'push-to-registry': True}}]
