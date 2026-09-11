@@ -32,6 +32,7 @@ Each tag-to-commit mapping was resolved from the canonical repository's Git tag 
 - Docker parser-directive regression: failed before the policy fix and passed afterward.
 - Current live evidence: registry index, child manifest and configuration hashes matched; platform was linux/amd64; configuration reported Node 24.21.0.
 - Current Docker Scout report: 65 total, 2 Critical, 14 High, 14 Medium, 31 Low, 4 unspecified; substantive findings SHA-256 `df7ee741a7722a49b94144c75d7eafcae18e8e29003cc5a5507d1c93b98ba7f0`. Six new CVEs were not independently corroborated in public Debian/CVE search results.
+- Commit-addressable tags are write-once: publication proceeds only after an authenticated GHCR manifest lookup returns authoritative HTTP 404. Existing tags and lookup/authentication/outage failures block before build/push.
 
 ## Required external evidence
 

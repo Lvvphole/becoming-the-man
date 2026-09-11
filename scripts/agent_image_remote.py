@@ -1,5 +1,6 @@
 """Bounded live registry and provenance evidence, separate from local policy tests."""
 import hashlib
+import base64
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import urllib.error
+import urllib.parse
 import urllib.request
 from agent_image_policy import (BASE, CHILD, IMAGE, REPO, WORKFLOW,
                                 PolicyError, digest_identity, registry_bytes, require)
@@ -105,6 +108,44 @@ def success(argv: list[str]) -> bytes:
     return result.stdout
 
 
+def tag_lookup_status(status: int) -> None:
+    """Only an authoritative not-found response permits first publication."""
+    if status == 404:
+        return
+    if status == 200:
+        raise PolicyError('COMMIT_TAG_ALREADY_EXISTS')
+    raise PolicyError('TAG_LOOKUP_FAILED')
+
+
+def require_commit_tag_absent() -> None:
+    """Fail closed before push so a commit-addressable tag is never rewritten."""
+    source = os.environ['GITHUB_SHA']
+    require(source == os.environ['SOURCE_SHA'] and
+            re.fullmatch('[0-9a-f]{40}', source) is not None, 'SOURCE_MISMATCH')
+    credentials = base64.b64encode(
+        (os.environ['GITHUB_ACTOR'] + ':' + os.environ['GH_TOKEN']).encode()).decode()
+    query = urllib.parse.urlencode({
+        'service': 'ghcr.io',
+        'scope': 'repository:lvvphole/becoming-the-man-agent:pull',
+    })
+    token_data = json.loads(fetch('https://ghcr.io/token?' + query,
+                                  {'Authorization': 'Basic ' + credentials}))
+    token = token_data.get('token') or token_data.get('access_token')
+    require(isinstance(token, str) and bool(token), 'TAG_LOOKUP_FAILED')
+    request = urllib.request.Request(
+        'https://ghcr.io/v2/lvvphole/becoming-the-man-agent/manifests/' + source,
+        headers={'Authorization': 'Bearer ' + token,
+                 'Accept': 'application/vnd.oci.image.index.v1+json, '
+                           'application/vnd.docker.distribution.manifest.list.v2+json'},
+        method='HEAD')
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            tag_lookup_status(response.status)
+    except urllib.error.HTTPError as exc:
+        tag_lookup_status(exc.code)
+    print('COMMIT_TAG_AUTHORITATIVELY_ABSENT')
+
+
 def check_registry(digest: str) -> bytes:
     digest_identity(digest, digest)
     source = os.environ['GITHUB_SHA']
@@ -170,9 +211,12 @@ def verify(digest: str) -> None:
 
 if __name__ == '__main__':
     try:
-        require(len(sys.argv) == 2 and sys.argv[1] in {'base', 'registry', 'verify'}, 'COMMAND')
+        require(len(sys.argv) == 2 and sys.argv[1] in
+                {'base', 'tag-absent', 'registry', 'verify'}, 'COMMAND')
         if sys.argv[1] == 'base':
             check_base()
+        elif sys.argv[1] == 'tag-absent':
+            require_commit_tag_absent()
         elif sys.argv[1] == 'registry':
             check_registry(os.environ['IMAGE_DIGEST'])
         else:

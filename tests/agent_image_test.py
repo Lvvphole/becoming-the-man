@@ -37,6 +37,8 @@ class ImagePolicyTests(unittest.TestCase):
             (('on', 'push', 'branches'), ['other'], 'EVENTS'),
             (('on', 'pull_request', 'paths'), ['README.md'], 'EVENTS'),
             (('permissions', 'packages'), 'write', 'WORKFLOW_PERMISSIONS'),
+            (('concurrency', 'group'), 'agent-image-global', 'CONCURRENCY'),
+            (('concurrency', 'cancel-in-progress'), True, 'CONCURRENCY'),
             (('jobs', 'hidden'), {}, 'JOB_SET'),
         ]
         for permission in ['packages', 'attestations', 'id-token']:
@@ -156,6 +158,15 @@ class ImagePolicyTests(unittest.TestCase):
         ]:
             result = subprocess.CompletedProcess(['gh'], code, b'', message)
             self.assertEqual(remote.rejected_identity(result, 'SourceRepositoryDigest'), expected)
+
+    def test_commit_tag_is_write_once(self):
+        remote.tag_lookup_status(404)
+        with self.assertRaisesRegex(policy.PolicyError, 'COMMIT_TAG_ALREADY_EXISTS'):
+            remote.tag_lookup_status(200)
+        for status in [0, 401, 403, 429, 500, 503]:
+            with self.subTest(status=status):
+                with self.assertRaisesRegex(policy.PolicyError, 'TAG_LOOKUP_FAILED'):
+                    remote.tag_lookup_status(status)
 
     def test_mutated_checkers(self):
         source = (ROOT / 'scripts/agent_image_policy.py').read_text()

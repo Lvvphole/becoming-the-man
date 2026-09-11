@@ -95,6 +95,9 @@ def steps(job: str) -> list:
             'test "$(docker image inspect ' + IMAGE + ':validation --format \'{{.Os}}/{{.Architecture}}\')" = "linux/amd64"')]
     if job == 'publish':
         return common + [command('python3 -B scripts/agent_image_remote.py base'), login(),
+            command('python3 -B scripts/agent_image_remote.py tag-absent', {
+                'GH_TOKEN': '${{ secrets.GITHUB_TOKEN }}',
+                'SOURCE_SHA': '${{ github.sha }}'}),
             build(True), command('python3 -B scripts/agent_image_remote.py registry', {
                 'IMAGE_DIGEST': '${{ steps.build.outputs.digest }}'}),
             {'uses': PINS['attest'], 'with': {'subject-name': IMAGE,
@@ -106,9 +109,11 @@ def steps(job: str) -> list:
 
 
 def workflow_policy(data: dict) -> None:
-    exact(set_as_list(data), ['jobs', 'name', 'on', 'permissions'], 'WORKFLOW_SHAPE')
+    exact(set_as_list(data), ['concurrency', 'jobs', 'name', 'on', 'permissions'], 'WORKFLOW_SHAPE')
     exact(data['name'], 'Agent Image', 'WORKFLOW_NAME')
     exact(data['on'], {'pull_request': {}, 'push': {'branches': ['main']}}, 'EVENTS')
+    exact(data['concurrency'], {'group': 'agent-image-' + HEAD,
+                                'cancel-in-progress': False}, 'CONCURRENCY')
     exact(data['permissions'], {}, 'WORKFLOW_PERMISSIONS')
     jobs = data['jobs']
     require(isinstance(jobs, dict), 'JOB_SET')
