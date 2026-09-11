@@ -3,6 +3,7 @@ import {
   COMMUNITY_ERROR_CODE,
   COMMUNITY_FIELD_LIMITS,
   COMMUNITY_HONEYPOT_FIELD,
+  shouldRotateSubscribeRequestId,
   type CommunityErrorCode,
 } from "../../contracts/community";
 import {
@@ -99,10 +100,12 @@ export function CommunitySignupForm({
       analytics.capture(
         createSignupAnalyticsEvent(SIGNUP_EVENT.error, { error_code: body.code }),
       );
-      // An attempt that failed partway leaves its claim unfinished, and with no reclaim path that
-      // key would answer IN_PROGRESS forever. Retrying is a new logical request, so it gets a new
-      // id rather than colliding with the abandoned claim.
-      rotateRequestId();
+      // Keep the same id while the original claim is still live so a retry can REPLAY the
+      // settled outcome. Other errors rotate: an abandoned claim answers IN_PROGRESS forever,
+      // and retrying it would strand the visitor.
+      if (shouldRotateSubscribeRequestId(body.code)) {
+        rotateRequestId();
+      }
       return;
     }
 

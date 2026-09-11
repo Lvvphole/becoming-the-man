@@ -37,3 +37,12 @@ export const COMMUNITY_ERROR_CODE = {
 } as const;
 
 export type CommunityErrorCode = (typeof COMMUNITY_ERROR_CODE)[keyof typeof COMMUNITY_ERROR_CODE];
+
+/**
+ * Whether the browser should mint a new idempotency key after this error.
+ * A live claim must keep the same id so a retry can `REPLAY` once it settles.
+ * Other errors rotate so an abandoned claim is not retried forever as IN_PROGRESS.
+ */
+export function shouldRotateSubscribeRequestId(code: CommunityErrorCode): boolean {
+  return code !== COMMUNITY_ERROR_CODE.requestInProgress;
+}
