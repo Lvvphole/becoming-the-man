@@ -12,7 +12,8 @@
     "routeIdToServerBundleId": {
       "routes/home": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/book": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
-      "routes/disclaimer": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
+      "routes/disclaimer": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.subscribe": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
     },
     "routes": {
       "root": {
@@ -44,6 +45,15 @@
         "parentId": "root",
         "file": "src/routes/disclaimer.tsx",
         "path": "disclaimer",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.subscribe": {
+        "id": "routes/api.subscribe",
+        "parentId": "root",
+        "file": "src/routes/api.subscribe.ts",
+        "path": "api/subscribe",
         "config": {
           "runtime": "nodejs"
         }
@@ -86,6 +96,12 @@
         "parentId": "root",
         "file": "routes/disclaimer.tsx",
         "path": "disclaimer"
+      },
+      "routes/api.subscribe": {
+        "id": "routes/api.subscribe",
+        "parentId": "root",
+        "file": "routes/api.subscribe.ts",
+        "path": "api/subscribe"
       }
     },
     "routeDiscovery": {
@@ -114,6 +130,10 @@
           {
             "file": "routes/disclaimer.tsx",
             "path": "disclaimer"
+          },
+          {
+            "file": "routes/api.subscribe.ts",
+            "path": "api/subscribe"
           }
         ]
       }

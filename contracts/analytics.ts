@@ -19,6 +19,46 @@ export type BookCtaAnalyticsEvent = Readonly<{
   properties: BookCtaEventProperties;
 }>;
 
+export const SIGNUP_EVENT = {
+  start: "signup_start",
+  complete: "signup_complete",
+  error: "signup_error",
+} as const;
+
+export type SignupEventName = (typeof SIGNUP_EVENT)[keyof typeof SIGNUP_EVENT];
+
+/**
+ * Signup telemetry carries the outcome only. The address a visitor typed is never an event
+ * property: "Never send raw email as analytics event property" (Product Specification, section 438).
+ */
+export type SignupEventProperties = Readonly<{
+  event_version: typeof ANALYTICS_EVENT_VERSION;
+  surface: "home";
+  outcome?: "subscribed" | "pending_provider";
+  error_code?: string;
+}>;
+
+export type SignupAnalyticsEvent = Readonly<{
+  name: SignupEventName;
+  properties: SignupEventProperties;
+}>;
+
+export type AnalyticsEvent = BookCtaAnalyticsEvent | SignupAnalyticsEvent;
+
+export function createSignupAnalyticsEvent(
+  name: SignupEventName,
+  detail: Omit<SignupEventProperties, "event_version" | "surface"> = {},
+): SignupAnalyticsEvent {
+  return {
+    name,
+    properties: {
+      event_version: ANALYTICS_EVENT_VERSION,
+      surface: "home",
+      ...detail,
+    },
+  };
+}
+
 export function createBookCtaAnalyticsEvent(
   name: BookCtaEventName,
   destinationUrl: string,
