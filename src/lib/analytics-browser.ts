@@ -1,9 +1,9 @@
-import type { BookCtaAnalyticsEvent } from "../../contracts/analytics";
+import type { AnalyticsEvent } from "../../contracts/analytics";
 
 export type AnalyticsCaptureResult = "queued" | "disabled" | "failed";
 
 export interface BrowserAnalytics {
-  capture(event: BookCtaAnalyticsEvent): AnalyticsCaptureResult;
+  capture(event: AnalyticsEvent): AnalyticsCaptureResult;
 }
 
 type AnalyticsFetch = (input: URL, init: RequestInit) => Promise<Response>;

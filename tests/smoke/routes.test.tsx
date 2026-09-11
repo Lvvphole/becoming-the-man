@@ -33,7 +33,10 @@ describe("R1-01 route rendering", () => {
     expect(html).toContain("Men who want to become more trustworthy in love and life");
     expect(html).toContain("Women who want to understand the kind of man they can trust");
     expect(html).toContain("JOIN THE COMMUNITY");
-    expect(html).toContain("Community signup will be available soon.");
+    expect(html).toContain('action="/api/subscribe"');
+    expect(html).toContain('name="firstName"');
+    expect(html).toContain('name="marketingConsent"');
+    expect(html).not.toContain("Community signup will be available soon.");
     expect(html).toContain('href="#non-negotiables"');
     expect(html).toContain('href="/disclaimer"');
     expect(html).toContain('href="https://example.test/book"');

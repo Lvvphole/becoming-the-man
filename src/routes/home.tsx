@@ -1,6 +1,7 @@
 import { useLoaderData } from "react-router";
 import type { BookPurchaseDestination } from "../../server/domain/book-purchase";
 import { BookPurchaseAction } from "../components/book-purchase-action";
+import { CommunitySignupForm } from "../components/community-signup-form";
 
 export function meta() {
   return [
@@ -215,12 +216,7 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
           <p>
             Stay connected to <em>Becoming the Man She Can Trust</em> and receive future communications from the author.
           </p>
-          <div className="community-form" aria-describedby="community-status">
-            <label className="sr-only" htmlFor="community-email">Email address</label>
-            <input id="community-email" type="email" placeholder="Your email address" disabled />
-            <button type="button" disabled>Join the Community</button>
-          </div>
-          <p className="community-note" id="community-status">Community signup will be available soon.</p>
+          <CommunitySignupForm />
         </section>
       </main>
 
