@@ -69,7 +69,6 @@ describe("supabase community repository", () => {
       { match: "/subscribers", json: [{ id: "sub-1" }] },
       { match: "/email_requests", json: [{}] },
       { match: "/consent_events", json: [{}] },
-      { match: "/idempotency_keys", json: [{}] },
     ]);
 
     const result = await repository(fetchImpl).persist(INPUT);
@@ -81,14 +80,14 @@ describe("supabase community repository", () => {
       emailRequestId: "00000000-0000-4000-8000-000000000002",
     });
 
-    // The claim must come first: nothing may be written before ownership is established.
+    // The claim must come first: nothing may be written before ownership is established. It must
+    // also NOT be settled here — the outcome is unknown until the provider has answered.
     expect(calls[0].path).toContain("/rpc/claim_idempotency_key");
     expect(calls.map((call) => call.path)).toEqual([
       "/rest/v1/rpc/claim_idempotency_key",
       "/rest/v1/subscribers",
       "/rest/v1/email_requests",
       "/rest/v1/consent_events",
-      "/rest/v1/idempotency_keys",
     ]);
   });
 
@@ -143,8 +142,69 @@ describe("supabase community repository", () => {
 
     const result = await repository(fetchImpl).persist(INPUT);
 
-    expect(result).toEqual({ ok: true, duplicate: true });
+    expect(result).toEqual({ ok: true, duplicate: true, outcome: "pending_provider" });
     expect(calls).toHaveLength(1);
+  });
+
+  it("replays the outcome the first attempt actually settled on", async () => {
+    // A first attempt whose provider sync failed settles the claim as pending_provider. Replaying
+    // it must return that, not a subscription the first attempt never achieved.
+    const { fetchImpl } = harness([
+      {
+        match: "/rpc/claim_idempotency_key",
+        json: [{ decision: "REPLAY", result_jsonb: { subscriber_id: "sub-1", outcome: "pending_provider" } }],
+      },
+    ]);
+
+    const result = await repository(fetchImpl).persist(INPUT);
+
+    expect(result).toEqual({ ok: true, duplicate: true, outcome: "pending_provider" });
+  });
+
+  it("replays a settled subscription as subscribed", async () => {
+    const { fetchImpl } = harness([
+      {
+        match: "/rpc/claim_idempotency_key",
+        json: [{ decision: "REPLAY", result_jsonb: { subscriber_id: "sub-1", outcome: "subscribed" } }],
+      },
+    ]);
+
+    const result = await repository(fetchImpl).persist(INPUT);
+
+    expect(result).toEqual({ ok: true, duplicate: true, outcome: "subscribed" });
+  });
+
+  it.each([
+    ["an absent result", undefined],
+    ["a null result", null],
+    ["an unrecognised outcome", { subscriber_id: "sub-1", outcome: "banana" }],
+    ["a legacy record with no outcome", { subscriber_id: "sub-1" }],
+  ])("does not invent a subscription from %s", async (_label, result_jsonb) => {
+    const { fetchImpl } = harness([
+      { match: "/rpc/claim_idempotency_key", json: [{ decision: "REPLAY", result_jsonb }] },
+    ]);
+
+    const result = await repository(fetchImpl).persist(INPUT);
+
+    expect(result).toEqual({ ok: true, duplicate: true, outcome: "pending_provider" });
+  });
+
+  it("leaves the claim unsettled when the outcome could not be recorded", async () => {
+    const { fetchImpl } = harness([
+      { match: "/email_requests", json: [{}] },
+      { match: "/subscribers", status: 503, json: {} },
+    ]);
+
+    const result = await repository(fetchImpl).recordProviderOutcome({
+      requestId: INPUT.requestId,
+      subscriberId: "sub-1",
+      emailRequestId: "req-1",
+      outcome: "synced",
+    });
+
+    // An unsettled claim answers IN_PROGRESS on retry, which is refused. That is the honest
+    // outcome: better than settling it with a result the database does not actually reflect.
+    expect(result).toEqual({ ok: false });
   });
 
   it("refuses an IN_PROGRESS claim rather than reporting it as persisted", async () => {
@@ -221,18 +281,31 @@ describe("supabase community repository", () => {
   });
 
   it("does not mark the subscriber reachable when provider sync failed", async () => {
-    const { calls, fetchImpl } = harness([{ match: "/email_requests", json: [{}] }]);
+    const { calls, fetchImpl } = harness([
+      { match: "/email_requests", json: [{}] },
+      { match: "/idempotency_keys", json: [{}] },
+    ]);
 
     await repository(fetchImpl).recordProviderOutcome({
+      requestId: INPUT.requestId,
       subscriberId: "sub-1",
       emailRequestId: "req-1",
       outcome: "failed",
     });
 
-    expect(calls).toHaveLength(1);
+    // No subscribers PATCH: a failed sync must not advance audience_state.
+    expect(calls.map((call) => call.path)).toEqual([
+      "/rest/v1/email_requests",
+      "/rest/v1/idempotency_keys",
+    ]);
     expect(calls[0].body).toMatchObject({
       delivery_status: "failed",
       error_code: COMMUNITY_ERROR_CODE.providerUnavailable,
+    });
+    // The settled claim carries the real outcome so a replay cannot report success.
+    expect(calls[1].body).toMatchObject({
+      status: "completed",
+      result_jsonb: { subscriber_id: "sub-1", outcome: "pending_provider" },
     });
   });
 
@@ -240,18 +313,24 @@ describe("supabase community repository", () => {
     const { calls, fetchImpl } = harness([
       { match: "/email_requests", json: [{}] },
       { match: "/subscribers", json: [{}] },
+      { match: "/idempotency_keys", json: [{}] },
     ]);
 
     const result = await repository(fetchImpl).recordProviderOutcome({
+      requestId: INPUT.requestId,
       subscriberId: "sub-1",
       emailRequestId: "req-1",
       outcome: "synced",
     });
 
     expect(result).toEqual({ ok: true });
-    expect(calls).toHaveLength(2);
+    expect(calls).toHaveLength(3);
     expect(calls[0].body).toMatchObject({ delivery_status: "synced", error_code: null });
     expect(calls[1].body).toMatchObject({ audience_state: "subscribed" });
+    expect(calls[2].body).toMatchObject({
+      status: "completed",
+      result_jsonb: { subscriber_id: "sub-1", outcome: "subscribed" },
+    });
   });
 
   it("reports failure when the audience-state transition does not land", async () => {
@@ -261,6 +340,7 @@ describe("supabase community repository", () => {
     ]);
 
     const result = await repository(fetchImpl).recordProviderOutcome({
+      requestId: INPUT.requestId,
       subscriberId: "sub-1",
       emailRequestId: "req-1",
       outcome: "synced",
@@ -274,6 +354,7 @@ describe("supabase community repository", () => {
     const { calls, fetchImpl } = harness([{ match: "/email_requests", status: 500, json: {} }]);
 
     const result = await repository(fetchImpl).recordProviderOutcome({
+      requestId: INPUT.requestId,
       subscriberId: "sub-1",
       emailRequestId: "req-1",
       outcome: "synced",

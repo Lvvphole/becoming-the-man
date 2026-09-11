@@ -17,6 +17,13 @@ export type SubscribeResponseBody =
  */
 const EMAIL_PATTERN = /^[^\s@,;]+@[^\s@,;.]+(\.[^\s@,;.]+)+$/;
 
+/**
+ * Hex digits in the exact positions PostgreSQL accepts. A length-and-charset check is not enough:
+ * 36 hyphens passes that and then fails the uuid cast downstream, which would surface to the
+ * visitor as a storage failure instead of the server-generated fallback.
+ */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const STATUS_BY_CODE: Readonly<Record<CommunityErrorCode, number>> = {
   [COMMUNITY_ERROR_CODE.consentRequired]: 422,
   [COMMUNITY_ERROR_CODE.emailInvalid]: 422,
@@ -100,7 +107,7 @@ export async function handleSubscribeRequest(
   // The client supplies a stable id so a retry of one submission stays one logical request; the
   // server creates one only when it is absent or unusable (Architecture section 19).
   const submittedRequestId = readField(form, "requestId").trim();
-  const requestId = /^[0-9a-f-]{36}$/i.test(submittedRequestId) ? submittedRequestId : newRequestId();
+  const requestId = UUID_PATTERN.test(submittedRequestId) ? submittedRequestId : newRequestId();
 
   const result = await subscribe({ requestId, email, firstName, marketingConsent });
 

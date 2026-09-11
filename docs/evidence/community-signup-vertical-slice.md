@@ -153,3 +153,47 @@ its side effect.
 Suite state after these repairs: 78 unit and smoke tests pass, the real-PostgreSQL suite reaches
 `GREEN_IDEMPOTENCY_CLAIM_CONTRACT`, `BDD_SUBSCRIBE_WRITE_PATH_OK` and `BDD_STORAGE_ROUNDTRIP_OK`, and
 the minimum-wait assertion still observes a real race at 6.01 s.
+
+## Codex cycle 2 findings (PR #37, `4f40e88`)
+
+Three findings: two real, one a false positive caused by review context rather than by the code.
+
+**P1 — a replay reported success the first attempt never reached.** The previous fix stopped
+`IN_PROGRESS` being reported as a subscription, but left the deeper fault untouched: `persist()`
+marked the claim `completed` *before* `syncContact()` ran, and stored no outcome. So a settled claim
+meant only "the database writes finished", and `REPLAY` returned a hardcoded `subscribed` even when
+the original attempt had ended in `pending_provider` — or when the provider had not yet answered.
+
+This is the root cause behind the earlier finding, not a separate defect, and it is fixed at the
+mechanism rather than the symptom. The claim is now settled **last**, by `recordProviderOutcome`,
+once the provider has answered, and `result_jsonb` carries the outcome that attempt actually reached.
+`persist()` deliberately leaves the claim pending. `REPLAY` returns the stored outcome; anything
+absent or unrecognised resolves to `pending_provider`, because the one thing this must never do is
+invent a reachable subscription. If the settling write itself fails the claim stays pending, so a
+retry is refused rather than answered with a guess.
+
+**P2 — structurally invalid UUIDs reached the database.** The guard was `/^[0-9a-f-]{36}$/i`, a
+length-and-charset check. Verified directly: `"-".repeat(36)` and `"a".repeat(36)` both pass it and
+neither is castable, so PostgREST would reject the cast and the visitor would see
+`storage_unavailable` instead of the documented server-generated fallback. Replaced with a positional
+pattern matching exactly what PostgreSQL accepts; `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` is a valid
+UUID and still passes.
+
+**P1 (change size) — false positive, no change made.** The finding states the 1,846-line change has
+no verifiable owner exception. The exception exists and CI verifies it on every run:
+`PASS: reviewable implementation change exceeds 1,000 lines under an explicit repository-owner
+exception recorded at .../pull/37#issuecomment-5628520643`. Codex reviews the tree and cannot read PR
+comments, which is where `scripts/check-change-size.sh` looks; the gate's own authority is the
+repository owner's comment, not the working tree. Recorded rather than repaired.
+
+The real-PostgreSQL write path was updated to the corrected order — writes, then an `IN_PROGRESS`
+assertion while the claim is unsettled, then the provider step, then settling with the outcome, then
+a `REPLAY` assertion that the stored outcome comes back. It was re-checked for vacuity: mutating the
+stored outcome makes it fail with `replay carried outcome pending_provider instead of subscribed`
+(exit 3) while the unmutated file passes.
+
+Suite state: 90 unit and smoke tests pass, the real-PostgreSQL suite reaches
+`GREEN_IDEMPOTENCY_CLAIM_CONTRACT`, `BDD_SUBSCRIBE_WRITE_PATH_OK` and `BDD_STORAGE_ROUNDTRIP_OK`, and
+the minimum-wait assertion observes a real race at 5.94 s.
+
+**Cycle budget: this is cycle 2 of the three permitted.** One remains.

@@ -112,7 +112,7 @@ describe("community subscription consent boundary", () => {
         marketingConsent: true,
       },
       {
-        repository: { async persist() { return { ok: true as const, duplicate: true as const }; }, recordProviderOutcome },
+        repository: { async persist() { return { ok: true as const, duplicate: true as const, outcome: "subscribed" as const }; }, recordProviderOutcome },
         contactProvider: { syncContact },
       },
     );
@@ -120,6 +120,34 @@ describe("community subscription consent boundary", () => {
     expect(result.status).toBe("subscribed");
     expect(syncContact).not.toHaveBeenCalled();
     expect(recordProviderOutcome).not.toHaveBeenCalled();
+  });
+
+  it("replays an unfinished outcome instead of reporting a subscription", async () => {
+    // The first attempt settled as pending_provider. A duplicate must return that, not success.
+    const syncContact = vi.fn<CommunityContactProvider["syncContact"]>();
+
+    const result = await subscribeToCommunity(
+      {
+        requestId: "0a4f5b2e-5555-4000-8000-000000000007",
+        email: "reader@example.com",
+        firstName: "Reader",
+        marketingConsent: true,
+      },
+      {
+        repository: {
+          async persist() {
+            return { ok: true as const, duplicate: true as const, outcome: "pending_provider" as const };
+          },
+          async recordProviderOutcome() {
+            return { ok: true };
+          },
+        },
+        contactProvider: { syncContact },
+      },
+    );
+
+    expect(result.status).toBe("pending_provider");
+    expect(syncContact).not.toHaveBeenCalled();
   });
 
   it("reports a failed provider sync as pending rather than a reachable subscription", async () => {

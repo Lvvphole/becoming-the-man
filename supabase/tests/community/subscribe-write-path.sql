@@ -34,13 +34,8 @@ VALUES ('00000000-0000-0000-0000-0000000000c4','00000000-0000-0000-0000-00000000
 '00000000-0000-0000-0000-0000000000c1','marketing','2026-09-marketing-v1',
 'home-community-form','grant');
 
--- 5. Record the logical result against the claim.
-UPDATE public.idempotency_keys
- SET status='completed',result_reference='00000000-0000-0000-0000-0000000000c3',
-  result_jsonb='{"subscriber_id":"00000000-0000-0000-0000-0000000000c2"}'
- WHERE scope='subscribe' AND key='00000000-0000-0000-0000-0000000000c1';
-
--- 6. A duplicate submission of the same logical request must replay, never write again.
+-- 5. While the claim is unsettled, a concurrent duplicate must be told the work is in progress.
+--    It must NOT be handed a result, because none exists yet.
 DO $$
 DECLARE v_decision text;
 BEGIN
@@ -48,16 +43,39 @@ BEGIN
   'subscribe','00000000-0000-0000-0000-0000000000c1',
   encode(sha256('reader@example.test|Reader|marketing'::bytea),'hex'),
   clock_timestamp() + interval '15 minutes');
- IF v_decision IS DISTINCT FROM 'REPLAY' THEN
-  RAISE EXCEPTION 'duplicate submission returned % instead of REPLAY', v_decision;
+ IF v_decision IS DISTINCT FROM 'IN_PROGRESS' THEN
+  RAISE EXCEPTION 'unsettled claim returned % instead of IN_PROGRESS', v_decision;
  END IF;
 END $$;
 
--- 7. Provider accepted the contact: only now is the subscriber reachable.
+-- 6. Provider accepted the contact: only now is the subscriber reachable.
 UPDATE public.email_requests SET delivery_status='synced',error_code=NULL,updated_at=now()
  WHERE id='00000000-0000-0000-0000-0000000000c3';
 UPDATE public.subscribers SET audience_state='subscribed',updated_at=now()
  WHERE id='00000000-0000-0000-0000-0000000000c2';
+
+-- 7. Settle the claim last, carrying the outcome this request actually reached, so a replay can
+--    return the truth rather than assuming success.
+UPDATE public.idempotency_keys
+ SET status='completed',result_reference='00000000-0000-0000-0000-0000000000c3',
+  result_jsonb='{"subscriber_id":"00000000-0000-0000-0000-0000000000c2","outcome":"subscribed"}'
+ WHERE scope='subscribe' AND key='00000000-0000-0000-0000-0000000000c1';
+
+-- 8. Only now does a duplicate replay, and it carries the stored outcome.
+DO $$
+DECLARE v_decision text; v_result jsonb;
+BEGIN
+ SELECT decision,result_jsonb INTO v_decision,v_result FROM public.claim_idempotency_key(
+  'subscribe','00000000-0000-0000-0000-0000000000c1',
+  encode(sha256('reader@example.test|Reader|marketing'::bytea),'hex'),
+  clock_timestamp() + interval '15 minutes');
+ IF v_decision IS DISTINCT FROM 'REPLAY' THEN
+  RAISE EXCEPTION 'settled claim returned % instead of REPLAY', v_decision;
+ END IF;
+ IF v_result->>'outcome' IS DISTINCT FROM 'subscribed' THEN
+  RAISE EXCEPTION 'replay carried outcome % instead of subscribed', v_result->>'outcome';
+ END IF;
+END $$;
 
 DO $$
 BEGIN

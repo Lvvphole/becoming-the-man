@@ -11,6 +11,7 @@ import type {
   CommunityPersistResult,
   CommunityProviderOutcomeInput,
   CommunityProviderOutcomeResult,
+  CommunitySettledOutcome,
   CommunitySubscriptionInput,
   CommunitySubscriptionRepository,
 } from "../domain/community-subscription";
@@ -122,6 +123,18 @@ function firstRow(payload: unknown): Record<string, unknown> | null {
   return typeof row === "object" && row !== null ? (row as Record<string, unknown>) : null;
 }
 
+/**
+ * Reads the outcome a settled claim stored. Anything unrecognised resolves to `pending_provider`,
+ * because the one thing this must never do is invent a reachable subscription.
+ */
+function storedOutcome(value: unknown): CommunitySettledOutcome {
+  if (typeof value !== "object" || value === null) {
+    return "pending_provider";
+  }
+
+  return Reflect.get(value, "outcome") === "subscribed" ? "subscribed" : "pending_provider";
+}
+
 function resolveConnection(
   env: ServerEnvironment,
   fetchImpl: CommunityFetch,
@@ -148,7 +161,13 @@ export function createSupabaseCommunityRepository(
   async function claim(
     connection: Connection,
     input: CommunitySubscriptionInput,
-  ): Promise<"claimed" | "replay" | "in_progress" | "conflict" | "unavailable"> {
+  ): Promise<
+    | { kind: "claimed" }
+    | { kind: "replay"; outcome: CommunitySettledOutcome }
+    | { kind: "in_progress" }
+    | { kind: "conflict" }
+    | { kind: "unavailable" }
+  > {
     const response = await send(connection, "/rest/v1/rpc/claim_idempotency_key", {
       method: "POST",
       body: JSON.stringify({
@@ -160,28 +179,30 @@ export function createSupabaseCommunityRepository(
     });
 
     if (!response || !response.ok) {
-      return "unavailable";
+      return { kind: "unavailable" };
     }
 
-    const decision = firstRow(await readJson(response))?.decision;
+    const row = firstRow(await readJson(response));
+    const decision = row?.decision;
     if (decision === "CLAIMED") {
-      return "claimed";
+      return { kind: "claimed" };
     }
-    // REPLAY means the prior attempt finished and its result is stored, so it is safe to report.
+    // REPLAY means the prior attempt settled. Return the outcome it settled on rather than assuming
+    // success: that attempt may have ended in pending_provider.
     if (decision === "REPLAY") {
-      return "replay";
+      return { kind: "replay", outcome: storedOutcome(row?.result_jsonb) };
     }
-    // IN_PROGRESS means a claim exists that never completed — another caller is mid-flight, or an
-    // earlier attempt failed partway through its writes. Either way there is no result to return
-    // and the work is not done, so it must never be reported as a finished subscription.
+    // IN_PROGRESS means a claim exists that never settled — another caller is mid-flight, or an
+    // earlier attempt failed partway. Either way there is no outcome to return and the work is not
+    // done, so it must never be reported as a finished subscription.
     if (decision === "IN_PROGRESS") {
-      return "in_progress";
+      return { kind: "in_progress" };
     }
     if (decision === "CONFLICT") {
-      return "conflict";
+      return { kind: "conflict" };
     }
 
-    return "unavailable";
+    return { kind: "unavailable" };
   }
 
   /**
@@ -239,22 +260,27 @@ export function createSupabaseCommunityRepository(
     return patched?.ok ? id : null;
   }
 
-  async function completeClaim(
+  /**
+   * Settles the claim with the outcome this request actually reached. Called only once the provider
+   * has answered, so a later replay reads a truthful result rather than an assumption.
+   */
+  async function settleClaim(
     connection: Connection,
-    input: CommunitySubscriptionInput,
+    requestId: string,
     subscriberId: string,
     emailRequestId: string,
+    outcome: CommunitySettledOutcome,
   ): Promise<boolean> {
     const response = await send(connection, "/rest/v1/idempotency_keys", {
       method: "PATCH",
       searchParams: {
         scope: `eq.${COMMUNITY_IDEMPOTENCY_SCOPE}`,
-        key: `eq.${input.requestId}`,
+        key: `eq.${requestId}`,
       },
       body: JSON.stringify({
         status: "completed",
         result_reference: emailRequestId,
-        result_jsonb: { subscriber_id: subscriberId },
+        result_jsonb: { subscriber_id: subscriberId, outcome },
       }),
     });
 
@@ -269,19 +295,20 @@ export function createSupabaseCommunityRepository(
       }
 
       const decision = await claim(connection, input);
-      if (decision === "conflict") {
+      if (decision.kind === "conflict") {
         return { ok: false, code: COMMUNITY_ERROR_CODE.requestConflict };
       }
-      if (decision === "unavailable") {
+      if (decision.kind === "unavailable") {
         return { ok: false, code: COMMUNITY_ERROR_CODE.storageUnavailable };
       }
-      // Only a completed prior attempt has a result to stand in for this one.
-      if (decision === "replay") {
-        return { ok: true, duplicate: true };
+      // Only a settled prior attempt has an outcome to stand in for this one, and the caller gets
+      // that outcome rather than an assumed success.
+      if (decision.kind === "replay") {
+        return { ok: true, duplicate: true, outcome: decision.outcome };
       }
-      // An unfinished claim is not a subscription. Reporting it as one would tell a visitor they
-      // are on the list when the consent grant or the provider sync may never have happened.
-      if (decision === "in_progress") {
+      // An unsettled claim is not a subscription. Reporting it as one would tell a visitor they are
+      // on the list when the consent grant or the provider sync may never have happened.
+      if (decision.kind === "in_progress") {
         return { ok: false, code: COMMUNITY_ERROR_CODE.requestInProgress };
       }
 
@@ -332,8 +359,8 @@ export function createSupabaseCommunityRepository(
         return { ok: false, code: COMMUNITY_ERROR_CODE.storageUnavailable };
       }
 
-      await completeClaim(connection, input, subscriberId, emailRequestId);
-
+      // The claim stays pending here on purpose. Its outcome is not known until the provider has
+      // answered, and settling it early is what let a replay report an unearned subscription.
       return { ok: true, duplicate: false, subscriberId, emailRequestId };
     },
 
@@ -364,23 +391,36 @@ export function createSupabaseCommunityRepository(
 
       // Only a contact the provider accepted is reachable, so audience_state advances on success
       // alone. A failed sync leaves the subscriber pending for a retry to pick up.
-      if (!synced) {
-        return { ok: true };
+      if (synced) {
+        const subscriber = await send(connection, "/rest/v1/subscribers", {
+          method: "PATCH",
+          searchParams: { id: `eq.${input.subscriberId}` },
+          body: JSON.stringify({
+            audience_state: AUDIENCE_STATE.subscribed,
+            updated_at: timestamp,
+          }),
+        });
+
+        // The database is authoritative for audience membership. If this transition did not land
+        // the subscriber is still pending there and would be skipped by later audience operations,
+        // so the caller must not be told the signup completed.
+        if (!subscriber?.ok) {
+          return { ok: false };
+        }
       }
 
-      const subscriber = await send(connection, "/rest/v1/subscribers", {
-        method: "PATCH",
-        searchParams: { id: `eq.${input.subscriberId}` },
-        body: JSON.stringify({
-          audience_state: AUDIENCE_STATE.subscribed,
-          updated_at: timestamp,
-        }),
-      });
+      // Settle the claim last, with the outcome this request actually reached, so a replay returns
+      // it. If this write fails the claim stays pending and a retry is refused rather than answered
+      // with a guess.
+      const settled = await settleClaim(
+        connection,
+        input.requestId,
+        input.subscriberId,
+        input.emailRequestId,
+        synced ? "subscribed" : "pending_provider",
+      );
 
-      // The database is authoritative for audience membership. If this transition did not land the
-      // subscriber is still pending there and would be skipped by later audience operations, so the
-      // caller must not be told the signup completed.
-      return { ok: Boolean(subscriber?.ok) };
+      return { ok: settled };
     },
   };
 }

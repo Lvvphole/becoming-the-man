@@ -104,6 +104,26 @@ describe("POST /api/subscribe boundary", () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["thirty-six hyphens", "-".repeat(36)],
+    ["thirty-six hex characters with no separators", "a".repeat(36)],
+    ["a hyphenated value of the wrong shape", "aaaa-aaaaaaaa-aaaa-aaaa-aaaaaaaaaaaa"],
+    ["a non-hex character in place", "9f1c2d3g-4444-4000-8000-000000000001"],
+  ])("replaces %s rather than passing it to the uuid cast", async (_label, malformed) => {
+    // These pass a length-and-charset check but are not UUIDs. Forwarding one makes PostgREST fail
+    // the cast, which would reach the visitor as a storage failure instead of the documented
+    // server-generated fallback.
+    const handler = vi.fn<SubscribeHandler>(subscribed);
+
+    await handleSubscribeRequest(
+      post(validFields({ requestId: malformed })),
+      handler,
+      () => REQUEST_ID,
+    );
+
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ requestId: REQUEST_ID }));
+  });
+
   it("creates a request id when the client did not supply a usable one", async () => {
     const handler = vi.fn<SubscribeHandler>(subscribed);
     const fields = validFields();

@@ -11,8 +11,14 @@ export interface CommunitySubscriptionInput {
   marketingConsent: boolean;
 }
 
+/**
+ * The settled answer for one logical request. It is only knowable after provider synchronization,
+ * so it is what gets stored against the claim and what a later replay must return.
+ */
+export type CommunitySettledOutcome = "subscribed" | "pending_provider";
+
 export type CommunityPersistResult =
-  | { ok: true; duplicate: true }
+  | { ok: true; duplicate: true; outcome: CommunitySettledOutcome }
   | { ok: true; duplicate: false; subscriberId: string; emailRequestId: string }
   | { ok: false; code: CommunityErrorCode };
 
@@ -21,6 +27,7 @@ export type CommunityContactSyncResult = { ok: true } | { ok: false; code: Commu
 export type CommunityProviderOutcome = "synced" | "failed";
 
 export interface CommunityProviderOutcomeInput {
+  requestId: string;
   subscriberId: string;
   emailRequestId: string;
   outcome: CommunityProviderOutcome;
@@ -32,8 +39,9 @@ export type CommunityProviderOutcomeResult = { ok: boolean };
 export interface CommunitySubscriptionRepository {
   persist(input: CommunitySubscriptionInput): Promise<CommunityPersistResult>;
   /**
-   * Records how provider synchronization ended so a failed sync is visible operator state rather
-   * than a silent gap. Never fails the subscription: the consent is already durable by this point.
+   * Records how provider synchronization ended and settles the claim with that outcome. This is the
+   * only point at which the answer for this request is known, so it is the only point at which the
+   * claim may be marked complete — otherwise a replay has nothing truthful to return.
    */
   recordProviderOutcome(
     input: CommunityProviderOutcomeInput,
@@ -91,14 +99,17 @@ export async function subscribeToCommunity(
     return { status: "error", code: persisted.code };
   }
 
-  // A duplicate submission maps to the same logical result: return it without a second provider
-  // call, so one logical signup never produces two sends (Architecture section 19).
+  // A duplicate submission maps to the same logical result: return the outcome the first attempt
+  // settled on, without a second provider call, so one logical signup never produces two sends
+  // (Architecture section 19). Reporting success here regardless would claim an outcome the first
+  // attempt may never have reached.
   if (persisted.duplicate) {
-    return { status: "subscribed" };
+    return { status: persisted.outcome };
   }
 
   const synced = await dependencies.contactProvider.syncContact(input);
   const recorded = await dependencies.repository.recordProviderOutcome({
+    requestId: input.requestId,
     subscriberId: persisted.subscriberId,
     emailRequestId: persisted.emailRequestId,
     outcome: synced.ok ? "synced" : "failed",
