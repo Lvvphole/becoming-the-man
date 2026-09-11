@@ -65,19 +65,27 @@ def checkout() -> dict:
         'ref': HEAD, 'fetch-depth': 0, 'persist-credentials': False}}
 
 
-def command(run: str, env: dict | None = None) -> dict:
+def command(run: str, env: dict | None = None, step_id: str | None = None) -> dict:
     step = {'run': run, 'shell': 'bash'}
     if env is not None:
         step['env'] = env
+    if step_id is not None:
+        step['id'] = step_id
     return step
 
 
+DIGEST = '${{ steps.build.outputs.digest || steps.tag.outputs.digest }}'
+
+
 def build(push: bool) -> dict:
-    return {'id': 'build', 'uses': PINS['build'], 'with': {
+    step = {'id': 'build', 'uses': PINS['build'], 'with': {
         'context': '.', 'file': 'Dockerfile.agent', 'platforms': 'linux/amd64',
         'push': push, 'load': not push, 'provenance': False, 'sbom': False,
         'tags': IMAGE + (':${{ github.sha }}' if push else ':validation'),
         'build-args': 'REVISION=' + HEAD}}
+    if push:
+        step['if'] = "${{ steps.tag.outputs.digest == '' }}"
+    return step
 
 
 def login() -> dict:
@@ -95,13 +103,13 @@ def steps(job: str) -> list:
             'test "$(docker image inspect ' + IMAGE + ':validation --format \'{{.Os}}/{{.Architecture}}\')" = "linux/amd64"')]
     if job == 'publish':
         return common + [command('python3 -B scripts/agent_image_remote.py base'), login(),
-            command('python3 -B scripts/agent_image_remote.py tag-absent', {
+            command('python3 -B scripts/agent_image_remote.py commit-tag', {
                 'GH_TOKEN': '${{ secrets.GITHUB_TOKEN }}',
-                'SOURCE_SHA': '${{ github.sha }}'}),
+                'SOURCE_SHA': '${{ github.sha }}'}, 'tag'),
             build(True), command('python3 -B scripts/agent_image_remote.py registry', {
-                'IMAGE_DIGEST': '${{ steps.build.outputs.digest }}'}),
+                'IMAGE_DIGEST': DIGEST}),
             {'uses': PINS['attest'], 'with': {'subject-name': IMAGE,
-                'subject-digest': '${{ steps.build.outputs.digest }}', 'push-to-registry': True}}]
+                'subject-digest': DIGEST, 'push-to-registry': True}}]
     require(job == 'verify', 'JOB_SET')
     return common + [login(), command('python3 -B scripts/agent_image_remote.py verify', {
         'IMAGE_DIGEST': '${{ needs.publish.outputs.digest }}',
@@ -126,7 +134,7 @@ def workflow_policy(data: dict) -> None:
             expected['permissions']['packages'] = 'write' if name == 'publish' else 'read'
         if name == 'publish':
             expected['permissions'].update({'id-token': 'write', 'attestations': 'write'})
-            expected['outputs'] = {'digest': '${{ steps.build.outputs.digest }}'}
+            expected['outputs'] = {'digest': DIGEST}
         if name == 'verify':
             expected['permissions']['attestations'] = 'read'
         require(isinstance(job, dict), 'JOB_SHAPE')
@@ -141,7 +149,7 @@ def set_as_list(data: dict) -> list:
 
 
 def docker_policy(text: str) -> None:
-    require(re.search(r'^\s*#\s*(syntax|escape|check)\s*=', text, re.I | re.M) is None,
+    require(re.search(r'^\\s*#\\s*(syntax|escape|check)\\s*=', text, re.I | re.M) is None,
             'DOCKER_DIRECTIVE')
     lines = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith('#')]
     require(bool(lines), 'MISSING_FROM')
@@ -165,13 +173,13 @@ def check_tree(root: Path) -> None:
     for path in FILES:
         require(not (root / path).is_symlink(), 'SYMLINK')
     docker_policy((root / 'Dockerfile.agent').read_text())
-    exact((root / '.dockerignore').read_text(), '**\n!Dockerfile.agent\n', 'BUILD_CONTEXT')
+    exact((root / '.dockerignore').read_text(), '**\\n!Dockerfile.agent\\n', 'BUILD_CONTEXT')
     require(not (root / 'Dockerfile.agent.dockerignore').exists(), 'BUILD_CONTEXT')
     surface = {p.name for p in (root / '.github/workflows').iterdir()}
     exact(sorted(surface), ['agent-image.yml', 'pr-verification.yml'], 'WORKFLOW_SURFACE')
     workflow_policy(parse((root / WORKFLOW).read_text()))
     original = (root / '.github/workflows/pr-verification.yml').read_bytes()
-    blob = hashlib.sha1(b'blob ' + str(len(original)).encode() + b'\0' + original).hexdigest()
+    blob = hashlib.sha1(b'blob ' + str(len(original)).encode() + b'\\0' + original).hexdigest()
     require(blob == CI_BLOB, 'FROZEN_CI')
 
 
