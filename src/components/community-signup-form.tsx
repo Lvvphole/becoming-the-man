@@ -5,7 +5,11 @@ import {
   COMMUNITY_HONEYPOT_FIELD,
   type CommunityErrorCode,
 } from "../../contracts/community";
-import { SIGNUP_EVENT, createSignupAnalyticsEvent } from "../../contracts/analytics";
+import {
+  SIGNUP_EVENT,
+  createSignupAnalyticsEvent,
+  createSignupResultAnalyticsEvent,
+} from "../../contracts/analytics";
 import { browserAnalytics, type BrowserAnalytics } from "../lib/analytics-browser";
 
 export const SUBSCRIBE_ENDPOINT = "/api/subscribe";
@@ -103,9 +107,7 @@ export function CommunitySignupForm({
     }
 
     setState({ kind: body.status });
-    analytics.capture(
-      createSignupAnalyticsEvent(SIGNUP_EVENT.complete, { outcome: body.status }),
-    );
+    analytics.capture(createSignupResultAnalyticsEvent(body.status));
     form.reset();
     // A new logical request for the next submission, so a later signup is not treated as a replay.
     rotateRequestId();

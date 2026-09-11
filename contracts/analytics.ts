@@ -59,6 +59,22 @@ export function createSignupAnalyticsEvent(
   };
 }
 
+export type SignupAcceptedStatus = "subscribed" | "pending_provider";
+
+/**
+ * Maps a non-error /api/subscribe result onto the locked audience events.
+ * Architecture: signup_complete only after the defined durable-success condition.
+ */
+export function createSignupResultAnalyticsEvent(
+  status: SignupAcceptedStatus,
+): SignupAnalyticsEvent {
+  if (status === "subscribed") {
+    return createSignupAnalyticsEvent(SIGNUP_EVENT.complete, { outcome: "subscribed" });
+  }
+
+  return createSignupAnalyticsEvent(SIGNUP_EVENT.error, { outcome: "pending_provider" });
+}
+
 export function createBookCtaAnalyticsEvent(
   name: BookCtaEventName,
   destinationUrl: string,

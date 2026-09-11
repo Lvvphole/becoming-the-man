@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   SIGNUP_EVENT,
   createSignupAnalyticsEvent,
+  createSignupResultAnalyticsEvent,
 } from "../../contracts/analytics";
 
 const SENSITIVE = "reader@example.com";
@@ -26,6 +27,24 @@ describe("signup analytics privacy contract", () => {
     // "Never send raw email as analytics event property" (Product Specification, section 438).
     expect(JSON.stringify(event)).not.toContain(SENSITIVE);
     expect(JSON.stringify(event)).not.toContain("@");
+  });
+
+  it("reserves signup_complete for durable subscribed success", () => {
+    const subscribed = createSignupResultAnalyticsEvent("subscribed");
+    expect(subscribed).toEqual({
+      name: SIGNUP_EVENT.complete,
+      properties: {
+        event_version: 1,
+        surface: "home",
+        outcome: "subscribed",
+      },
+    });
+
+    const pending = createSignupResultAnalyticsEvent("pending_provider");
+    expect(pending.name).toBe(SIGNUP_EVENT.error);
+    expect(pending.name).not.toBe(SIGNUP_EVENT.complete);
+    expect(pending.properties.outcome).toBe("pending_provider");
+    expect(JSON.stringify(pending)).not.toContain("@");
   });
 
   it("carries a stable error code rather than the submitted values", () => {
