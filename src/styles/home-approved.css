@@ -617,10 +617,45 @@
 }
 
 .community-form {
+  position: relative;
   width: min(620px, 100%);
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+/* The decoy stays in the DOM for automated submitters but out of sight and out of the tab order. */
+.community-decoy {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.community-consent,
+.community-form button {
+  grid-column: 1 / -1;
+}
+
+.community-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 2px 0 0;
+  color: #dfe6ea;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.community-consent input {
+  flex: none;
+  width: 18px;
+  min-height: 18px;
+  margin-top: 2px;
+  accent-color: var(--urban-gold);
 }
 
 .community-form input,
