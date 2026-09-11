@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { Analytics } from "@vercel/analytics/react";
 import "./styles/global.css";
 import "./styles/home-approved.css";
 import "./styles/disclaimer.css";
@@ -18,6 +19,7 @@ export function Layout({ children }: { children: ReactNode }) {
         {children}
         <ScrollRestoration />
         <Scripts />
+        <Analytics />
       </body>
     </html>
   );
