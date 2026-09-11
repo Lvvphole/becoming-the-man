@@ -1,4 +1,5 @@
 """Review verifier: only a caller-created disposable Docker container is supported."""
+import importlib.util
 import re
 import subprocess
 from pathlib import Path
@@ -115,4 +116,13 @@ def suite(container: str) -> bool:
            "'pending','2020-01-01T00:00:00Z'::timestamptz,'2020-01-02T00:00:00Z'::timestamptz FROM generate_series(1,2);",
            '23505')
     print('GREEN_DRAFT_STORAGE_CHECKS_ONLY', flush=True)
-    return True
+    return idempotency_suite(container)
+
+
+def idempotency_suite(container: str) -> bool:
+    # The declared scenario filename is not a Python identifier, so load it by path.
+    spec = importlib.util.spec_from_file_location(
+        'idempotency_scenarios', ROOT / 'idempotency-scenarios.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.run(container, sql, expect)
