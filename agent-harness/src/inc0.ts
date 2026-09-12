@@ -349,12 +349,13 @@ function readAuditSatisfiesRecord(
     return false;
   }
 
-  if (record.routed_skill !== null) {
+  const routedSkill = record.routed_skill;
+  if (routedSkill !== null) {
     const routedSkillMatched =
       audit.routedSkill != null &&
-      sameAuthorityBinding(record.routed_skill, audit.routedSkill);
+      sameAuthorityBinding(routedSkill, audit.routedSkill);
     const routedSkillWasRead = audit.authorityBundle.some((observed) =>
-      sameAuthorityBinding(record.routed_skill, observed),
+      sameAuthorityBinding(routedSkill, observed),
     );
     if (!routedSkillMatched && !routedSkillWasRead) {
       return false;
