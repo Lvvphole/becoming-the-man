@@ -25,7 +25,9 @@ No generated content, vendor dashboard, crawler label, public SERP observation, 
 
 This proposal binds existing requirements; it does not replace them.
 
-### 2.1 Website Product Specification v1.0 — LOCKED
+### 2.1 Website Product Specification v1.0 — APPROVED & LOCKED
+
+By explicit user authority, `docs/Website_Product_Specification_v1.0_LOCKED.md` is the repository's governing website product specification for product goal, governing UX, DoD, release intent/order, product constraints, exact user/operator behavior, requirements, and acceptance criteria. This resolves the prior naming/semantics mismatch between “Website Governing Product Specification” and “Website Product Specification”; they refer to this single approved repository authority for website product governance.
 
 Relevant requirements:
 
@@ -105,8 +107,8 @@ Operator-captured Google Search Console evidence on 2026-09-11 establishes:
 - Domain-property ownership for `becomingthemanshecantrust.com`: **VERIFIED** through the domain name provider.
 - `https://www.becomingthemanshecantrust.com/`: **URL is on Google / Page is indexed**.
 - `https://www.becomingthemanshecantrust.com/book`: **URL is on Google / Page is indexed**.
-- Site-wide Page Indexing report: **PENDING_GOOGLE_PROCESSING**.
-- Search Performance/query report: **PENDING_GOOGLE_PROCESSING**.
+- Site-wide Page Indexing report: **PENDING_EXTERNAL_EVIDENCE** (provider state: Google processing).
+- Search Performance/query report: **PENDING_EXTERNAL_EVIDENCE** (provider state: Google processing).
 
 The two inspected URLs are therefore individually confirmed indexed at capture time. The baseline must not extrapolate from those two URLs to whole-site index coverage.
 
@@ -250,8 +252,8 @@ P15 allowed search/user crawler set is not accidentally blocked by project-owned
 ```text
 SC1 domain_property_ownership == VERIFIED
 SC2 inspected_critical_url state comes from Search Console URL Inspection
-SC3 sitewide_index_state remains PENDING until Page Indexing report is processed
-SC4 query/performance state remains PENDING until Performance report is processed
+SC3 sitewide_index_state == PENDING_EXTERNAL_EVIDENCE until Page Indexing report is processed
+SC4 query/performance_state == PENDING_EXTERNAL_EVIDENCE until Performance report is processed
 SC5 no public SERP observation may substitute for SC2-SC4
 SC6 sitemap submission may occur only after production sitemap passes P9-P11
 ```
@@ -354,4 +356,4 @@ Before freeze:
 4. current Search Console site-wide Page Indexing and Performance reports remain pending external evidence and must not be fabricated;
 5. any material change to crawler policy must update this proposal before freeze.
 
-After user approval/freeze, the first bounded implementation slice is the deterministic `/sitemap.xml` infrastructure required by FR-205, followed by canonical/metadata/schema verification.
+After user approval/freeze, implementation planning must remain inside the governing Release 2 — Distribution Engine contract. The governing Product Specification admits public rendering/metadata, sitemap/robots/llms, internal links, publishing, campaign operations, and discoverability as R2 scope, but it does not prescribe an intra-R2 implementation order. Any next implementation slice must therefore be selected by a separate governed plan from the current verified gaps and dependencies; this baseline does not freeze `/sitemap.xml` or any other R2 capability as the first slice.
