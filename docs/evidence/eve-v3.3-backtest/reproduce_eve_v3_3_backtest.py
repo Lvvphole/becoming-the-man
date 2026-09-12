@@ -7,16 +7,16 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-POLICY_FILE = ROOT / "eve-v3.2-normative-policy.json"
-MUTATION_FILE = ROOT / "eve-v3.2-mutation-manifest.json"
-RESULT_FILE = ROOT / "eve-v3.2-backtest-results.reproduced.json"
-COMMITTED_RESULT_FILE = ROOT / "eve-v3.2-backtest-results.json"
-AGGREGATE_FILE = ROOT / "eve-v3.2-aggregate-evidence.txt"
+POLICY_FILE = ROOT / "eve-v3.3-normative-policy.json"
+MUTATION_FILE = ROOT / "eve-v3.3-mutation-manifest.json"
+RESULT_FILE = ROOT / "eve-v3.3-backtest-results.reproduced.json"
+COMMITTED_RESULT_FILE = ROOT / "eve-v3.3-backtest-results.json"
+AGGREGATE_FILE = ROOT / "eve-v3.3-aggregate-evidence.txt"
 
-EXPECTED_POLICY_SHA256 = "4511124cd8b4de4196675a95917c5ad73c295ff48086b7147f85327d174a3bce"
-EXPECTED_MUTATION_SHA256 = "e4b4876b1b8759aabac0cc33189ac935e32fb00918d4803e1357b6784834a3cd"
-EXPECTED_RESULTS_SHA256 = "a9100bcff3fad446bfc4bc5af62592ec10afeff2039ff325d7ce265ca6b84796"
-EXPECTED_AGGREGATE_SHA256 = "e5467d248125f8313321f580d977865f96d274bb5db73ad60bfba76338645374"
+EXPECTED_POLICY_SHA256 = "97ce4d1aa6b7e40724a05960f00781f7fca448639fe879965f5cdade2cd4b874"
+EXPECTED_MUTATION_SHA256 = "e4dfdf9ee2daabaf9a4297e9137a452682fc65075d9a2722e386cd4b2d111b5d"
+EXPECTED_RESULTS_SHA256 = "335523c49a9ce63358dd78fbdd075f243e0f45661878bdc6c159c665b8630530"
+EXPECTED_AGGREGATE_SHA256 = "600d8ac075542abca8776a1fbcf3d9fba00b8c1c7211d0c02134c6f949041de7"
 
 
 def canonical_bytes(value: object) -> bytes:
@@ -68,11 +68,13 @@ def validate(policy: dict) -> list[str]:
         (("identity","git_blob_oid_separate_from_content_sha256"), True, "IDENTITY_SEPARATION"),
         (("identity","authority_binding_shape"), "object:path+git_blob_oid+content_sha256", "IDENTITY_SHAPE"),
         (("identity","parallel_authority_arrays_forbidden"), True, "IDENTITY_PARALLEL_ARRAYS"),
-        (("bootstrap","repository_name"), "Agent-Harness", "BOOTSTRAP_NAME"),
-        (("bootstrap","repository_name_user_approved"), True, "BOOTSTRAP_NAME_APPROVAL"),
-        (("bootstrap","implementation_agent_may_create_unbootstrapped_repo"), False, "BOOTSTRAP_AGENT_CREATE"),
-        (("bootstrap","repo_must_preexist_with_root_agents_before_agent_write"), True, "BOOTSTRAP_PREEXIST"),
-        (("bootstrap","first_commit_exact_paths"), ["AGENTS.md"], "BOOTSTRAP_FIRST_COMMIT"),
+        (("bootstrap","component_name"), "Agent-Harness", "BOOTSTRAP_COMPONENT_NAME"),
+        (("bootstrap","component_path"), "agent-harness/", "BOOTSTRAP_COMPONENT_PATH"),
+        (("bootstrap","repository_full_name"), "Lvvphole/becoming-the-man", "BOOTSTRAP_REPOSITORY"),
+        (("bootstrap","repository_preexists"), True, "BOOTSTRAP_REPOSITORY_EXISTS"),
+        (("bootstrap","root_agents_authoritative"), True, "BOOTSTRAP_ROOT_AGENTS"),
+        (("bootstrap","nested_agents_created_in_inc0"), False, "BOOTSTRAP_NESTED_AGENTS"),
+        (("bootstrap","readiness_gate_before_component_write"), True, "BOOTSTRAP_READINESS"),
         (("task_envelope","authorized_effects_semantic_only"), True, "SCOPE_EFFECTS_SEMANTIC"),
         (("task_envelope","authorized_candidate_paths_exact"), True, "SCOPE_EXACT_PATHS"),
         (("task_envelope","wildcards_in_authorized_candidate_paths"), False, "SCOPE_WILDCARDS"),
@@ -85,6 +87,8 @@ def validate(policy: dict) -> list[str]:
         (("authority","unrouted_repo_text_is_data"), True, "AUTH_UNROUTED_DATA"),
         (("authority","task_cannot_silently_override_governance"), True, "AUTH_OVERRIDE"),
         (("authority","actual_read_audit_required"), True, "AUTH_READ_AUDIT"),
+        (("authority","engineering_rules_source_identifier"), "skill://flora-skills/root/.codex/skills/remote-skills/skill-6a7bbe3c89448191900ebcdd6395ac7c/SKILL.md", "AUTH_RULES_SOURCE"),
+        (("authority","engineering_rules_sha256"), "deb95b212e0d3fae948e6cd0b9b932ede58cbaeef0170ccc8257b7a80a117793", "AUTH_RULES_DIGEST"),
         (("readiness","schema_language"), "typescript", "READY_LANGUAGE"),
         (("readiness","schema_validator"), "zod_strict", "READY_VALIDATOR"),
         (("readiness","authority_bundle_shape"), "array_of_identity_objects", "READY_AUTH_SHAPE"),
@@ -156,6 +160,23 @@ def validate(policy: dict) -> list[str]:
         (("verifier","self_reported_pass_authoritative"), False, "VERIFIER_SELF_PASS"),
         (("verifier","binds_base_and_candidate"), True, "VERIFIER_BINDING"),
         (("verifier","raw_evidence_required"), True, "VERIFIER_EVIDENCE"),
+        (("verifier","executes_candidate_commands_directly"), False, "VERIFIER_DIRECT_EXECUTION"),
+        (("verifier","candidate_command_sandbox","fresh_per_command"), True, "COMMAND_FRESH"),
+        (("verifier","candidate_command_sandbox","network"), "deny-all", "COMMAND_NETWORK"),
+        (("verifier","candidate_command_sandbox","secrets_present"), False, "COMMAND_SECRETS"),
+        (("verifier","candidate_command_sandbox","github_credentials_present"), False, "COMMAND_GITHUB"),
+        (("verifier","candidate_command_sandbox","docker_socket_mounted"), False, "COMMAND_DOCKER_SOCKET"),
+        (("verifier","candidate_command_sandbox","host_filesystem_mounted"), False, "COMMAND_HOST_MOUNT"),
+        (("verifier","candidate_command_sandbox","verifier_oracle_mounted"), False, "COMMAND_ORACLE_MOUNT"),
+        (("verifier","candidate_command_sandbox","shared_writable_volume"), False, "COMMAND_SHARED_WRITE"),
+        (("verifier","candidate_command_sandbox","sanitized_fixed_environment"), True, "COMMAND_ENV"),
+        (("verifier","candidate_command_sandbox","verifier_selects_argv_and_cwd"), True, "COMMAND_ARGV"),
+        (("verifier","candidate_command_sandbox","resource_limits_enforced"), ["cpu","memory","pids","wall_clock","output"], "COMMAND_LIMITS"),
+        (("verifier","candidate_command_sandbox","disposable_candidate_working_copy"), True, "COMMAND_WORKTREE"),
+        (("verifier","candidate_command_sandbox","narrow_evidence_channel"), True, "COMMAND_EVIDENCE"),
+        (("verifier","candidate_command_sandbox","candidate_controls_sandbox_profile"), False, "COMMAND_PROFILE"),
+        (("verifier","candidate_command_sandbox","dependency_acquisition_verifier_controlled"), True, "COMMAND_DEPENDENCIES"),
+        (("verifier","candidate_command_sandbox","candidate_lifecycle_execution_separated"), True, "COMMAND_LIFECYCLE"),
         (("resume","guard_every_resume"), True, "RESUME_GUARD"),
         (("resume","governance_drift"), "RETURN_TO_AUTHORITY_READ_ONLY", "RESUME_GOV"),
         (("resume","candidate_drift"), "BLOCKED", "RESUME_CANDIDATE"),

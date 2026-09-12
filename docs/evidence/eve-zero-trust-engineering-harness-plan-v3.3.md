@@ -1,14 +1,14 @@
 PLAN_READY
 
-# Eve Zero-Trust Engineering Harness — Redesigned Plan v3.2
+# Eve Zero-Trust Engineering Harness — Redesigned Plan v3.3
 
 ## Disposition
 
-`PLAN_READY` after the bounded v3.2 corrections and an executed plan-policy adversarial backtest.
+`PLAN_READY` after the bounded v3.3 corrections and an executed plan-policy adversarial backtest.
 
 This is **not** an implementation PASS.
 
-No target repository, harness repository, branch, workflow, code, test, schema, or configuration was mutated in this planning step.
+This revision replaces v3.2. It binds the harness to the existing single repository, closes the candidate-command isolation defect, and adds a retrievable engineering-rules authority identifier.
 
 ---
 
@@ -18,7 +18,7 @@ Target repository: `Lvvphole/becoming-the-man`
 
 Base commit OID:
 
-`9c7eaa6513eb66391dd4faee444b77d6edd2c481`
+`13ff57bc8dbece2e6a517753835a08d11402b90d`
 
 PR #39 is currently closed and unmerged. Its implementation is negative-learning evidence only and is not an implementation baseline.
 
@@ -39,8 +39,9 @@ Identity is explicit:
 
 External canonical engineering rules:
 
-- bytes: `12,641`
-- content SHA-256: `072a8a485692ecd54aba2d96583b81ae3096c75ef0eb2080a78d9781915c3cbb`
+- stable source identifier: `skill://flora-skills/root/.codex/skills/remote-skills/skill-6a7bbe3c89448191900ebcdd6395ac7c/SKILL.md`
+- bytes: `31,013`
+- content SHA-256: `deb95b212e0d3fae948e6cd0b9b932ede58cbaeef0170ccc8257b7a80a117793`
 
 Builder preflight must recompute every applicable identity before the first implementation mutation.
 
@@ -54,7 +55,9 @@ Build the smallest sufficient single-agent Eve engineering control plane that ca
 
 ### Selected architecture
 
-- Harness repository name: **`Agent-Harness`**.
+- Harness component name: **`Agent-Harness`**.
+- Harness repository path: **`agent-harness/`** inside `Lvvphole/becoming-the-man`.
+- The locked single-repository architecture remains unchanged; no separate harness repository exists.
 - Eve is the orchestrator/runtime.
 - Eve uses the AI SDK. OpenAI SDK is not required.
 - One root agent only.
@@ -75,26 +78,20 @@ Build the smallest sufficient single-agent Eve engineering control plane that ca
 
 ## 3. Definition of Done
 
-### D1 — Governed repository bootstrap
+### D1 — Governed in-repository component bootstrap
 
-The implementation agent does **not** create an empty or ungoverned harness repository.
+`Agent-Harness` is implemented only under `agent-harness/` in the existing `Lvvphole/becoming-the-man` repository. Existing root `AGENTS.md` remains the routing authority. No nested `AGENTS.md` is created in INC-0.
 
 Before implementation:
 
-1. the approved repository name is `Agent-Harness`;
-2. the user or another external human creates the repository;
-3. the first commit contains exactly `AGENTS.md`;
-4. the approved bootstrap `AGENTS.md` content SHA-256 is recorded externally;
-5. the implementation session opens the already-existing repository;
-6. it reads root `AGENTS.md` and verifies the approved digest;
-7. it reads the canonical engineering rules;
-8. it completes the Pre-Code Readiness Gate before any repository write.
+1. bind current `main` and root `AGENTS.md` identities;
+2. read root `AGENTS.md` before any write;
+3. read the canonical engineering rules from the stable source identifier and verify its digest;
+4. read only the routed architecture sections required for the harness boundary;
+5. complete the Pre-Code Readiness Gate;
+6. constrain INC-0 writes to its exact declared paths under `agent-harness/` plus the authorized task-list entry.
 
-If the repository does not already exist with approved root governance:
-
-`BLOCKED_BOOTSTRAP_REQUIRED`
-
-This resolves the governance bootstrap paradox instead of treating the first write as exempt.
+Failure returns `BLOCKED_READINESS_REQUIRED`.
 
 ### D2 — Exact identity model
 
@@ -356,7 +353,19 @@ Task-specific structural predicates are added only when routed authority explici
 
 ### D14 — External verifier
 
-Verifier runs outside the candidate workspace and has no shared writable volume with it.
+The verifier control plane runs outside the candidate workspace and has no shared writable volume with it. It never executes candidate-controlled commands directly.
+
+Every candidate-controlled command, including package-manager lifecycle hooks, tests, builds, and routed verification commands, runs in a fresh verifier-launched least-privilege command sandbox. The command sandbox has:
+
+- deny-all network by default;
+- no secrets, GitHub credentials, Docker socket, verifier/oracle files, or host filesystem access;
+- no shared writable volume with the verifier control plane or another command sandbox;
+- a sanitized fixed environment and verifier-selected argv/cwd;
+- verifier-enforced CPU, memory, PID, wall-clock, and output limits;
+- a disposable writable candidate working copy derived from the frozen candidate identity;
+- a narrow verifier-owned evidence channel that returns only bounded exit status and captured output.
+
+Dependency acquisition, when required, is verifier-controlled and separated from candidate lifecycle execution. Candidate code cannot configure, weaken, or escape the command sandbox.
 
 It binds:
 
@@ -499,26 +508,22 @@ Plan-policy backtest evidence is never transferred as implementation evidence.
 
 ---
 
-## 4. Repository bootstrap gate B0
+## 4. In-repository bootstrap gate B0
 
-Current governance requires root `AGENTS.md` to be read before any repository write. Therefore the implementation agent cannot legally create a blank repository and then govern it afterward.
-
-B0 is external to implementation:
+B0 binds the new component to the existing repository governance:
 
 ```text
-1. Repository name is Agent-Harness.
-2. User/external human approves root AGENTS.md bytes.
-3. User/external human creates Agent-Harness.
-4. First commit contains AGENTS.md only.
-5. AGENTS.md content SHA-256 is recorded externally.
-6. Implementation session enters the existing repository.
-7. It reads AGENTS.md and verifies the approved digest.
-8. It reads canonical engineering rules.
-9. It completes the normal Pre-Code Readiness Gate.
-10. Only then may INC-0 mutate repository state.
+1. Repository is `Lvvphole/becoming-the-man`.
+2. Component path is `agent-harness/`.
+3. Current main and root `AGENTS.md` identities are rebound.
+4. Root `AGENTS.md` is read before mutation.
+5. Canonical engineering rules are retrieved from the stable source identifier and their digest is verified.
+6. Routed single-repository architecture and CI governance are read.
+7. The normal Pre-Code Readiness Gate passes.
+8. Only then may INC-0 mutate its exact declared paths.
 ```
 
-Failure -> `BLOCKED_BOOTSTRAP_REQUIRED`.
+Failure -> `BLOCKED_READINESS_REQUIRED`.
 
 ---
 
@@ -545,7 +550,7 @@ Prerequisite: B0 satisfied.
 
 Close the authority/readiness foundation:
 
-- bind already-present harness `AGENTS.md`;
+- bind existing repository root `AGENTS.md`;
 - bind canonical engineering rules;
 - implement trusted TaskEnvelope;
 - implement authority/read audit;
@@ -626,6 +631,104 @@ Any survivor -> `BLOCKED`.
 
 ---
 
+## Atomic obligations
+
+- `OBL-REV-1`: replace the v3.2 plan and policy with the in-repository v3.3 identities and candidate-command sandbox contract.
+- `OBL-REV-2`: persist reproducible v3.3 mutation evidence whose committed bytes are checked by the reproducer in normal and optimized Python modes.
+- `OBL-INC0-1`: reject an untrusted or incomplete TaskEnvelope before authoring capability exists.
+- `OBL-INC0-2`: bind root governance, engineering-rules authority, target profile, and run configuration as exact identities in the readiness decision.
+- `OBL-INC0-3`: expose no authoring tool from INC-0 and return only `PRE_CODE_READY` or a stable blocking code.
+
+## Build manifest
+
+```json
+{
+  "schema": "build-agent/v2",
+  "completion_authority": "Repository owner after exact-head PR Verification and Codex review",
+  "source_binding": {
+    "commit": "13ff57bc8dbece2e6a517753835a08d11402b90d",
+    "staged_diff_sha256": "49a528df0c6920081bc96f58f6bd8f0910d1decc8d93c5d51f526407abd60c92",
+    "unstaged_diff_sha256": "7232b48772c50e86addf0750837b64f6198412108ef29266be7fed6bfcc85bd3",
+    "untracked_manifest_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "dirty_submodule_manifest_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "excluded_plan_path": "docs/evidence/eve-zero-trust-engineering-harness-plan-v3.3.md"
+  },
+  "task_list": {
+    "target": "tasks/todo.md",
+    "preservation_evidence": "tasks/todo.md did not exist at source commit 13ff57bc8dbece2e6a517753835a08d11402b90d",
+    "entries": [
+      {"increment": "REV-A", "text": "Replace the v3.2 plan and normative policy with v3.3."},
+      {"increment": "REV-B", "text": "Persist and reproduce the v3.3 adversarial plan evidence."},
+      {"increment": "INC-0", "text": "Implement the Agent-Harness authority and readiness skeleton without authoring tools."}
+    ]
+  },
+  "increments": [
+    {
+      "id": "REV-A",
+      "objective": "Bind the corrected in-repository architecture and verifier isolation contract.",
+      "obligations": ["OBL-REV-1"],
+      "dependencies": [],
+      "files": ["docs/evidence/eve-zero-trust-engineering-harness-plan-v3.3.md", "docs/evidence/eve-v3.3-backtest/eve-v3.3-normative-policy.json", "docs/evidence/eve-v3.3-backtest/eve-v3.3-mutation-manifest.json"],
+      "actions": [{"instruction": "Replace v3.2 identities and invalid bootstrap assumptions.", "postcondition": "Plan and policy identify agent-harness/ inside becoming-the-man and prohibit direct verifier execution of candidate commands."}],
+      "acceptance_criteria": ["Plan and policy contain the stable engineering-rules locator and command-sandbox invariants."],
+      "verifier": {"reference": "python3 docs/evidence/eve-v3.3-backtest/reproduce_eve_v3_3_backtest.py", "oracle": "Policy validation and all declared mutants are rejected.", "class": "DETERMINISTIC"},
+      "budgets": {"repair_attempts": 2, "command_timeout_seconds": 30, "increment_timeout_seconds": 300},
+      "checkpoint": "v3.3 plan-policy inputs fixed and canonical",
+      "stateful": false,
+      "protected_actions": [],
+      "recovery": null
+    },
+    {
+      "id": "REV-B",
+      "objective": "Persist self-checking deterministic evidence for the revised policy.",
+      "obligations": ["OBL-REV-2"],
+      "dependencies": ["REV-A"],
+      "files": ["docs/evidence/eve-v3.3-backtest/eve-v3.3-backtest-results.json", "docs/evidence/eve-v3.3-backtest/eve-v3.3-aggregate-evidence.txt", "docs/evidence/eve-v3.3-backtest/reproduce_eve_v3_3_backtest.py"],
+      "actions": [{"instruction": "Run the deterministic backtest and persist exact outputs.", "postcondition": "Normal and optimized runs compare generated bytes with committed evidence and report zero survivors."}],
+      "acceptance_criteria": ["154 mutants are killed with zero survivors in normal and optimized modes."],
+      "verifier": {"reference": "python3 reproduce_eve_v3_3_backtest.py and python3 -O reproduce_eve_v3_3_backtest.py from the evidence directory", "oracle": "Both commands exit zero and report mutants=154 killed=154 survivors=0 without changing committed evidence.", "class": "DETERMINISTIC"},
+      "budgets": {"repair_attempts": 2, "command_timeout_seconds": 30, "increment_timeout_seconds": 300},
+      "checkpoint": "v3.3 evidence bytes reproduce exactly",
+      "stateful": false,
+      "protected_actions": [],
+      "recovery": null
+    },
+    {
+      "id": "INC-0",
+      "objective": "Produce a deterministic readiness decision that cannot expose authoring capability before all trusted bindings pass.",
+      "obligations": ["OBL-INC0-1", "OBL-INC0-2", "OBL-INC0-3"],
+      "dependencies": ["REV-B"],
+      "files": ["agent-harness/src/inc0.ts", "tests/agent-harness/inc0.test.ts", "tasks/todo.md"],
+      "actions": [{"instruction": "Establish failing tests for malformed, missing, and mismatched authority inputs.", "postcondition": "The INC-0 test fails because the implementation is absent."}, {"instruction": "Implement strict contracts and the pure readiness state transition.", "postcondition": "All INC-0 cases return the exact expected readiness or blocking code and no authoring tools."}],
+      "acceptance_criteria": ["Valid exact bindings return PRE_CODE_READY with no authoring tools.", "Every missing or mismatched binding returns a stable BLOCKED code.", "Mutation attempts against required gates are rejected by the test oracle."],
+      "verifier": {"reference": "npx vitest run tests/agent-harness/inc0.test.ts", "oracle": "All positive, boundary, and negative-control assertions pass twice against an unchanged candidate.", "class": "DETERMINISTIC"},
+      "budgets": {"repair_attempts": 2, "command_timeout_seconds": 120, "increment_timeout_seconds": 600},
+      "checkpoint": "INC-0 authority/readiness skeleton verified locally; no authoring tool exists",
+      "stateful": false,
+      "protected_actions": [],
+      "recovery": null
+    }
+  ],
+  "publication": {
+    "mode": "OPEN_PR",
+    "branch": "agent-harness/plan-v3-3-inc0",
+    "base_branch": "main",
+    "commit_message": "Add Agent-Harness v3.3 plan and INC-0 readiness skeleton",
+    "commit_paths": ["docs/evidence/eve-zero-trust-engineering-harness-plan-v3.3.md", "docs/evidence/eve-v3.3-backtest/eve-v3.3-normative-policy.json", "docs/evidence/eve-v3.3-backtest/eve-v3.3-mutation-manifest.json", "docs/evidence/eve-v3.3-backtest/eve-v3.3-backtest-results.json", "docs/evidence/eve-v3.3-backtest/eve-v3.3-aggregate-evidence.txt", "docs/evidence/eve-v3.3-backtest/reproduce_eve_v3_3_backtest.py", "agent-harness/src/inc0.ts", "tests/agent-harness/inc0.test.ts", "tasks/todo.md"],
+    "pr_title": "Add Agent-Harness v3.3 plan and INC-0 readiness skeleton",
+    "pr_body": "Replaces the invalid separate-repository v3.2 plan with the governed in-repository Agent-Harness path, closes the candidate-command isolation and engineering-rules locator findings, persists deterministic v3.3 evidence, and implements the bounded INC-0 readiness skeleton. Merge remains separately user-authorized.",
+    "protected_actions": [
+      {"action": "commit verified candidate", "state": "AUTHORIZED", "owner": "user", "evidence_ref": "explicit instruction to update the plan, create its artifacts, start INC-0, and open the replacement PR"},
+      {"action": "push task branch", "state": "AUTHORIZED", "owner": "user", "evidence_ref": "explicit instruction to update the plan, create its artifacts, start INC-0, and open the replacement PR"},
+      {"action": "create pull request", "state": "AUTHORIZED", "owner": "user", "evidence_ref": "explicit instruction to update the plan, create its artifacts, start INC-0, and open the replacement PR"},
+      {"action": "merge pull request", "state": "UNAUTHORIZED", "owner": "repository owner", "evidence_ref": "root AGENTS.md merge gate"}
+    ]
+  }
+}
+```
+
+---
+
 ## 7. Normative plan-policy backtest
 
 The plan-policy backtest was executed against the exact policy represented in this artifact.
@@ -641,22 +744,22 @@ ensure_ascii = false
 
 Evidence identities:
 
-- normative policy SHA-256: `4511124cd8b4de4196675a95917c5ad73c295ff48086b7147f85327d174a3bce`
-- mutation manifest SHA-256: `e4b4876b1b8759aabac0cc33189ac935e32fb00918d4803e1357b6784834a3cd`
-- backtest results SHA-256: `a9100bcff3fad446bfc4bc5af62592ec10afeff2039ff325d7ce265ca6b84796`
-- aggregate evidence SHA-256: `e5467d248125f8313321f580d977865f96d274bb5db73ad60bfba76338645374`
+- normative policy SHA-256: `97ce4d1aa6b7e40724a05960f00781f7fca448639fe879965f5cdade2cd4b874`
+- mutation manifest SHA-256: `e4dfdf9ee2daabaf9a4297e9137a452682fc65075d9a2722e386cd4b2d111b5d`
+- backtest results SHA-256: `335523c49a9ce63358dd78fbdd075f243e0f45661878bdc6c159c665b8630530`
+- aggregate evidence SHA-256: `600d8ac075542abca8776a1fbcf3d9fba00b8c1c7211d0c02134c6f949041de7`
 
 Results:
 
-- hostile mutants tested: **133**
-- killed: **133**
+- hostile mutants tested: **154**
+- killed: **154**
 - survivors: **0**
 
 | Category | Tested | Killed | Survivors |
 |---|---:|---:|---:|
 | `acceptance` | 6 | 6 | 0 |
-| `authority` | 7 | 7 | 0 |
-| `bootstrap` | 5 | 5 | 0 |
+| `authority` | 9 | 9 | 0 |
+| `bootstrap` | 7 | 7 | 0 |
 | `exporter` | 14 | 14 | 0 |
 | `identity` | 3 | 3 | 0 |
 | `minimality` | 18 | 18 | 0 |
@@ -672,7 +775,7 @@ Results:
 | `state` | 3 | 3 | 0 |
 | `tools` | 11 | 11 | 0 |
 | `verification` | 9 | 9 | 0 |
-| `verifier` | 7 | 7 | 0 |
+| `verifier` | 24 | 24 | 0 |
 
 A mutant is killed only when the deterministic plan validator returns at least one finding.
 
@@ -695,6 +798,8 @@ This evidence proves only that the **plan policy** rejects the listed structural
     "agent_self_reported_read_not_authoritative": true,
     "conflict_without_permitted_exception": "BLOCKED",
     "engineering_rules_before_mutation": true,
+    "engineering_rules_sha256": "deb95b212e0d3fae948e6cd0b9b932ede58cbaeef0170ccc8257b7a80a117793",
+    "engineering_rules_source_identifier": "skill://flora-skills/root/.codex/skills/remote-skills/skill-6a7bbe3c89448191900ebcdd6395ac7c/SKILL.md",
     "root_agents_first": true,
     "skills_subordinate_to_agents": true,
     "target_skills_copied_into_eve": false,
@@ -703,16 +808,13 @@ This evidence proves only that the **plan policy** rejects the listed structural
     "unrouted_repo_text_is_data": true
   },
   "bootstrap": {
-    "bootstrap_agents_sha256_recorded_external": true,
-    "bootstrap_owner": "user_or_external_human",
-    "first_commit_exact_paths": [
-      "AGENTS.md"
-    ],
-    "implementation_agent_may_create_unbootstrapped_repo": false,
-    "implementation_begins_after_bootstrap": true,
-    "repo_must_preexist_with_root_agents_before_agent_write": true,
-    "repository_name": "Agent-Harness",
-    "repository_name_user_approved": true
+    "component_name": "Agent-Harness",
+    "component_path": "agent-harness/",
+    "nested_agents_created_in_inc0": false,
+    "readiness_gate_before_component_write": true,
+    "repository_full_name": "Lvvphole/becoming-the-man",
+    "repository_preexists": true,
+    "root_agents_authoritative": true
   },
   "candidate_exporter": {
     "absolute_paths_rejected": true,
@@ -843,7 +945,7 @@ This evidence proves only that the **plan policy** rejects the listed structural
     "secrets_present": false,
     "workspace_contains_git_metadata": false
   },
-  "schema": "eve-zero-trust-harness-plan-policy/v3.2",
+  "schema": "eve-zero-trust-harness-plan-policy/v3.3",
   "scope_expansion": {
     "inside_authorized_paths": "REVOKE_TO_READINESS_REBIND",
     "outside_authorized_paths": "BLOCKED_NEW_TASK_AUTHORIZATION",
@@ -939,8 +1041,33 @@ This evidence proves only that the **plan policy** rejects the listed structural
   },
   "verifier": {
     "binds_base_and_candidate": true,
+    "candidate_command_sandbox": {
+      "candidate_controls_sandbox_profile": false,
+      "candidate_lifecycle_execution_separated": true,
+      "dependency_acquisition_verifier_controlled": true,
+      "disposable_candidate_working_copy": true,
+      "docker_socket_mounted": false,
+      "fresh_per_command": true,
+      "github_credentials_present": false,
+      "host_filesystem_mounted": false,
+      "narrow_evidence_channel": true,
+      "network": "deny-all",
+      "resource_limits_enforced": [
+        "cpu",
+        "memory",
+        "pids",
+        "wall_clock",
+        "output"
+      ],
+      "sanitized_fixed_environment": true,
+      "secrets_present": false,
+      "shared_writable_volume": false,
+      "verifier_oracle_mounted": false,
+      "verifier_selects_argv_and_cwd": true
+    },
     "candidate_controls_command": false,
     "candidate_controls_profile": false,
+    "executes_candidate_commands_directly": false,
     "outside_candidate_workspace": true,
     "raw_evidence_required": true,
     "self_reported_pass_authoritative": false,
@@ -956,7 +1083,7 @@ This evidence proves only that the **plan policy** rejects the listed structural
 
 ### Mutation manifest
 
-The exact mutation manifest is frozen by SHA-256 `e4b4876b1b8759aabac0cc33189ac935e32fb00918d4803e1357b6784834a3cd`. Each mutation changes one declared plan-policy property or one explicit relational invariant. The manifest contains 133 cases; no mutation result is accepted by model judgment.
+The exact mutation manifest is frozen by SHA-256 `e4dfdf9ee2daabaf9a4297e9137a452682fc65075d9a2722e386cd4b2d111b5d`. Each mutation changes one declared plan-policy property or one explicit relational invariant. The manifest contains 154 cases; no mutation result is accepted by model judgment.
 
 ---
 
@@ -965,7 +1092,7 @@ The exact mutation manifest is frozen by SHA-256 `e4b4876b1b8759aabac0cc33189ac9
 Stop immediately if:
 
 - target base or authority identity drifts without re-evaluation;
-- `Agent-Harness` does not already exist with approved root `AGENTS.md`;
+- the harness is routed outside `agent-harness/` or attempts to replace root governance;
 - PR #39 is revived or reused as implementation baseline;
 - Git blob identity is confused with content SHA-256;
 - semantic `authorized_effects` is used as path authority;
@@ -986,9 +1113,9 @@ Stop immediately if:
 
 Before INC-0:
 
-1. B0 bootstrap is complete.
-2. Read existing `Agent-Harness/AGENTS.md`.
-3. Read canonical engineering rules and verify SHA-256 `072a8a485692ecd54aba2d96583b81ae3096c75ef0eb2080a78d9781915c3cbb`.
+1. B0 readiness bootstrap is complete.
+2. Read existing repository root `AGENTS.md`.
+3. Retrieve canonical engineering rules from the stable source identifier and verify SHA-256 `deb95b212e0d3fae948e6cd0b9b932ede58cbaeef0170ccc8257b7a80a117793`.
 4. Rebind target commit and every required `{path, git_blob_oid, content_sha256}`.
 5. Verify PR #39 remains closed/unmerged.
 6. Verify task mode, TaskEnvelope, exact path authority, and selected-plan digest when applicable.
@@ -1008,4 +1135,4 @@ Harness increment acceptance requires executable mechanical evidence and the inc
 
 Any target PR remains independently governed by `becoming-the-man` exact-head `PR Verification`, required Codex review, up-to-date-main compliance, and explicit user merge authorization.
 
-`PLAN_READY` means v3.2 is ready for governed execution **after B0 and the exact Eve image-digest approval gate**. It does not mean implementation has begun or passed.
+`PLAN_READY` means v3.3 is ready for governed execution **after B0 and the exact Eve image-digest approval gate**. It does not mean implementation has begun or passed.
