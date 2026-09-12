@@ -10,6 +10,8 @@ ROOT = Path(__file__).resolve().parent
 POLICY_FILE = ROOT / "eve-v3.2-normative-policy.json"
 MUTATION_FILE = ROOT / "eve-v3.2-mutation-manifest.json"
 RESULT_FILE = ROOT / "eve-v3.2-backtest-results.reproduced.json"
+COMMITTED_RESULT_FILE = ROOT / "eve-v3.2-backtest-results.json"
+AGGREGATE_FILE = ROOT / "eve-v3.2-aggregate-evidence.txt"
 
 EXPECTED_POLICY_SHA256 = "4511124cd8b4de4196675a95917c5ad73c295ff48086b7147f85327d174a3bce"
 EXPECTED_MUTATION_SHA256 = "e4b4876b1b8759aabac0cc33189ac935e32fb00918d4803e1357b6784834a3cd"
@@ -28,6 +30,11 @@ def canonical_bytes(value: object) -> bytes:
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise SystemExit(message)
 
 
 def get_path(value: dict, path: tuple[str, ...]):
@@ -215,11 +222,17 @@ def main() -> None:
     policy = json.loads(policy_bytes)
     mutations = json.loads(mutation_bytes)
 
-    assert sha256_bytes(policy_bytes) == EXPECTED_POLICY_SHA256
-    assert sha256_bytes(mutation_bytes) == EXPECTED_MUTATION_SHA256
-    assert canonical_bytes(policy) == policy_bytes
-    assert canonical_bytes(mutations) == mutation_bytes
-    assert validate(policy) == []
+    require(
+        sha256_bytes(policy_bytes) == EXPECTED_POLICY_SHA256,
+        "POLICY_SHA256_MISMATCH",
+    )
+    require(
+        sha256_bytes(mutation_bytes) == EXPECTED_MUTATION_SHA256,
+        "MUTATION_SHA256_MISMATCH",
+    )
+    require(canonical_bytes(policy) == policy_bytes, "POLICY_NOT_CANONICAL")
+    require(canonical_bytes(mutations) == mutation_bytes, "MUTATION_NOT_CANONICAL")
+    require(validate(policy) == [], "POLICY_VALIDATION_FAILED")
 
     results = []
     for mutation in mutations:
@@ -237,19 +250,33 @@ def main() -> None:
     result_bytes = canonical_bytes(results)
     RESULT_FILE.write_bytes(result_bytes)
 
+    committed_result_bytes = COMMITTED_RESULT_FILE.read_bytes()
+    require(
+        result_bytes == committed_result_bytes,
+        "COMMITTED_RESULTS_BYTES_MISMATCH",
+    )
     result_sha = sha256_bytes(result_bytes)
+
     aggregate_bytes = (
         EXPECTED_POLICY_SHA256
         + EXPECTED_MUTATION_SHA256
         + result_sha
     ).encode("ascii")
+    committed_aggregate_bytes = AGGREGATE_FILE.read_bytes()
+    require(
+        aggregate_bytes == committed_aggregate_bytes,
+        "COMMITTED_AGGREGATE_BYTES_MISMATCH",
+    )
     aggregate_sha = sha256_bytes(aggregate_bytes)
 
     survivors = [item for item in results if not item["killed"]]
 
-    assert result_sha == EXPECTED_RESULTS_SHA256
-    assert aggregate_sha == EXPECTED_AGGREGATE_SHA256
-    assert not survivors
+    require(result_sha == EXPECTED_RESULTS_SHA256, "RESULTS_SHA256_MISMATCH")
+    require(
+        aggregate_sha == EXPECTED_AGGREGATE_SHA256,
+        "AGGREGATE_SHA256_MISMATCH",
+    )
+    require(not survivors, "BACKTEST_SURVIVORS_PRESENT")
 
     print(f"policy_sha256={EXPECTED_POLICY_SHA256}")
     print(f"mutation_manifest_sha256={EXPECTED_MUTATION_SHA256}")
