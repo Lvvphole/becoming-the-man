@@ -93,8 +93,7 @@ Project skills are subordinate workflows under `.claude/skills/<skill-name>/SKIL
 
 ## Upstream Source Router
 Do not preload upstream specifications. Read only the smallest relevant authoritative section when the task requires it.
-- Product goal, governing UX, DoD, release intent/order, or product constraints -> **Website Governing Product Specification v1.0 — LOCKED**.
-- Exact user/operator behavior, journey, requirement, or acceptance criterion -> **Website Product Specification v1.0 — LOCKED**.
+- Product goal, governing UX, DoD, release intent/order, product constraints, exact user/operator behavior, journey, requirement, or acceptance criterion -> `docs/Website_Product_Specification_v1.0_LOCKED.md` (**Website Product Specification v1.0 — APPROVED & LOCKED**), explicitly user-authorized as the repository's governing website product specification.
 - Repository boundary, runtime, data ownership, API/provider contract, security, AI grounding/evals, CI/CD, or recovery -> **Website System Architecture v1.0 — LOCKED**, as amended by approved versioned architecture amendments.
 - Public book identity or Twenty-Four Non-Negotiables -> published **Becoming the Man She Can Trust**.
 - Deeper relationship protocols, evidence calibration, or safety/referral rules -> **Master Relationship Operating System v1.4**.
