@@ -22,8 +22,12 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
   - Release candidate -> owning release checks plus all earlier-release regressions.
 - A green build alone is not release evidence.
 
+  ## AGENT EXECUTION GOVERNANCE
+- **Micro-PR Ceiling (500 LOC):** Every PR must be atomic (e.g., UI component vs API route vs database schema).
+- **No Speculative Schema Drift:** DB migrations, Prisma models, and API payload schemas must be defined and approved before UI or service logic is authored.
+
 ## Change & Review Gates
-- A PR may contain at most 1,000 reviewable implementation lines changed, measured as additions + deletions from the merge base to the final head.
+- A PR may contain at most 500 reviewable implementation lines changed, measured as additions + deletions from the merge base to the final head.
 - Count source, tests, scripts, SQL, configuration, and workflow definitions. Exclude Markdown/docs, dependency lockfiles, and explicitly generated framework/build artifacts.
 - Over-budget work must be decomposed unless the user explicitly authorizes an exception before merge. Record that authorization in a PR comment containing the exact line `CHANGE-SIZE-EXCEPTION: APPROVED`; CI accepts it only when the comment author is the repository owner.
 - Persistent `PR Verification` must PASS for the exact final PR head SHA. Any new implementation commit invalidates earlier verification evidence.
@@ -44,7 +48,7 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 - If the same failure remains, make another repair only when materially new diagnostic evidence identifies a specific, bounded, non-speculative correction.
 - If no materially new diagnostic evidence remains, stop and report BLOCKED. Do not continue speculative fix-forward.
 - If repairs expose a new significant defect class caused by the same mechanism, stop local repair and reassess the mechanism: `STOP -> REDUCE OR REDESIGN -> VERIFY`.
-- The 1,000-line change-size rule remains a reviewability guardrail. Do not fragment one coherent repair merely to satisfy the limit; request the existing explicit exception when safe decomposition would weaken verification or correctness.
+- The 500-line change-size rule remains a reviewability guardrail. Do not fragment one coherent repair merely to satisfy the limit; request the existing explicit exception when safe decomposition would weaken verification or correctness.
 - Bug-repair re-review is subject to the same three-cycle Codex convergence cap in Change & Review Gates.
 - A repaired change is not complete until required verification passes on the exact final head SHA and the required Codex review has no unresolved actionable finding.
 - Verification establishes merge eligibility only. Merge remains separately user-authorized.
