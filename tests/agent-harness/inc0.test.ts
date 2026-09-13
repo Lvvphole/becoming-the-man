@@ -64,6 +64,11 @@ function validEnvironment(): TrustedInc0Environment {
     base_commit_oid: OID_A,
     target_profile_digest: SHA_C,
     run_configuration_digest: SHA_D,
+    expected_authorities: [ROOT_AGENTS],
+    canonical_engineering_rules: {
+      source_identifier: CANONICAL_ENGINEERING_RULES_SOURCE,
+      content_sha256: CANONICAL_ENGINEERING_RULES_SHA256,
+    },
     routed_skills: {
       SCOUT: SCOUT_SKILL,
       PLAN: PLAN_SKILL,
@@ -233,6 +238,26 @@ describe("INC-0 readiness gate", () => {
     };
     expect(decide(envelope, record, audit).code).toBe(
       "BLOCKED_READ_AUDIT_INSUFFICIENT",
+    );
+  });
+
+  it("rejects a colluding forged authority in both record and read audit", () => {
+    const envelope = validEnvelope();
+    const forgedAgents = {
+      ...ROOT_AGENTS,
+      content_sha256: SHA_D,
+    };
+    const record = {
+      ...validRecord(envelope),
+      authority_bundle: [forgedAgents],
+    };
+    const audit = {
+      ...validReadAudit(),
+      authority_bundle: [forgedAgents],
+    };
+
+    expect(decide(envelope, record, audit).code).toBe(
+      "BLOCKED_AUTHORITY_BINDING_MISMATCH",
     );
   });
 
