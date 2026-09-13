@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BASE_REF="${1:-origin/main}"
-MAX_LINES=1000
+MAX_LINES=500
 EXCEPTION_MARKER="CHANGE-SIZE-EXCEPTION: APPROVED"
 
 if ! MERGE_BASE="$(git merge-base "$BASE_REF" HEAD 2>/dev/null)"; then
@@ -34,7 +34,7 @@ echo "Excluded documentation/generated/lockfile lines: $excluded."
 
 if (( counted > MAX_LINES )); then
   if [[ -z "${GITHUB_TOKEN:-}" || -z "${GITHUB_REPOSITORY:-}" || -z "${PR_NUMBER:-}" || -z "${REPOSITORY_OWNER:-}" ]]; then
-    echo "BLOCKED: change exceeds 1,000 lines and PR exception evidence cannot be verified in this context."
+    echo "BLOCKED: change exceeds 500 lines and PR exception evidence cannot be verified in this context."
     exit 2
   fi
   if ! command -v curl >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
@@ -69,8 +69,8 @@ if (( counted > MAX_LINES )); then
     page=$((page + 1))
   done
 
-  echo "FAIL: reviewable implementation change exceeds the 1,000-line governance limit without an authorized PR exception."
+  echo "FAIL: reviewable implementation change exceeds the 500-line governance limit without an authorized PR exception."
   exit 1
 fi
 
-echo "PASS: implementation change is within the 1,000-line governance limit."
+echo "PASS: implementation change is within the 500-line governance limit."
