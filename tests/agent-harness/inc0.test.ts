@@ -153,8 +153,9 @@ describe("INC-0 readiness gate", () => {
   it("blocks a readiness record that omits the required configuration digests", () => {
     const envelope = validEnvelope();
     const record = validRecord(envelope);
-    const { target_profile_digest: _target, run_configuration_digest: _run, ...invalid } =
-      record;
+    const invalid: Record<string, unknown> = { ...record };
+    delete invalid.target_profile_digest;
+    delete invalid.run_configuration_digest;
 
     expect(
       evaluateInc0Readiness(
