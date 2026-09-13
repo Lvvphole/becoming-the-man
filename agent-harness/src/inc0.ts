@@ -105,6 +105,8 @@ export const ReadinessRecordSchema = z
   .object({
     task_envelope_sha256: Sha256Schema,
     base_commit_oid: GitOidSchema,
+    target_profile_digest: Sha256Schema,
+    run_configuration_digest: Sha256Schema,
     authority_bundle: z.array(AuthorityBindingSchema).min(1),
     engineering_rules: ExternalAuthorityBindingSchema,
     routed_skill: AuthorityBindingSchema.nullable(),
@@ -120,11 +122,36 @@ export const ReadinessRecordSchema = z
 
 export type ReadinessRecord = z.infer<typeof ReadinessRecordSchema>;
 
+export const TrustedInc0EnvironmentSchema = z
+  .object({
+    base_commit_oid: GitOidSchema,
+    target_profile_digest: Sha256Schema,
+    run_configuration_digest: Sha256Schema,
+    routed_skills: z
+      .object({
+        SCOUT: AuthorityBindingSchema.nullable(),
+        PLAN: AuthorityBindingSchema.nullable(),
+        IMPLEMENT: AuthorityBindingSchema.nullable(),
+        REPAIR: AuthorityBindingSchema.nullable(),
+        REVIEW: AuthorityBindingSchema.nullable(),
+        GOVERNANCE_CHANGE: AuthorityBindingSchema.nullable(),
+      })
+      .strict(),
+  })
+  .strict();
+
+export type TrustedInc0Environment = z.infer<
+  typeof TrustedInc0EnvironmentSchema
+>;
+
 export type Inc0BlockingCode =
   | "BLOCKED_TASK_ENVELOPE_INVALID"
   | "BLOCKED_READINESS_SCHEMA_INVALID"
   | "BLOCKED_ENVELOPE_DIGEST_MISMATCH"
   | "BLOCKED_BASE_COMMIT_MISMATCH"
+  | "BLOCKED_TARGET_PROFILE_MISMATCH"
+  | "BLOCKED_RUN_CONFIGURATION_MISMATCH"
+  | "BLOCKED_ROUTING_MISMATCH"
   | "BLOCKED_UNRESOLVED_CONFLICTS"
   | "BLOCKED_SCOPE_EXCEEDS_ENVELOPE"
   | "BLOCKED_READ_AUDIT_INSUFFICIENT";
@@ -367,30 +394,40 @@ function readAuditSatisfiesRecord(
   return true;
 }
 
-const TargetProfileSnakeSchema = z
-  .object({
-    base_commit_oid: GitOidSchema,
-  })
-  .passthrough();
+const SCOUT_SKILL_PATH = ".claude/skills/scout-agent/SKILL.md";
+const PLAN_SKILL_PATH = ".claude/skills/plan/SKILL.md";
 
-const TargetProfileCamelSchema = z
-  .object({
-    baseCommitOid: GitOidSchema,
-  })
-  .passthrough();
+function sameNullableAuthorityBinding(
+  left: AuthorityBinding | null,
+  right: AuthorityBinding | null,
+): boolean {
+  if (left === null || right === null) {
+    return left === right;
+  }
+  return sameAuthorityBinding(left, right);
+}
 
-function getTargetBaseCommitOid(targetProfile: unknown): string | null {
-  const snake = TargetProfileSnakeSchema.safeParse(targetProfile);
-  if (snake.success) {
-    return snake.data.base_commit_oid;
+function expectedRoutedSkill(
+  mode: RunMode,
+  environment: TrustedInc0Environment,
+): AuthorityBinding | null | undefined {
+  const expected = environment.routed_skills[mode];
+
+  if (
+    mode === "SCOUT" &&
+    (expected === null || expected.path !== SCOUT_SKILL_PATH)
+  ) {
+    return undefined;
   }
 
-  const camel = TargetProfileCamelSchema.safeParse(targetProfile);
-  if (camel.success) {
-    return camel.data.baseCommitOid;
+  if (
+    mode === "PLAN" &&
+    (expected === null || expected.path !== PLAN_SKILL_PATH)
+  ) {
+    return undefined;
   }
 
-  return null;
+  return expected;
 }
 
 function blockedInc0(
@@ -409,7 +446,7 @@ export function evaluateInc0Readiness(
   rawEnvelope: unknown,
   rawRecord: unknown,
   readAuditTrail: unknown,
-  targetProfile: unknown,
+  rawEnvironment: unknown,
 ): ReadinessDecision {
   const envelopeResult = TaskEnvelopeSchema.safeParse(rawEnvelope);
   if (!envelopeResult.success) {
@@ -427,8 +464,19 @@ export function evaluateInc0Readiness(
     );
   }
 
+  const environmentResult = TrustedInc0EnvironmentSchema.safeParse(
+    rawEnvironment,
+  );
+  if (!environmentResult.success) {
+    return blockedInc0(
+      "BLOCKED_TARGET_PROFILE_MISMATCH",
+      "Trusted INC-0 environment failed strict schema validation.",
+    );
+  }
+
   const envelope = envelopeResult.data;
   const record = recordResult.data;
+  const environment = environmentResult.data;
 
   if (
     record.task_envelope_sha256 !== computeTaskEnvelopeDigest(envelope)
@@ -439,14 +487,27 @@ export function evaluateInc0Readiness(
     );
   }
 
-  const targetBaseCommitOid = getTargetBaseCommitOid(targetProfile);
-  if (
-    targetBaseCommitOid === null ||
-    record.base_commit_oid !== targetBaseCommitOid
-  ) {
+  if (record.base_commit_oid !== environment.base_commit_oid) {
     return blockedInc0(
       "BLOCKED_BASE_COMMIT_MISMATCH",
-      "ReadinessRecord base commit does not match the target profile.",
+      "ReadinessRecord base commit does not match the trusted environment.",
+    );
+  }
+
+  if (record.target_profile_digest !== environment.target_profile_digest) {
+    return blockedInc0(
+      "BLOCKED_TARGET_PROFILE_MISMATCH",
+      "ReadinessRecord target-profile digest does not match the trusted environment.",
+    );
+  }
+
+  if (
+    record.run_configuration_digest !==
+    environment.run_configuration_digest
+  ) {
+    return blockedInc0(
+      "BLOCKED_RUN_CONFIGURATION_MISMATCH",
+      "ReadinessRecord run-configuration digest does not match the trusted environment.",
     );
   }
 
@@ -469,6 +530,17 @@ export function evaluateInc0Readiness(
     );
   }
 
+  const routedSkill = expectedRoutedSkill(envelope.mode, environment);
+  if (
+    routedSkill === undefined ||
+    !sameNullableAuthorityBinding(record.routed_skill, routedSkill)
+  ) {
+    return blockedInc0(
+      "BLOCKED_ROUTING_MISMATCH",
+      "ReadinessRecord routed skill does not match trusted mode routing.",
+    );
+  }
+
   if (!readAuditSatisfiesRecord(record, readAuditTrail)) {
     return blockedInc0(
       "BLOCKED_READ_AUDIT_INSUFFICIENT",
@@ -482,141 +554,4 @@ export function evaluateInc0Readiness(
     authorized_tools: [],
     findings: [],
   };
-}
-
-/*
- * Compatibility surface for the currently committed INC-0 regression test.
- * The revised strict contracts above are authoritative for the new readiness
- * record path; this wrapper preserves the predecessor test while the test
- * fixture is advanced independently.
- */
-export interface ReadinessInput {
-  taskEnvelope: {
-    mode: RunMode;
-    requestedRef: string;
-    userRequestSha256: string;
-    selectedPlanSha256: string;
-    authorizedCandidatePaths: string[];
-    proposedCandidatePaths: string[];
-    governanceChange: boolean;
-    destructiveActions: boolean;
-  };
-  authority: {
-    rootAgents: {
-      path: string;
-      gitBlobOid: string;
-      contentSha256: string;
-    };
-    engineeringRules: {
-      source: string;
-      contentSha256: string;
-    };
-  };
-  expected: {
-    rootAgentsGitBlobOid: string;
-    rootAgentsContentSha256: string;
-    engineeringRulesSource: string;
-    engineeringRulesContentSha256: string;
-    selectedPlanSha256: string;
-  };
-  targetProfileSha256: string;
-  expectedTargetProfileSha256: string;
-  runConfigurationSha256: string;
-  expectedRunConfigurationSha256: string;
-  reads: string[];
-  unresolvedConflicts: string[];
-}
-
-export type LegacyBlockingCode =
-  | "BLOCKED_INVALID_ENVELOPE"
-  | "BLOCKED_REQUIRED_READ_MISSING"
-  | "BLOCKED_AUTHORITY_MISMATCH"
-  | "BLOCKED_PLAN_MISMATCH"
-  | "BLOCKED_SCOPE"
-  | "BLOCKED_CONFLICT";
-
-export type LegacyReadinessDecision =
-  | { state: "PRE_CODE_READY"; authoringTools: [] }
-  | { state: "BLOCKED"; code: LegacyBlockingCode; authoringTools: [] };
-
-function blockedLegacy(code: LegacyBlockingCode): LegacyReadinessDecision {
-  return { state: "BLOCKED", code, authoringTools: [] };
-}
-
-export function evaluateReadiness(
-  input: ReadinessInput,
-): LegacyReadinessDecision {
-  const legacyEnvelope = input.taskEnvelope;
-  if (
-    legacyEnvelope.mode !== "IMPLEMENT" ||
-    legacyEnvelope.requestedRef.length === 0 ||
-    !SHA256_PATTERN.test(legacyEnvelope.userRequestSha256) ||
-    !SHA256_PATTERN.test(legacyEnvelope.selectedPlanSha256) ||
-    legacyEnvelope.authorizedCandidatePaths.length === 0 ||
-    legacyEnvelope.proposedCandidatePaths.length === 0 ||
-    legacyEnvelope.governanceChange ||
-    legacyEnvelope.destructiveActions
-  ) {
-    return blockedLegacy("BLOCKED_INVALID_ENVELOPE");
-  }
-
-  if (
-    !["AGENTS.md", "engineering-rules"].every((required) =>
-      input.reads.includes(required),
-    )
-  ) {
-    return blockedLegacy("BLOCKED_REQUIRED_READ_MISSING");
-  }
-
-  const { rootAgents, engineeringRules } = input.authority;
-  if (
-    rootAgents.path !== "AGENTS.md" ||
-    !GIT_OID_PATTERN.test(rootAgents.gitBlobOid) ||
-    !SHA256_PATTERN.test(rootAgents.contentSha256) ||
-    !SHA256_PATTERN.test(engineeringRules.contentSha256) ||
-    rootAgents.gitBlobOid !== input.expected.rootAgentsGitBlobOid ||
-    rootAgents.contentSha256 !== input.expected.rootAgentsContentSha256 ||
-    engineeringRules.source !== input.expected.engineeringRulesSource ||
-    engineeringRules.contentSha256 !==
-      input.expected.engineeringRulesContentSha256
-  ) {
-    return blockedLegacy("BLOCKED_AUTHORITY_MISMATCH");
-  }
-
-  if (
-    legacyEnvelope.selectedPlanSha256 !==
-    input.expected.selectedPlanSha256
-  ) {
-    return blockedLegacy("BLOCKED_PLAN_MISMATCH");
-  }
-
-  if (
-    !SHA256_PATTERN.test(input.targetProfileSha256) ||
-    !SHA256_PATTERN.test(input.runConfigurationSha256) ||
-    input.targetProfileSha256 !== input.expectedTargetProfileSha256 ||
-    input.runConfigurationSha256 !== input.expectedRunConfigurationSha256
-  ) {
-    return blockedLegacy("BLOCKED_AUTHORITY_MISMATCH");
-  }
-
-  const authorized = new Set(legacyEnvelope.authorizedCandidatePaths);
-  if (
-    !legacyEnvelope.authorizedCandidatePaths.every(
-      isCanonicalCandidatePath,
-    ) ||
-    !legacyEnvelope.proposedCandidatePaths.every(
-      isCanonicalCandidatePath,
-    ) ||
-    !legacyEnvelope.proposedCandidatePaths.every((path) =>
-      authorized.has(path),
-    )
-  ) {
-    return blockedLegacy("BLOCKED_SCOPE");
-  }
-
-  if (input.unresolvedConflicts.length > 0) {
-    return blockedLegacy("BLOCKED_CONFLICT");
-  }
-
-  return { state: "PRE_CODE_READY", authoringTools: [] };
 }
