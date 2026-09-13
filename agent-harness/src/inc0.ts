@@ -127,6 +127,8 @@ export const TrustedInc0EnvironmentSchema = z
     base_commit_oid: GitOidSchema,
     target_profile_digest: Sha256Schema,
     run_configuration_digest: Sha256Schema,
+    expected_authorities: z.array(AuthorityBindingSchema).min(1),
+    canonical_engineering_rules: ExternalAuthorityBindingSchema,
     routed_skills: z
       .object({
         SCOUT: AuthorityBindingSchema.nullable(),
@@ -151,6 +153,7 @@ export type Inc0BlockingCode =
   | "BLOCKED_BASE_COMMIT_MISMATCH"
   | "BLOCKED_TARGET_PROFILE_MISMATCH"
   | "BLOCKED_RUN_CONFIGURATION_MISMATCH"
+  | "BLOCKED_AUTHORITY_BINDING_MISMATCH"
   | "BLOCKED_ROUTING_MISMATCH"
   | "BLOCKED_UNRESOLVED_CONFLICTS"
   | "BLOCKED_SCOPE_EXCEEDS_ENVELOPE"
@@ -348,8 +351,20 @@ function sameAuthorityBinding(
   );
 }
 
-function readAuditSatisfiesRecord(
+function hasEveryRequiredAuthority(
+  requiredAuthorities: AuthorityBinding[],
+  observedAuthorities: AuthorityBinding[],
+): boolean {
+  return requiredAuthorities.every((required) =>
+    observedAuthorities.some((observed) =>
+      sameAuthorityBinding(required, observed),
+    ),
+  );
+}
+
+function readAuditSatisfiesTrustedEnvironment(
   record: ReadinessRecord,
+  environment: TrustedInc0Environment,
   rawReadAuditTrail: unknown,
 ): boolean {
   const audit = normalizeReadAudit(rawReadAuditTrail);
@@ -357,20 +372,21 @@ function readAuditSatisfiesRecord(
     return false;
   }
 
-  const hasEveryAuthority = record.authority_bundle.every((required) =>
-    audit.authorityBundle.some((observed) =>
-      sameAuthorityBinding(required, observed),
-    ),
-  );
-  if (!hasEveryAuthority) {
+  if (
+    !hasEveryRequiredAuthority(
+      environment.expected_authorities,
+      audit.authorityBundle,
+    )
+  ) {
     return false;
   }
 
   const hasEngineeringRules = audit.externalAuthorities.some(
     (observed) =>
       observed.source_identifier ===
-        record.engineering_rules.source_identifier &&
-      observed.content_sha256 === record.engineering_rules.content_sha256,
+        environment.canonical_engineering_rules.source_identifier &&
+      observed.content_sha256 ===
+        environment.canonical_engineering_rules.content_sha256,
   );
   if (!hasEngineeringRules) {
     return false;
@@ -511,6 +527,18 @@ export function evaluateInc0Readiness(
     );
   }
 
+  if (
+    !hasEveryRequiredAuthority(
+      environment.expected_authorities,
+      record.authority_bundle,
+    )
+  ) {
+    return blockedInc0(
+      "BLOCKED_AUTHORITY_BINDING_MISMATCH",
+      "ReadinessRecord authority bundle does not match trusted required authorities.",
+    );
+  }
+
   if (record.unresolved_conflicts.length > 0) {
     return blockedInc0(
       "BLOCKED_UNRESOLVED_CONFLICTS",
@@ -541,7 +569,13 @@ export function evaluateInc0Readiness(
     );
   }
 
-  if (!readAuditSatisfiesRecord(record, readAuditTrail)) {
+  if (
+    !readAuditSatisfiesTrustedEnvironment(
+      record,
+      environment,
+      readAuditTrail,
+    )
+  ) {
     return blockedInc0(
       "BLOCKED_READ_AUDIT_INSUFFICIENT",
       "Trusted read audit does not prove every required authority read.",
