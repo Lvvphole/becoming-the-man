@@ -6,7 +6,7 @@
 
 **Version 1.0 • APPROVED & LOCKED**
 
-*Subordinate to the locked Website Governing Product Specification v1.0*
+*Canonical Website PRD subordinate to root `AGENTS.md` and routed by root `CONTEXT.md`*
 
 <table>
 <colgroup>
@@ -637,13 +637,13 @@ The admin dashboard is not the operator outcome by itself. It exists to make the
 
 ## Next authorized artifact after approval
 
-Website System Architecture v1.0: select the exact rendering/runtime topology, repository layout, API contracts, database migrations/RLS policies, email webhook architecture, PostHog instrumentation boundaries, admin authentication, SEO rendering path, R4 File Search/eval/security architecture, deployment topology, and observability. It must remain subordinate to this Product Specification and the locked governing baseline.
+Website System Architecture v1.0: select the exact rendering/runtime topology, repository layout, API contracts, database migrations/RLS policies, email webhook architecture, PostHog instrumentation boundaries, admin authentication, SEO rendering path, R4 File Search/eval/security architecture, deployment topology, and observability. It must remain subordinate to root `AGENTS.md` and preserve the routed requirements of this Product Specification.
 
 # Appendix A • Evidence Basis
 
-Governing sources
+Routed reference sources
 
-- BTMSCT Website Governing Product Specification v1.0 — LOCKED 26 August 2026.
+- Root `AGENTS.md` — repository execution constitution; root `CONTEXT.md` selects the subordinate sources applicable to the task.
 
 - Published Becoming the Man She Can Trust manuscript — public book identity and Twenty-Four Non-Negotiables.
 
