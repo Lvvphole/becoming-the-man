@@ -1,0 +1,52 @@
+{
+  "version": "1.0.0",
+  "task_envelope": {
+    "required_fields": [
+      "workflow_stage", "task_domains", "source_sections", "workpiece_paths",
+      "selected_evidence_ids", "prior_outputs", "authorized_candidate_paths",
+      "approvals", "source_binding"
+    ],
+    "path_array_fields": ["workpiece_paths", "authorized_candidate_paths"]
+  },
+  "blocked_record": {
+    "required_fields": [
+      "status", "reason_code", "gate_id", "stage_id", "route_candidates",
+      "missing_inputs", "conflicts", "source_binding", "resolution_required"
+    ],
+    "status": "BLOCKED",
+    "reason_codes": [
+      "ROUTING_TABLE_INVALID", "ROUTE_ZERO_MATCH", "ROUTE_MULTI_MATCH",
+      "MISSING_SELECTOR", "MISSING_SOURCE", "SOURCE_BINDING_STALE",
+      "WILDCARD_INPUT", "EVIDENCE_INDEX_MISSING", "EVIDENCE_ID_UNKNOWN",
+      "EVIDENCE_BINDING_STALE", "EVIDENCE_AUTHORITY_FORBIDDEN",
+      "UNLISTED_INPUT", "TRANSITION_PRECONDITION_FALSE",
+      "REVIEW_CYCLE_EXCEEDED", "CHANGE_SIZE_DRIFT", "STAGE_CONTRACT_INVALID"
+    ]
+  },
+  "stage_contract": {
+    "required_fields": [
+      "stage_id", "job", "required_inputs", "allowed_layer3", "allowed_layer4",
+      "permitted_mutations", "forbidden_mutations", "required_verifier",
+      "primary_output", "next_stage", "human_gate"
+    ]
+  },
+  "architecture": {
+    "active_sources": [
+      "docs/Website_System_Architecture_v1.0_LOCKED.md",
+      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md",
+      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md"
+    ]
+  },
+  "governance": {
+    "active_500_paths": [
+      "AGENTS.md",
+      "references/architecture/CONTEXT.md",
+      "references/engineering/engineering-rules.md",
+      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md",
+      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md"
+    ],
+    "forbidden_drift_tokens": [
+      "Website Governing Product Specification", "1,000", "1000-line", "1,000-line"
+    ]
+  }
+}
