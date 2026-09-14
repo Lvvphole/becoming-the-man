@@ -628,7 +628,7 @@ The admin dashboard is not the operator outcome by itself. It exists to make the
 <thead>
 <tr class="header">
 <th><p><strong>PRODUCT-SPECIFICATION VERDICT</strong></p>
-<p>APPROVED & LOCKED v1.0 is internally aligned with the locked governing baseline and the user’s requested capability set. Explicit approval and lock are recorded. No implementation is authorized by this document alone.</p></th>
+<p>APPROVED & LOCKED v1.0 is internally aligned with root `AGENTS.md` and the routed product contract. Explicit approval and lock are recorded. No implementation is authorized by this document alone.</p></th>
 </tr>
 </thead>
 <tbody>
