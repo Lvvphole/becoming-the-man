@@ -1,4 +1,6 @@
+/* global structuredClone */
 import { readFileSync } from "node:fs";
+import { URL } from "node:url";
 import { describe, expect, test } from "vitest";
 import {
   evaluateRoute, makeBlocked, parseRoutingTable, validateBlocked,
