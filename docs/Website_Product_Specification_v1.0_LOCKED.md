@@ -28,10 +28,10 @@ Prepared 26 August 2026
 
 | **Field**      | **Specification**                                                                                                                                                                           |
 |----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Authority      | Subordinate to BTMSCT Website Governing Product Specification v1.0 — LOCKED 26 August 2026.                                                                                                 |
+| Authority      | Subordinate to root `AGENTS.md`. When selected by root `CONTEXT.md`, this document is the canonical Website PRD/product authority for the routed task.                                    |
 | Status         | APPROVED & LOCKED — explicit approval and lock recorded. No implementation is authorized by this document alone.                                                                            |
 | Purpose        | Decompose the locked outcome, user stories, DoD, experience, and releases into testable requirements, data/product contracts, operator workflows, and release backlog.                      |
-| Precedence     | If this specification conflicts with the locked governing baseline, the baseline controls and the conflict is escalated.                                                                    |
+| Precedence     | Root `AGENTS.md` controls. Any unresolved conflict among routed subordinate sources is `BLOCKED`; no agent may silently reconcile or choose a competing source.                              |
 | Admission rule | Every product requirement must map to a verified desired-state gap, governed user story, DoD capability, release, observable behavior, acceptance evidence, invariants, and stop condition. |
 | Change rule    | Implementation details may change downstream only when the governed outcome, release contract, trust constraints, and acceptance criteria remain satisfied.                                 |
 
