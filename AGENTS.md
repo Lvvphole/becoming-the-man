@@ -3,6 +3,14 @@
 Repository: `Lvvphole/becoming-the-man`
 Status: active React SSR repository. Keep this file under 150 lines and synchronized with real commands and enforced checks.
 
+## Authority & Routing
+- This file is the repository execution constitution and highest repository authority.
+- After reading this file, route every task through root `CONTEXT.md`. `CONTEXT.md` exclusively owns task-domain selection, workflow-stage selection, subordinate source selection, and stage transitions.
+- `CLAUDE.md` may only route to this file. It must not duplicate or reinterpret governance.
+- Product specifications, architecture documents/amendments, stage contracts, skills, contracts, schemas, tests, plans, and evidence are subordinate to this file.
+- The executing agent must not infer, broaden, substitute, or choose a route. Any missing, conflicting, zero-match, or multi-match route returns the machine-readable `BLOCKED` record defined by the routed engineering rules.
+- Before creating or modifying code, tests, schemas, migrations, build/workflow logic, or harness/verifier logic, read the engineering-rules source selected by `CONTEXT.md` and satisfy its Pre-Code Readiness Gate.
+
 ## Build & Test
 - Install locked dependencies: `npm ci`.
 - Start the SSR development server: `npm run dev`.
@@ -71,7 +79,7 @@ Use the locked single-repository shape when scaffolding:
 - `supabase/` — migrations, seed data, RLS/migration tests.
 - `config/` — versioned assessment and AI configuration.
 - `tests/` — unit, contract, integration, E2E, accessibility/SEO, AI tests as added.
-- `docs/evidence/` — non-sensitive verification evidence or stable references.
+- `docs/evidence/` — non-sensitive, non-authoritative Layer 4 verification evidence only; never plans, requirements, waivers, or reference authority.
 - `scripts/` — bounded build, ingestion, release, or evidence utilities.
 Do not introduce microservices, queues, Kubernetes, custom payment/order systems, or duplicate provider systems of record without an approved architecture change.
 
@@ -86,20 +94,9 @@ Do not introduce microservices, queues, Kubernetes, custom payment/order systems
 - Do not bypass required checks to obtain a green deployment.
 - `main` must require `PR Verification` and require the branch to be up to date before merge. Until repository rules enforce both, merge enforcement is incomplete.
 
-## Project Skills Router
-Project skills are subordinate workflows under `.claude/skills/<skill-name>/SKILL.md`; they never override this file or routed authorities.
-- Do not scan or preload `.claude/skills/`. Select from skill metadata, then read only the matching `SKILL.md`.
-- User asks to scout, survey, map, orient in, or determine the next repo step -> `scout-agent`. It is read-only and stops after its Scout Report.
-- User invokes `/plan`, supplies a Scout handoff, or asks for an implementation plan -> `plan`. It requires a user- or Scout-selected path and stops at `PLAN_READY` or `PLAN_BLOCKED`; it does not implement.
-- Load only a reference explicitly linked by the selected skill when the current step requires it.
-- Do not invoke a skill from inside another skill, re-invoke an unchanged skill in the same task, or use a skill to bypass a stop. New material evidence or explicit user direction is required to re-enter a completed workflow.
-- A skill cannot grant write, review, PASS, merge-readiness, or merge authority.
-
-## Upstream Source Router
-Do not preload upstream specifications. Read only the smallest relevant authoritative section when the task requires it.
-- Product goal, governing UX, DoD, release intent/order, product constraints, exact user/operator behavior, journey, requirement, or acceptance criterion -> `docs/Website_Product_Specification_v1.0_LOCKED.md` (**Website Product Specification v1.0 — APPROVED & LOCKED**), explicitly user-authorized as the repository's governing website product specification.
-- Repository boundary, runtime, data ownership, API/provider contract, security, AI grounding/evals, CI/CD, or recovery -> **Website System Architecture v1.0 — LOCKED**, as amended by approved versioned architecture amendments.
-- Public book identity or Twenty-Four Non-Negotiables -> published **Becoming the Man She Can Trust**.
-- Deeper relationship protocols, evidence calibration, or safety/referral rules -> **Master Relationship Operating System v1.4**.
-If the required authoritative source is not present in the repository or supplied task context, stop and request it. Do not substitute memory or guess.
-
+## Routing Boundary
+- Root `CONTEXT.md` is the only task/stage router. Do not maintain a second skill router, source router, or evidence router in this file.
+- Load only the exact stage contract, Layer 3 sources, prior-stage outputs, workpiece paths, and evidence IDs selected by the validated task envelope.
+- Do not scan or preload `.claude/skills/`, `docs/`, or `docs/evidence/` to discover a route or source.
+- Skills are subordinate stage workflows and cannot grant write, review, PASS, merge-readiness, or merge authority.
+- If root `CONTEXT.md` or any required routed source is unavailable, stale, ambiguous, or conflicts without explicit precedence, stop and return `BLOCKED`. Do not substitute memory or guess.
