@@ -1,4 +1,4 @@
-# Stage 06 — Review
+# Stage 06 - review
 
 ```yaml
 stage_id: 06_review
@@ -30,56 +30,69 @@ forbidden_mutations:
   - merge
 required_verifier: independent-codex-review
 success_disposition: REVIEW_CLEAR
-failure_dispositions:
-  - REVIEW_ACTION_REQUIRED
-  - BLOCKED
+blocked_disposition: BLOCKED
 primary_output: stages/06_review/output/review-record.md
 next_stage: 07_release
 human_gate: none_when_review_clear
 ```
 
-## Admission
+## Inputs
 
-Review begins only when:
+- `AGENTS.md`
+- `CONTEXT.md`
+- `stages/06_review/CONTEXT.md`
+- `route.approved_plan`
+- `route.implementation_contract`
+- `route.candidate_manifest`
+- `route.verification_record`
 
-```text
-verification_disposition = PASS
-AND verification_binding = exact_reviewed_candidate
-AND required_PR_Verification = PASS_on_exact_head
-```
+## Allowed Layer 3 References
 
-The review stage cannot repair implementation. A valid actionable finding returns control to the appropriate earlier stage only through the root router and within the existing review-cycle authorization.
+- `references/engineering/engineering-rules.md`
+- `references/architecture/CONTEXT.md`
+- `route.selected_layer3`
 
-## Review-cycle gate
+## Allowed Layer 4 Evidence and Working Inputs
 
-```text
-G_REVIEW_CYCLE := cycle_number <= 3
-G_REVIEW_CLEAR := unresolved_actionable_findings = 0
-```
+- `route.approved_plan`
+- `route.implementation_contract`
+- `route.candidate_manifest`
+- `route.verification_record`
+- `route.selected_evidence_ids`
 
-If cycle 3 reports an actionable finding, return BLOCKED. No repair and no fourth review cycle is authorized without new explicit user direction.
+Evidence remains non-authoritative under `G_EVIDENCE_NONAUTH`.
 
-A pure update-to-main refresh may preserve an earlier review only when the active architecture rule for effective reviewable-diff equivalence is mechanically demonstrated. Fresh exact-head CI is still required.
+## Permitted Mutations
 
-## Success transition
+- `stages/06_review/output/review-record.md`
 
-Review -> Release requires:
+A symbolic `route.*` mutation entry is valid only when the selected route resolves it to an exact allowlist.
 
-```text
-review_disposition = REVIEW_CLEAR
-AND unresolved_actionable_findings = 0
-AND exact_head_CI = PASS
-```
+## Forbidden Mutations
 
-Review creates technical review eligibility only. It never grants merge authority.
+- `candidate_files`
+- `verification_record`
+- `governance`
+- `merge`
 
-## BLOCKED
+## Verifier
 
-Return the standard BLOCKED JSON record when:
+Required verifier: `independent-codex-review`.
 
-- required exact-head CI is absent, stale, or failing;
-- review is requested against a different candidate state;
-- review cycle exceeds the authorized bound;
-- cycle 3 has an actionable finding;
-- review equivalence after main refresh cannot be proven;
-- an attempted repair would occur inside Review.
+The verifier establishes only this stage's disposition. It cannot grant merge authority.
+
+## Transition
+
+Review -> Release requires exact-head CI PASS, REVIEW_CLEAR, zero unresolved actionable findings, and review cycle <= 3.
+
+The transition is evaluated only from caller/prior-stage facts and current source bindings. Missing or false required facts fail closed.
+
+## BLOCKED Conditions
+
+- required exact-head CI is absent, stale, or failing.
+- review target differs from verified candidate.
+- review cycle exceeds 3.
+- cycle 3 has an actionable finding.
+- an implementation repair is attempted inside Review.
+
+Every terminal failure emits a C4-conformant `BLOCKED` record and stops the current envelope.

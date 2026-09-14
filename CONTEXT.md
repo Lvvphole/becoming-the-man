@@ -2,11 +2,11 @@
 
 Status: ACTIVE LAYER 1 ROUTER
 Authority: subordinate only to `AGENTS.md`.
-Purpose: deterministically route one explicit task envelope to one workflow stage and the exact subordinate context allowed for that task.
+Contract: C1 Route-Table Contract from `stages/03_contract/output/implementation-contract.md`.
 
-This file owns task and stage routing. `AGENTS.md` owns repository execution authority. Stage files own stage behavior. No agent may choose a route by intent inference, similarity, reward optimization, or "best fit."
+Root `CONTEXT.md` is the only task/stage router. The executing agent validates a caller-supplied or validated-prior-stage task envelope. It never infers, broadens, substitutes, or chooses selector values.
 
-## ICM layers
+## ICM Layers
 
 ```text
 Layer 0: CLAUDE.md -> AGENTS.md
@@ -16,70 +16,4487 @@ Layer 3: exact routed governance/reference sources
 Layer 4: exact prior-stage outputs, workpiece inputs, and non-authoritative evidence
 ```
 
-## Required task envelope
+## Task Envelope
 
-The caller or a validated prior-stage output must supply a structured task envelope with these fields:
+A task envelope must satisfy C2 and contain all of these fields:
 
-- `workflow_stage`: exactly one stage ID from the stage registry.
-- `task_domains`: non-empty array of unique domain IDs from the domain registry.
-- `source_sections`: exact heading/range selectors for every selected source whose registry policy requires one.
-- `workpiece_paths`: exact repository-relative paths the stage may inspect as task working input; no wildcards.
-- `selected_evidence_ids`: exact evidence IDs; default empty. The agent may not invent IDs.
-- `prior_outputs`: exact prior-stage artifact identities required by the selected stage.
-- `authorized_candidate_paths`: exact mutable repository-relative paths when the selected stage permits candidate mutation.
-- `approvals`: explicit approval facts required by a transition.
-- `source_binding`: repository revision plus required source identities.
+- `workflow_stage`
+- `task_domains`
+- `source_sections`
+- `workpiece_paths`
+- `selected_evidence_ids`
+- `prior_outputs`
+- `authorized_candidate_paths`
+- `approvals`
+- `source_binding`
 
-A value is valid only when supplied by the user/caller or copied without semantic alteration from a validated prior-stage artifact. The executing agent may validate values. It may not invent, broaden, reinterpret, or substitute them.
+Selectors are valid only when caller-supplied or copied without semantic alteration from a validated prior-stage artifact.
 
-Missing required selector data is BLOCKED.
+## Canonical Route Matrix
 
-## Canonical machine-readable routing table
+The JSON object between `ROUTING_TABLE_BEGIN` and `ROUTING_TABLE_END` is the single canonical route matrix.
 
-The JSON object between `ROUTING_TABLE_BEGIN` and `ROUTING_TABLE_END` is the canonical route table. No second route table may exist.
+Each row contains exactly the C1 columns: `route_id`, `selectors`, `predicate`, `required_layer3_bundle`, `allowed_evidence_ids`, `target_stage`, and `transition`.
+
+This initial bootstrap registers only exact single-domain routes derived from the pre-bootstrap domain registry. Multi-domain envelopes fail closed until an explicitly authorized composite route row is added. No agent may synthesize a composite route.
 
 ROUTING_TABLE_BEGIN
 
 ```json
 {
   "version": "1.0.0",
-  "stage_registry": {
-    "01_scout": {
-      "contract": "stages/01_scout/CONTEXT.md",
-      "skill": ".claude/skills/scout-agent/SKILL.md",
-      "base_layer3": ["engineering_rules"]
+  "routes": [
+    {
+      "route_id": "route:01_scout:governance",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "governance"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
     },
-    "02_plan": {
-      "contract": "stages/02_plan/CONTEXT.md",
-      "skill": ".claude/skills/plan/SKILL.md",
-      "base_layer3": ["engineering_rules"]
+    {
+      "route_id": "route:01_scout:product_behavior",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "product_behavior"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
     },
-    "03_contract": {
-      "contract": "stages/03_contract/CONTEXT.md",
-      "skill": null,
-      "base_layer3": ["engineering_rules"]
+    {
+      "route_id": "route:01_scout:ui_ux",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "ui_ux"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
     },
-    "04_implement": {
-      "contract": "stages/04_implement/CONTEXT.md",
-      "skill": null,
-      "base_layer3": ["engineering_rules"]
+    {
+      "route_id": "route:01_scout:system_architecture",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "system_architecture"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
     },
-    "05_verify": {
-      "contract": "stages/05_verify/CONTEXT.md",
-      "skill": null,
-      "base_layer3": ["engineering_rules"]
+    {
+      "route_id": "route:01_scout:api_contract",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "api_contract"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
     },
-    "06_review": {
-      "contract": "stages/06_review/CONTEXT.md",
-      "skill": null,
-      "base_layer3": ["engineering_rules", "architecture_manifest"]
+    {
+      "route_id": "route:01_scout:database_rls",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "database_rls"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
     },
-    "07_release": {
-      "contract": "stages/07_release/CONTEXT.md",
-      "skill": null,
-      "base_layer3": ["engineering_rules", "architecture_manifest"]
+    {
+      "route_id": "route:01_scout:provider_integration",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "provider_integration"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:01_scout:security",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "security"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:01_scout:ci_cd",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "ci_cd"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:01_scout:testing",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "testing"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:01_scout:ai_assessment",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "ai_assessment"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:01_scout:content_identity",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "content_identity"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "published_book"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:01_scout:relationship_protocol",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "relationship_protocol"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "mros_v1_4"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:01_scout:project_narrative",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "project_narrative"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "project_architecture",
+        "master_story_bible",
+        "product_vision"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:01_scout:bug_repair",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "bug_repair"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:01_scout:release",
+      "selectors": {
+        "workflow_stage": "01_scout",
+        "task_domains": [
+          "release"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "01_scout",
+      "transition": {
+        "from_stage": null,
+        "to_stage": "01_scout",
+        "required_facts": [],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:02_plan:governance",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "governance"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:product_behavior",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "product_behavior"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:ui_ux",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "ui_ux"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:system_architecture",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "system_architecture"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:api_contract",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "api_contract"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:database_rls",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "database_rls"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:provider_integration",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "provider_integration"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:security",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "security"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:ci_cd",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "ci_cd"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:testing",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "testing"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:ai_assessment",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "ai_assessment"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:content_identity",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "content_identity"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "published_book"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:relationship_protocol",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "relationship_protocol"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "mros_v1_4"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:project_narrative",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "project_narrative"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "project_architecture",
+        "master_story_bible",
+        "product_vision"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:bug_repair",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "bug_repair"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:02_plan:release",
+      "selectors": {
+        "workflow_stage": "02_plan",
+        "task_domains": [
+          "release"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "02_plan",
+      "transition": {
+        "from_stage": "01_scout",
+        "to_stage": "02_plan",
+        "required_facts": [
+          "scout_report_valid",
+          "original_request_pre_authorized_plan"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:03_contract:governance",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "governance"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:product_behavior",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "product_behavior"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:ui_ux",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "ui_ux"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:system_architecture",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "system_architecture"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:api_contract",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "api_contract"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:database_rls",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "database_rls"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:provider_integration",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "provider_integration"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:security",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "security"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:ci_cd",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "ci_cd"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:testing",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "testing"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:ai_assessment",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "ai_assessment"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:content_identity",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "content_identity"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "published_book"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:relationship_protocol",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "relationship_protocol"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "mros_v1_4"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:project_narrative",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "project_narrative"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "project_architecture",
+        "master_story_bible",
+        "product_vision"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:bug_repair",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "bug_repair"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:03_contract:release",
+      "selectors": {
+        "workflow_stage": "03_contract",
+        "task_domains": [
+          "release"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "03_contract",
+      "transition": {
+        "from_stage": "02_plan",
+        "to_stage": "03_contract",
+        "required_facts": [
+          "plan_ready",
+          "explicit_user_approval",
+          "plan_binding_current"
+        ],
+        "automatic": false
+      }
+    },
+    {
+      "route_id": "route:04_implement:governance",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "governance"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:product_behavior",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "product_behavior"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:ui_ux",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "ui_ux"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:system_architecture",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "system_architecture"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:api_contract",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "api_contract"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:database_rls",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "database_rls"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:provider_integration",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "provider_integration"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:security",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "security"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:ci_cd",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "ci_cd"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:testing",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "testing"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:ai_assessment",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "ai_assessment"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:content_identity",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "content_identity"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "published_book"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:relationship_protocol",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "relationship_protocol"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "mros_v1_4"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:project_narrative",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "project_narrative"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "project_architecture",
+        "master_story_bible",
+        "product_vision"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:bug_repair",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "bug_repair"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:04_implement:release",
+      "selectors": {
+        "workflow_stage": "04_implement",
+        "task_domains": [
+          "release"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "04_implement",
+      "transition": {
+        "from_stage": "03_contract",
+        "to_stage": "04_implement",
+        "required_facts": [
+          "contract_ready",
+          "approved_plan_binding_current",
+          "G_PRE_CODE_READY"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:governance",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "governance"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:product_behavior",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "product_behavior"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:ui_ux",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "ui_ux"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:system_architecture",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "system_architecture"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:api_contract",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "api_contract"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:database_rls",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "database_rls"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:provider_integration",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "provider_integration"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:security",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "security"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:ci_cd",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "ci_cd"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:testing",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "testing"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:ai_assessment",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "ai_assessment"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "product_prd",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:content_identity",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "content_identity"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "published_book"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:relationship_protocol",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "relationship_protocol"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "mros_v1_4"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:project_narrative",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "project_narrative"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "project_architecture",
+        "master_story_bible",
+        "product_vision"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:bug_repair",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "bug_repair"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:05_verify:release",
+      "selectors": {
+        "workflow_stage": "05_verify",
+        "task_domains": [
+          "release"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "05_verify",
+      "transition": {
+        "from_stage": "04_implement",
+        "to_stage": "05_verify",
+        "required_facts": [
+          "candidate_manifest_valid",
+          "active_stop_condition_clear"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:governance",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "governance"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:product_behavior",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "product_behavior"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:ui_ux",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "ui_ux"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:system_architecture",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "system_architecture"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:api_contract",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "api_contract"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "product_prd",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:database_rls",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "database_rls"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:provider_integration",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "provider_integration"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:security",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "security"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:ci_cd",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "ci_cd"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:testing",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "testing"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:ai_assessment",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "ai_assessment"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "product_prd",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:content_identity",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "content_identity"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "published_book"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:relationship_protocol",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "relationship_protocol"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "mros_v1_4"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:project_narrative",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "project_narrative"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "project_architecture",
+        "master_story_bible",
+        "product_vision"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:bug_repair",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "bug_repair"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:06_review:release",
+      "selectors": {
+        "workflow_stage": "06_review",
+        "task_domains": [
+          "release"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "06_review",
+      "transition": {
+        "from_stage": "05_verify",
+        "to_stage": "06_review",
+        "required_facts": [
+          "verification_pass",
+          "exact_state_binding"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:governance",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "governance"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:product_behavior",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "product_behavior"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:ui_ux",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "ui_ux"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "product_prd"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:system_architecture",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "system_architecture"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:api_contract",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "api_contract"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "product_prd",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:database_rls",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "database_rls"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:provider_integration",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "provider_integration"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:security",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "security"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:ci_cd",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "ci_cd"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:testing",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "testing"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:ai_assessment",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "ai_assessment"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "product_prd",
+        "system_architecture"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:content_identity",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "content_identity"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "published_book"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:relationship_protocol",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "relationship_protocol"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "mros_v1_4"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:project_narrative",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "project_narrative"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest",
+        "project_architecture",
+        "master_story_bible",
+        "product_vision"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:bug_repair",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "bug_repair"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
+    },
+    {
+      "route_id": "route:07_release:release",
+      "selectors": {
+        "workflow_stage": "07_release",
+        "task_domains": [
+          "release"
+        ]
+      },
+      "predicate": {
+        "operator": "ALL_EXACT",
+        "required_envelope_fields": [
+          "workflow_stage",
+          "task_domains",
+          "source_sections",
+          "workpiece_paths",
+          "selected_evidence_ids",
+          "prior_outputs",
+          "authorized_candidate_paths",
+          "approvals",
+          "source_binding"
+        ],
+        "required_approval_facts": []
+      },
+      "required_layer3_bundle": [
+        "engineering_rules",
+        "architecture_manifest"
+      ],
+      "allowed_evidence_ids": [],
+      "target_stage": "07_release",
+      "transition": {
+        "from_stage": "06_review",
+        "to_stage": "07_release",
+        "required_facts": [
+          "review_clear",
+          "exact_head_ci_pass",
+          "zero_actionable_findings"
+        ],
+        "automatic": true
+      }
     }
-  },
+  ],
   "source_registry": {
     "engineering_rules": {
       "kind": "layer3",
@@ -136,181 +4553,62 @@ ROUTING_TABLE_BEGIN
       "path": null,
       "section_policy": "explicit_selector_required"
     }
-  },
-  "domain_registry": {
-    "governance": {
-      "layer3": ["engineering_rules", "architecture_manifest"],
-      "required_envelope_fields": []
-    },
-    "product_behavior": {
-      "layer3": ["product_prd"],
-      "required_envelope_fields": []
-    },
-    "ui_ux": {
-      "layer3": ["product_prd"],
-      "required_envelope_fields": []
-    },
-    "system_architecture": {
-      "layer3": ["architecture_manifest", "system_architecture"],
-      "required_envelope_fields": []
-    },
-    "api_contract": {
-      "layer3": ["product_prd", "architecture_manifest", "system_architecture"],
-      "required_envelope_fields": []
-    },
-    "database_rls": {
-      "layer3": ["architecture_manifest", "system_architecture"],
-      "required_envelope_fields": []
-    },
-    "provider_integration": {
-      "layer3": ["architecture_manifest", "system_architecture"],
-      "required_envelope_fields": []
-    },
-    "security": {
-      "layer3": ["engineering_rules", "architecture_manifest", "system_architecture"],
-      "required_envelope_fields": []
-    },
-    "ci_cd": {
-      "layer3": ["engineering_rules", "architecture_manifest", "system_architecture"],
-      "required_envelope_fields": []
-    },
-    "testing": {
-      "layer3": ["engineering_rules", "architecture_manifest"],
-      "required_envelope_fields": []
-    },
-    "ai_assessment": {
-      "layer3": ["product_prd", "architecture_manifest", "system_architecture"],
-      "required_envelope_fields": []
-    },
-    "content_identity": {
-      "layer3": ["published_book"],
-      "required_envelope_fields": []
-    },
-    "relationship_protocol": {
-      "layer3": ["mros_v1_4"],
-      "required_envelope_fields": []
-    },
-    "project_narrative": {
-      "layer3": ["project_architecture", "master_story_bible", "product_vision"],
-      "required_envelope_fields": []
-    },
-    "bug_repair": {
-      "layer3": ["engineering_rules"],
-      "required_envelope_fields": ["violated_contract_source", "repair_verifier_id"]
-    },
-    "release": {
-      "layer3": ["engineering_rules", "architecture_manifest"],
-      "required_envelope_fields": ["final_head_sha"]
-    }
-  },
-  "evidence_index": {
-    "path": "docs/evidence/index.json",
-    "required_when_selected_evidence_ids_nonempty": true,
-    "normative": false
-  },
-  "transition_registry": {
-    "01_scout->02_plan": {
-      "requires": ["scout_report_valid", "original_request_pre_authorized_plan"]
-    },
-    "02_plan->03_contract": {
-      "requires": ["plan_ready", "explicit_user_approval", "plan_binding_current"]
-    },
-    "03_contract->04_implement": {
-      "requires": ["contract_ready", "approved_plan_binding_current", "G_PRE_CODE_READY"]
-    },
-    "04_implement->05_verify": {
-      "requires": ["candidate_manifest_valid", "active_stop_condition_clear"]
-    },
-    "05_verify->06_review": {
-      "requires": ["verification_pass", "exact_state_binding"]
-    },
-    "06_review->07_release": {
-      "requires": ["review_clear", "exact_head_ci_pass", "zero_actionable_findings"]
-    },
-    "07_release->merge": {
-      "requires": ["explicit_user_merge_authorization"],
-      "automatic": false
-    }
   }
 }
 ```
 
 ROUTING_TABLE_END
 
-## Binary route evaluation
+## Binary Evaluation
 
-For task envelope `E`:
-
-1. Validate that every required envelope field is present and contains no wildcard path.
-2. Select the stage by exact equality: `stage_registry[E.workflow_stage]`.
-3. Require exactly one stage entry. Unknown or missing stage -> BLOCKED.
-4. Require `task_domains` to be non-empty and contain no duplicate IDs.
-5. For each domain ID, select exactly one `domain_registry` entry by exact equality.
-6. Unknown domain, duplicate domain definition, or missing domain-required envelope field -> BLOCKED.
-7. Compute one source bundle as the set union of the stage's `base_layer3` and every selected domain's `layer3`.
-8. For each selected source, require the source registry entry to exist exactly once.
-9. For each `explicit_selector_required` source, require an exact selector in `source_sections`. Do not infer one.
-10. For task-context sources, require the exact source to be supplied in the task context. Missing source -> BLOCKED.
-11. If `selected_evidence_ids` is non-empty, require `docs/evidence/index.json`, resolve every ID exactly once, and require its binding/freshness to satisfy the active stage. Missing/duplicate/stale current-state evidence -> BLOCKED.
-12. Load only the selected stage contract, selected source bundle, selected evidence IDs, exact declared prior outputs, and exact `workpiece_paths`.
-13. Emit one route object. There is no fallback route.
+For envelope `E` and route `r`:
 
 ```text
-stage_matches = 1
-AND every(domain_matches) = 1
-AND every(source_matches) = 1
-AND every(required_selector_present) = TRUE
-AND every(required_external_source_present) = TRUE
-AND every(selected_evidence_match_count) = 1
-=> ROUTED
+MATCH(E,r) :=
+  E.workflow_stage = r.selectors.workflow_stage
+  AND set(E.task_domains) = set(r.selectors.task_domains)
+  AND every(r.predicate.required_envelope_fields is present and non-null in E)
+  AND every(r.required_layer3_bundle resolves exactly once)
+  AND every(E.selected_evidence_ids is in r.allowed_evidence_ids)
 
-otherwise => BLOCKED
+M(E) := { r in Routes | MATCH(E,r) = TRUE }
+G_ROUTE_UNIQUE(E) := |M(E)| = 1
 ```
 
-## Context prohibition
+- `|M(E)| = 0` -> `ROUTE_ZERO_MATCH`.
+- `|M(E)| > 1` -> `ROUTE_MULTI_MATCH`.
+- Exactly one match yields exactly one `route_id`, `target_stage`, Layer 3 bundle, evidence allowlist, and transition contract.
 
-The following are routing violations:
+No semantic similarity, fallback route, "best fit", inferred task domain, or inferred source selector is permitted.
 
-- scanning or preloading `.claude/skills/`;
-- scanning `docs/` to discover an authoritative source;
-- scanning `docs/evidence/` to discover evidence;
-- globbing for possible governance files;
-- choosing a route from natural-language similarity;
-- adding a task domain because the agent believes it is relevant;
-- dropping a supplied task domain because the agent believes it is unnecessary;
-- loading an unrouted reference "for context";
-- treating implementation files, tests, schemas, plans, or evidence as higher authority than `AGENTS.md`.
+## Source Loading
 
-Repository workpiece files may be read only when their exact paths are supplied in `workpiece_paths` or an already-selected stage contract deterministically derives the exact path from a supplied identifier without directory discovery.
+After one route matches:
 
-## Cross-domain tasks
+1. read the selected Layer 2 stage contract;
+2. read only the route's exact Layer 3 bundle;
+3. for a source with `section_policy = "full"`, caller selector `["*"]` means full-document access only and is not a path wildcard;
+4. for `explicit_selector_required`, require an exact non-wildcard section selector;
+5. load only exact prior outputs, exact workpiece paths, and exact evidence IDs declared by the envelope and allowed by the route.
 
-Cross-domain work does not create competing routes.
+Missing source, stale binding, unauthorized input, or evidence promotion returns C4 `BLOCKED`.
 
-The caller supplies multiple unique domain IDs. The router forms one route whose Layer 3 source bundle is the set union of those domain bundles.
+## Evidence Boundary
 
-If the caller cannot supply a unique domain set, the task is BLOCKED. The agent does not decide which domain to add or remove.
+`docs/evidence/**` is Layer 4 proof only. Evidence cannot create requirements, permissions, waivers, route choice, transition authority, or merge authority.
 
-## Evidence boundary
-
-Evidence is never authority.
-
-`docs/evidence/index.json` is a lookup manifest only. It may state evidence identity, path, type, binding, applicability, and freshness. It may not define requirements, permissions, waivers, transitions, or acceptance criteria.
-
-Any attempted evidence-to-authority promotion returns BLOCKED under `G_EVIDENCE_NONAUTH`.
+The bootstrap route matrix sets `allowed_evidence_ids` to an empty array for every initial route. Evidence remains inaccessible until a later authorized governance change binds exact evidence IDs to exact routes and the C5 evidence index exists.
 
 ## Skills
 
-Skills are stage-scoped subordinate workflows.
+Skills are subordinate stage procedures, never routing authority.
 
-- `01_scout` -> `.claude/skills/scout-agent/SKILL.md`
-- `02_plan` -> `.claude/skills/plan/SKILL.md`
-- all other stages -> no skill unless this routing table is explicitly amended.
+- `01_scout` may load `.claude/skills/scout-agent/SKILL.md`.
+- `02_plan` may load `.claude/skills/plan/SKILL.md`.
+- Other stages load no skill unless a later authorized route explicitly names one.
 
-A skill may not invoke another skill. A pre-authorized sequential handoff occurs through this router after the prior stage produces its required output.
+A skill cannot invoke another skill or grant write, review, PASS, release, or merge authority.
 
-## BLOCKED output
+## BLOCKED Output
 
-Every non-unique, missing, conflicting, stale, or unauthorized route condition returns the BLOCKED JSON record defined by `references/engineering/engineering-rules.md`.
-
-The agent must not continue by approximation.
+Every fail-closed routing result must satisfy C4. The agent stops after emitting the record and does not continue by approximation.

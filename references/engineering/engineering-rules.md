@@ -1,33 +1,68 @@
 # Mathematical Engineering Rules
 
-Status: INTERNAL GOVERNANCE REFERENCE
-Authority: subordinate to `AGENTS.md` and the active route selected by root `CONTEXT.md`.
-Purpose: convert repository engineering governance into deterministic, fail-closed gates.
-Scope: construction, repair, verification, review, and release work in this repository.
+Status: INTERNAL LAYER 3 GOVERNANCE REFERENCE
+Authority: subordinate to `AGENTS.md` and the unique route selected by root `CONTEXT.md`.
+Purpose: express repository engineering governance as deterministic, fail-closed predicates.
 
-## 1. Binary outcome model
+## 1. Core State Model
 
-Every required gate evaluates to exactly one boolean result.
-
-```text
-TRUE  -> the gated transition may continue.
-FALSE -> stop and emit BLOCKED.
-```
-
-No model judgment may convert FALSE to TRUE. No evidence artifact, skill, test result, CI result, or implementation state may waive a FALSE gate unless `AGENTS.md` or an explicit user-authorized exception defines that waiver.
-
-For task envelope `E` and route set `R`:
+For caller/prior-stage task envelope `E` and canonical route set `Routes`:
 
 ```text
-M(E) = { r in R | predicate_r(E) = TRUE }
+M(E) := { r in Routes | predicate_r(E) = true }
 G_ROUTE_UNIQUE(E) := |M(E)| = 1
+
+G_REQUIRED_INPUTS := RequiredInputs subset_of LoadedInputs
+G_ALLOWED_INPUTS := LoadedInputs subset_of AllowedInputs
+
+G_SOURCE_PRESENT :=
+  every RoutedSource exists
+  AND every required source binding equals the observed source identity
+
+G_EVIDENCE_NONAUTH :=
+  no Requirement has source_kind = evidence
+  AND no Permission has source_kind = evidence
+  AND no Waiver has source_kind = evidence
+  AND no TransitionAuthority has source_kind = evidence
+
+G_EVIDENCE_CURRENT(e,s) := binding(e) = identity(s)
+
+G_TRANSITION :=
+  predecessor_disposition_satisfies_transition = true
+  AND every required_transition_fact = true
+  AND every required_human_gate = true
+
+G_CHANGE_SIZE :=
+  reviewable_lines <= 500
+  OR owner_exception_exactly_verified = true
+
+G_REVIEW :=
+  exact_head_PR_Verification = PASS
+  AND unresolved_actionable_findings = 0
+  AND review_cycle <= 3
 ```
 
-If `G_ROUTE_UNIQUE(E) = FALSE`, execution stops. The agent must not select a likely route.
+Every required predicate is binary. False returns `BLOCKED`. No model judgment may convert false to true.
 
-## 2. BLOCKED record
+## 2. Authority Invariants
 
-A blocked gate must produce a JSON record with these semantic fields:
+```text
+G_AUTHORITY_ROOT := root_authority = "AGENTS.md"
+G_CONTEXT_ROUTER := task_stage_router = "CONTEXT.md"
+G_NO_PARALLEL_AUTHORITY := no subordinate source claims precedence over AGENTS.md
+```
+
+Authority chain:
+
+```text
+CLAUDE.md -> AGENTS.md -> CONTEXT.md -> one stage CONTEXT.md -> exact routed Layer 3 references
+```
+
+Plans, contracts, schemas, tests, skills, implementation files, and evidence are subordinate.
+
+## 3. C4 BLOCKED Record
+
+A failed gate emits exactly one terminal C4 record containing:
 
 ```json
 {
@@ -43,191 +78,114 @@ A blocked gate must produce a JSON record with these semantic fields:
 }
 ```
 
-The record reports state. It does not authorize the resolution.
+The record reports state. It does not authorize a repair or transition.
 
-## 3. Authority gate
-
-Repository authority is single-rooted:
-
-```text
-CLAUDE.md -> AGENTS.md -> CONTEXT.md -> one stage CONTEXT.md -> exact routed references
-```
-
-`AGENTS.md` is the repository execution constitution.
-
-All routed specifications, architecture documents, engineering rules, skills, contracts, schemas, tests, plans, and evidence are subordinate to `AGENTS.md`.
-
-```text
-G_AUTHORITY_ROOT := root_authority = "AGENTS.md"
-G_NO_PARALLEL_AUTHORITY := no subordinate source claims precedence over AGENTS.md
-G_CONTEXT_ROUTER := task_stage_router = "CONTEXT.md"
-```
-
-Any false authority gate is BLOCKED.
-
-## 4. Context-loading gate
+## 4. Input and Source Gates
 
 A stage may load only:
 
 1. `AGENTS.md`;
 2. root `CONTEXT.md`;
-3. its own stage `CONTEXT.md`;
-4. exact Layer 3 sources enumerated by the selected route;
-5. exact Layer 4 evidence IDs enumerated by the evidence index and selected route;
-6. exact prior-stage outputs declared by the selected route.
-
-Let `L` be loaded inputs and `A` the selected route's allowed inputs:
+3. its selected stage `CONTEXT.md`;
+4. exact Layer 3 sources in the unique route;
+5. exact Layer 4 inputs explicitly allowed by the route and envelope;
+6. exact prior-stage outputs;
+7. exact workpiece paths.
 
 ```text
-G_ALLOWED_INPUTS := L subset_of A
-G_REQUIRED_INPUTS := required_inputs subset_of L
-G_NO_DISCOVERY_WILDCARDS := no route input uses *, **, glob discovery, or directory-wide preload
+G_NO_DISCOVERY_WILDCARDS :=
+  no repository path uses *, **, ?, [, or ] for discovery
 ```
 
-A missing required input or an unlisted loaded input is BLOCKED.
+The literal `["*"]` is permitted only as a full-document section selector for a source whose route declares `section_policy = "full"`. It is never a file path.
 
-## 5. Source-presence and identity gate
+Unknown, missing, stale, or unlisted input returns `BLOCKED`.
 
-Every routed source must exist at the path declared by the route.
+## 5. Evidence Gates
 
-When a route or stage requires an exact revision, SHA, run ID, schema version, or other state binding, the observed identity must equal that binding.
+`docs/evidence/**` is Layer 4 proof only.
 
-```text
-G_SOURCE_PRESENT := all(routed_source.exists)
-G_SOURCE_BOUND := all(required_binding == observed_binding)
-```
+Evidence may establish what happened, what was observed, or what was proven. It may not define what must be built, what is allowed, a waiver, route selection, transition authority, or merge authority.
 
-Missing or mismatched required identity is BLOCKED.
+Historical or stale evidence cannot satisfy a current-state gate.
 
-## 6. Evidence non-authority gate
+## 6. Pre-Code Readiness Gate
 
-`docs/evidence/**` is Layer 4 evidence only.
-
-Evidence may establish:
-
-- what happened;
-- what was observed;
-- what was proven;
-- whether a current-state gate has supporting proof.
-
-Evidence may not establish:
-
-- what must be built;
-- what behavior is required;
-- what action is permitted;
-- what authority applies;
-- a waiver;
-- transition authority;
-- merge authority.
+Before creating or modifying code, tests, schemas, migrations, build logic, workflow logic, or harness/verifier logic, every predicate below must be true:
 
 ```text
-G_EVIDENCE_NONAUTH :=
-  no(requirement.source_kind = "evidence") AND
-  no(permission.source_kind = "evidence") AND
-  no(waiver.source_kind = "evidence") AND
-  no(transition_authority.source_kind = "evidence")
-```
+G_PC_01_AGENTS_READ :=
+  current AGENTS.md was read
 
-If false, BLOCKED.
+G_PC_02_ROUTE_SELECTED :=
+  G_ROUTE_UNIQUE(E) = true
 
-For evidence item `e` and relevant state `s`:
+G_PC_03_STAGE_READ :=
+  selected stage CONTEXT.md was read
 
-```text
-G_EVIDENCE_CURRENT(e,s) := binding(e) = identity(s)
-```
+G_PC_04_ENGINEERING_RULES_READ :=
+  this routed engineering-rules document was read
 
-Unbound or mismatched evidence is historical only and cannot satisfy a current gate.
+G_PC_05_REQUIRED_AUTHORITIES_READ :=
+  every Layer 3 source required by the unique route was read at the routed scope
 
-## 7. Pre-Code Readiness Gate
+G_PC_06_GAP_VERIFIED :=
+  the exact defect, gap, or DoD remainder is supported by repository state
 
-This gate is mandatory before any action that creates or modifies code, tests, schemas, migrations, build logic, workflow logic, or harness/verifier logic.
+G_PC_07_SCOPE_EXACT :=
+  proposed changed paths and effects are inside the explicit authorization
 
-All predicates must be TRUE:
+G_PC_08_VERIFIER_DEFINED :=
+  every obligation has a deterministic verifier or explicit BLOCKED condition
 
-```text
-G_PC_01_AGENTS_READ
-  := current AGENTS.md was read before mutation.
+G_PC_09_STOP_DEFINED :=
+  the next mutation has a named stop condition
 
-G_PC_02_ROUTE_SELECTED
-  := G_ROUTE_UNIQUE(task_envelope) = TRUE.
+G_PC_10_NO_UNRESOLVED_CONFLICT :=
+  no unresolved conflict exists among AGENTS.md, the unique route, and routed Layer 3 sources
 
-G_PC_03_STAGE_READ
-  := selected stage CONTEXT.md was read.
+G_PC_11_500_LOC :=
+  G_CHANGE_SIZE = true
 
-G_PC_04_ENGINEERING_RULES_READ
-  := this document was read from the path routed by CONTEXT.md.
-
-G_PC_05_REQUIRED_AUTHORITIES_READ
-  := every Layer 3 authority required by the selected route was read at the routed scope.
-
-G_PC_06_GAP_VERIFIED
-  := the exact defect/gap or DoD remainder is supported by repository evidence.
-
-G_PC_07_SCOPE_EXACT
-  := proposed changed paths and effects are within the explicitly authorized scope.
-
-G_PC_08_VERIFIER_DEFINED
-  := each planned obligation has a deterministic verifier or an explicit BLOCKED condition.
-
-G_PC_09_STOP_DEFINED
-  := the next mutation has a named stop condition.
-
-G_PC_10_NO_UNRESOLVED_CONFLICT
-  := there is no unresolved conflict among AGENTS.md, the selected route, and routed Layer 3 authorities.
-
-G_PC_11_500_LOC
-  := projected reviewable implementation lines <= 500
-     OR a valid owner-approved exception is already authorized.
-
-G_PC_12_PLAN_APPROVAL
-  := when the workflow requires Plan approval, the exact PLAN_READY artifact is explicitly user-approved.
+G_PC_12_PLAN_APPROVAL :=
+  when Plan approval is required, the exact PLAN_READY artifact has explicit user approval
 
 G_PRE_CODE_READY :=
-  G_PC_01 AND G_PC_02 AND G_PC_03 AND G_PC_04 AND
-  G_PC_05 AND G_PC_06 AND G_PC_07 AND G_PC_08 AND
-  G_PC_09 AND G_PC_10 AND G_PC_11 AND G_PC_12
+  G_PC_01 AND G_PC_02 AND G_PC_03 AND G_PC_04
+  AND G_PC_05 AND G_PC_06 AND G_PC_07 AND G_PC_08
+  AND G_PC_09 AND G_PC_10 AND G_PC_11 AND G_PC_12
 ```
 
-If `G_PRE_CODE_READY = FALSE`, code/test/schema/migration/build/workflow/harness mutation is unauthorized and execution must return BLOCKED.
+If `G_PRE_CODE_READY = false`, protected mutation is unauthorized.
 
-## 8. Mutation gate
+## 7. Mutation Gate
 
-Before every repository mutation, the executing agent must state:
+Before every repository mutation, state:
 
-- verified defect/gap;
+- verified defect or gap;
 - governing rule;
 - required evidence;
-- permitted next action;
+- exact permitted next action;
 - stop condition.
-
-For mutation `m`:
 
 ```text
 G_MUTATION_AUTHORIZED(m) :=
-  path(m) in permitted_paths AND
-  effect(m) in permitted_effects AND
-  required_preconditions(m) = TRUE
+  path(m) in PermittedPaths
+  AND effect(m) in PermittedEffects
+  AND every RequiredPrecondition(m) = true
 ```
 
 After every mutation, re-evaluate the active stop condition before another mutation.
 
-If the stop condition is met, or new evidence requires STOP, BLOCKED, REDUCE, REDESIGN, or a new authorization, no fix-forward mutation is permitted.
+If governance requires `STOP`, `BLOCKED`, `REDUCE`, `REDESIGN`, or new evidence/authorization, stop. No speculative fix-forward is permitted.
 
-## 9. Change-size gate
+## 8. Change-Size Gate
 
-Reviewable implementation lines are additions plus deletions from merge base to final PR head, with exclusions defined by `AGENTS.md`.
+Reviewable implementation lines are additions plus deletions from merge base to final PR head, using the exclusions defined by `AGENTS.md` and `scripts/check-change-size.sh`.
 
-```text
-G_CHANGE_SIZE :=
-  reviewable_lines <= 500
-  OR owner_exception_exactly_verified = TRUE
-```
+The active ceiling is 500. A subordinate source that states a different active ceiling is governance drift.
 
-The active limit is 500. A subordinate source that states a different active limit is governance drift and blocks implementation until reconciled.
-
-## 10. Bug-repair gate
-
-Repair route:
+## 9. Bug-Repair Gate
 
 ```text
 observable violated contract
@@ -238,80 +196,39 @@ observable violated contract
 -> stop
 ```
 
-Required predicates:
-
 ```text
-G_REPAIR_CONTRACT := violated observable contract is identified
-G_REPAIR_AUTHORITY := requirement source is routed and non-evidence
-G_REPAIR_REPRO := reproducible defect has failing baseline evidence
-G_REPAIR_SCOPE := proposed repair does not expand beyond violated contract
-G_REPAIR_VERIFIER := deterministic verifier is defined
+G_REPAIR :=
+  violated_contract_identified
+  AND routed_non_evidence_authority_identified
+  AND reproducible_failure_evidence_present_when_reproducible
+  AND repair_scope_does_not_expand_contract
+  AND exact_verifier_defined
 ```
 
-Any false required repair predicate is BLOCKED.
+A second repair attempt requires materially new diagnostic evidence identifying one bounded correction.
 
-A second repair attempt is permitted only when materially new diagnostic evidence identifies a specific bounded correction. Speculative fix-forward is forbidden.
+## 10. Lifecycle Transition Gate
 
-## 11. Transition gate
-
-Canonical workflow:
+Canonical lifecycle:
 
 ```text
 01_scout -> 02_plan -> 03_contract -> 04_implement -> 05_verify -> 06_review -> 07_release
 ```
 
-Transition predicates:
+Admission requires `G_TRANSITION = true`.
 
-```text
-Scout -> Plan:
-  scout_handoff_valid AND original_user_request_pre_authorized_plan
+- Scout -> Plan: valid Scout handoff plus original pre-authorization.
+- Plan -> Contract: PLAN_READY plus explicit user approval and current plan binding.
+- Contract -> Implement: CONTRACT_READY plus current approved Plan binding and readiness.
+- Implement -> Verify: valid candidate manifest plus clear stop condition.
+- Verify -> Review: PASS plus exact-state binding.
+- Review -> Release: `G_REVIEW = true`.
+- Release -> Merge: never automatic.
 
-Plan -> Contract:
-  plan_disposition = PLAN_READY AND explicit_user_approval = TRUE
+## 11. Review and Completion Gate
 
-Contract -> Implement:
-  contract_valid AND approved_plan_binding_current AND G_PRE_CODE_READY = TRUE
+If review cycle 3 reports an actionable finding, return `BLOCKED`. No repair or fourth cycle occurs without new explicit user authorization.
 
-Implement -> Verify:
-  candidate_manifest_valid AND implementation_stop_condition_clear
+`G_REVIEW = true` creates review eligibility only. Merge always requires separate explicit user authorization.
 
-Verify -> Review:
-  verification_disposition = PASS AND evidence_binding = exact_candidate_state
-
-Review -> Release:
-  exact_head_CI = PASS AND unresolved_actionable_findings = 0 AND review_cycle <= 3
-
-Release -> Merge:
-  NEVER automatic
-```
-
-Merge requires separate explicit user authorization.
-
-A skill cannot perform a workflow-stage transition by invoking another skill. Sequential handoff occurs through the root router/orchestrator.
-
-## 12. Verification and review gates
-
-```text
-G_EXACT_HEAD_CI := required_PR_Verification = PASS on exact final head SHA
-
-G_REVIEW_CYCLE :=
-  review_cycle <= 3
-
-G_REVIEW_CLEAR :=
-  unresolved_actionable_findings = 0
-
-G_MERGE_ELIGIBLE :=
-  G_EXACT_HEAD_CI AND G_REVIEW_CYCLE AND G_REVIEW_CLEAR
-```
-
-`G_MERGE_ELIGIBLE` creates eligibility only. It does not create merge authority.
-
-If cycle 3 reports an actionable finding, return BLOCKED. No repair or fourth review cycle may occur without new explicit user authorization.
-
-## 13. Completion rule
-
-No agent may declare PASS, complete, merge-ready, or accepted from self-report.
-
-A stage may report only its own disposition and evidence.
-
-Final technical eligibility requires exact-head required CI and independent review state. Merge remains a separate user action.
+No implementation agent may self-declare final PASS, completion, release eligibility, or merge readiness without the exact external evidence required by the active stage.

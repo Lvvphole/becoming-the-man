@@ -1,4 +1,4 @@
-# Stage 04 — Implement
+# Stage 04 - implement
 
 ```yaml
 stage_id: 04_implement
@@ -34,55 +34,62 @@ next_stage: 05_verify
 human_gate: none_after_contract_ready
 ```
 
-## Admission
+## Inputs
 
-Before the first code, test, schema, migration, build, workflow, or harness/verifier mutation:
+- `AGENTS.md`
+- `CONTEXT.md`
+- `stages/04_implement/CONTEXT.md`
+- `route.approved_plan`
+- `route.implementation_contract`
 
-```text
-G_PRE_CODE_READY = TRUE
-AND approved_plan_binding_current = TRUE
-AND implementation_contract_binding_current = TRUE
-AND authorized_candidate_paths are exact
-```
+## Allowed Layer 3 References
 
-The Implement agent does not choose or broaden the route, task domain, authority bundle, changed-path set, verifier, or completion criteria.
+- `references/engineering/engineering-rules.md`
+- `route.selected_layer3`
 
-## Mutation discipline
+## Allowed Layer 4 Evidence and Working Inputs
 
-For every mutation:
+- `route.approved_plan`
+- `route.implementation_contract`
+- `route.selected_evidence_ids`
 
-1. state the verified gap;
-2. state the governing rule;
-3. state required evidence;
-4. state the exact permitted mutation;
-5. state the stop condition;
-6. mutate once;
-7. re-evaluate the stop condition before another mutation.
+Evidence remains non-authoritative under `G_EVIDENCE_NONAUTH`.
 
-Unexpected state, new conflicts, scope expansion, or a required REDUCE/REDESIGN signal stops implementation.
+## Permitted Mutations
 
-Raw implementation logs are working artifacts only. They are not acceptance evidence.
+- `route.authorized_candidate_paths`
+- `stages/04_implement/output/candidate-manifest.md`
+- `stages/04_implement/output/raw-logs/`
 
-## Success transition
+A symbolic `route.*` mutation entry is valid only when the selected route resolves it to an exact allowlist.
 
-Implement -> Verify requires:
+## Forbidden Mutations
 
-```text
-candidate_manifest_valid = TRUE
-AND actual_changed_paths subset_of authorized_candidate_paths
-AND active_stop_condition_clear = TRUE
-```
+- `docs/evidence`
+- `governance_outside_authorized_candidate_paths`
+- `merge`
+- `review_records`
+- `release_records`
 
-No implementation self-report can produce PASS.
+## Verifier
 
-## BLOCKED
+Required verifier: `implementation-contract-conformance`.
 
-Return the standard BLOCKED JSON record when:
+The verifier establishes only this stage's disposition. It cannot grant merge authority.
 
-- `G_PRE_CODE_READY` is false;
-- an actual change falls outside the exact authorized path set;
-- the approved Plan or Contract binding drifts;
-- a required authority/reference changes materially;
-- the same failure remains without materially new diagnostic evidence;
-- the change requires an unapproved exception;
+## Transition
+
+Implement -> Verify requires a valid candidate manifest, actual changes confined to the authorized path set, and a clear active stop condition.
+
+The transition is evaluated only from caller/prior-stage facts and current source bindings. Missing or false required facts fail closed.
+
+## BLOCKED Conditions
+
+- G_PRE_CODE_READY is false.
+- a change falls outside the authorized path set.
+- Plan or Contract binding drifts.
+- a routed authority changes materially.
+- an exception is required but not authorized.
 - a stop condition is met.
+
+Every terminal failure emits a C4-conformant `BLOCKED` record and stops the current envelope.

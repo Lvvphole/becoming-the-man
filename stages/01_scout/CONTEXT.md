@@ -1,14 +1,14 @@
-# Stage 01 — Scout
+# Stage 01 - scout
 
 ```yaml
 stage_id: 01_scout
-job: establish repository truth and select one evidence-backed next path
+job: establish repository truth and one evidence-backed next path
 required_inputs:
   - AGENTS.md
   - CONTEXT.md
   - stages/01_scout/CONTEXT.md
 allowed_layer3:
-  - references/engineering/engineering-rules.md#authority-gate
+  - references/engineering/engineering-rules.md
   - route.selected_layer3
 allowed_layer4:
   - route.selected_evidence_ids
@@ -22,36 +22,61 @@ forbidden_mutations:
   - evidence_files
 required_verifier: scout-report-structure
 success_disposition: SCOUT_READY
+blocked_disposition: BLOCKED
 primary_output: stages/01_scout/output/scout-report.md
 next_stage: 02_plan
 human_gate: original_request_must_pre_authorize_plan_for_automatic_handoff
 ```
 
-## Contract
+## Inputs
 
-Scout is read-only. It establishes the requested outcome contract, repository truth, verified gaps, constraints, and one selected next path.
+- `AGENTS.md`
+- `CONTEXT.md`
+- `stages/01_scout/CONTEXT.md`
 
-The repository skill `.claude/skills/scout-agent/SKILL.md` may be loaded only when the root route explicitly selects this stage. The skill remains subordinate to this contract and may not invoke another skill.
+## Allowed Layer 3 References
 
-## Success transition
+- `references/engineering/engineering-rules.md`
+- `route.selected_layer3`
 
-Scout -> Plan is allowed only when:
+## Allowed Layer 4 Evidence and Working Inputs
 
-```text
-scout_report_valid = TRUE
-AND selected_path_count = 1
-AND original_user_request_pre_authorized_plan = TRUE
-```
+- `route.selected_evidence_ids`
+- `user_supplied_task_material`
 
-Otherwise Scout stops after its report.
+Evidence remains non-authoritative under `G_EVIDENCE_NONAUTH`.
 
-## BLOCKED
+## Permitted Mutations
 
-Return the standard BLOCKED JSON record when:
+- `none`
 
-- required authority is missing;
-- the requested scope cannot be uniquely determined;
-- evidence supports more than one unresolved next path;
-- a required source is unavailable;
-- completing Scout would require a mutation;
-- the route requests an input not explicitly allowed here.
+A symbolic `route.*` mutation entry is valid only when the selected route resolves it to an exact allowlist.
+
+## Forbidden Mutations
+
+- `repository_files`
+- `git_state`
+- `external_system_state`
+- `evidence_files`
+
+## Verifier
+
+Required verifier: `scout-report-structure`.
+
+The verifier establishes only this stage's disposition. It cannot grant merge authority.
+
+## Transition
+
+Scout -> Plan requires a valid Scout report, exactly one selected path, and original user pre-authorization for Plan.
+
+The transition is evaluated only from caller/prior-stage facts and current source bindings. Missing or false required facts fail closed.
+
+## BLOCKED Conditions
+
+- required authority is missing.
+- scope or next path is non-unique.
+- a required source is unavailable.
+- Scout would require a mutation.
+- an input is not explicitly routed.
+
+Every terminal failure emits a C4-conformant `BLOCKED` record and stops the current envelope.

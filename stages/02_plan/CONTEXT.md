@@ -1,8 +1,8 @@
-# Stage 02 — Plan
+# Stage 02 - plan
 
 ```yaml
 stage_id: 02_plan
-job: convert one selected Scout/user path into the smallest sufficient verifiable implementation plan
+job: convert one selected path into the smallest sufficient verifiable implementation plan
 required_inputs:
   - AGENTS.md
   - CONTEXT.md
@@ -26,52 +26,65 @@ forbidden_mutations:
   - docs/evidence
 required_verifier: plan-skill-contract
 success_disposition: PLAN_READY
-blocked_disposition: PLAN_BLOCKED
+blocked_disposition: BLOCKED
 primary_output: stages/02_plan/output/implementation-plan.md
 next_stage: 03_contract
 human_gate: explicit_user_approval_of_exact_PLAN_READY
 ```
 
-## Contract
+## Inputs
 
-The repository skill `.claude/skills/plan/SKILL.md` may be loaded only when the root route explicitly selects this stage.
+- `AGENTS.md`
+- `CONTEXT.md`
+- `stages/02_plan/CONTEXT.md`
+- `route.selected_scout_or_user_handoff`
 
-Plan may create exactly one planning artifact. It may not implement, test, configure, review, accept, or merge.
+## Allowed Layer 3 References
 
-The plan freezes:
+- `references/engineering/engineering-rules.md`
+- `route.selected_layer3`
 
-- goal;
-- observable Definition of Done;
-- authorized scope and non-goals;
-- selected path;
-- obligations;
-- verifiers;
-- increments;
-- stop conditions;
-- source binding.
+## Allowed Layer 4 Evidence and Working Inputs
 
-Repository beliefs remain falsifiable and must be verified before they are used.
+- `route.selected_evidence_ids`
+- `route.selected_scout_or_user_handoff`
 
-## Success transition
+Evidence remains non-authoritative under `G_EVIDENCE_NONAUTH`.
 
-Plan -> Contract requires:
+## Permitted Mutations
 
-```text
-plan_disposition = PLAN_READY
-AND explicit_user_approval_of_exact_plan = TRUE
-AND plan_binding_current = TRUE
-```
+- `stages/02_plan/output/implementation-plan.md`
 
-No PLAN_READY artifact grants construction authority by itself.
+A symbolic `route.*` mutation entry is valid only when the selected route resolves it to an exact allowlist.
 
-## BLOCKED
+## Forbidden Mutations
 
-Return PLAN_BLOCKED / the standard BLOCKED record when:
+- `application_code`
+- `tests`
+- `schemas`
+- `migrations`
+- `build_logic`
+- `harness_logic`
+- `docs/evidence`
 
-- the selected path is absent;
-- goal, DoD, or authorized scope is absent;
-- governing authorities conflict without deterministic precedence;
-- a material design choice cannot be resolved without inventing a priority;
-- a blocking unknown remains;
-- repository evidence invalidates the selected path;
-- the plan would require an unauthorized mutation.
+## Verifier
+
+Required verifier: `plan-skill-contract`.
+
+The verifier establishes only this stage's disposition. It cannot grant merge authority.
+
+## Transition
+
+Plan -> Contract requires PLAN_READY, current plan binding, and explicit user approval of the exact Plan artifact.
+
+The transition is evaluated only from caller/prior-stage facts and current source bindings. Missing or false required facts fail closed.
+
+## BLOCKED Conditions
+
+- selected path is absent.
+- goal, DoD, or authorized scope is absent.
+- governing sources conflict without deterministic precedence.
+- a blocking unknown remains.
+- planning requires an unauthorized mutation.
+
+Every terminal failure emits a C4-conformant `BLOCKED` record and stops the current envelope.
