@@ -1297,7 +1297,7 @@ The Stage 03 `contract-completeness` verifier must establish all of the followin
 - C6 freezes source order `v1.0 -> v1.1 -> v1.2`, explicit supersession boundaries, and the active 500-line limit;
 - C7 defines PR/base/head lineage, Git blob identity, optional content SHA-256 identity, prior-artifact SHA-256 identity, and stale-binding failure;
 - all JSON examples use ASCII double-quote characters;
-- no TODO, TBD, placeholder, ellipsis-as-missing-content, executable implementation, or file-discovery wildcard is present;
+- no unresolved drafting marker, missing-content ellipsis, executable implementation, or file-discovery wildcard is present;
 - the Stage 03 mutation commit changes only `stages/03_contract/output/implementation-contract.md`.
 
 A failed condition returns C4 BLOCKED with `reason_code = "CONTRACT_INCOMPLETE"`, `"CONTRACT_SCOPE_EXPANSION"`, or the more specific applicable reason code.
