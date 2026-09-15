@@ -42,15 +42,12 @@ describe("governance route positives", () => {
     expect(result.stage_id).toBe("04_implement");
     expect(result.layer3).toEqual(["architecture_manifest", "engineering_rules"]);
   });
-  test("cross-domain input returns one combined route", () => {
+  test("undeclared cross-domain input fails closed", () => {
     const result = evaluateRoute(table, envelope({
       task_domains: ["governance", "product_behavior"],
-      source_sections: { product_prd: "01 • Document Control and Contract" },
     }));
-    expect(result.stage_id).toBe("04_implement");
-    expect(result.layer3).toEqual([
-      "architecture_manifest", "engineering_rules", "product_prd",
-    ]);
+    expect(result.status).toBe("BLOCKED");
+    expect(result.reason_code).toBe("ROUTE_ZERO_MATCH");
   });
   test("validates BLOCKED records and stage contracts", () => {
     const blocked = makeBlocked("ROUTE_ZERO_MATCH", "G_ROUTE_UNIQUE", "UNKNOWN");
