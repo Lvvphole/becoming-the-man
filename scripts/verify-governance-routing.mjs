@@ -51,7 +51,7 @@ function sameSet(left, right) {
 }
 
 function hasWildcard(path) {
-  return /[*?\[\]]/.test(path);
+  return ["*", "?", "[", "]"].some((token) => path.includes(token));
 }
 
 function evidenceEntry(index, id) {
