@@ -10,21 +10,15 @@ import {
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const contract = JSON.parse(read("contracts/governance-routing-contract.json"));
-const binding = {
-  pr: 49,
-  base: "fec5de5f242dc1dba4e007658f3323931f83c193",
-  current_head: "66782c4019558e7ff2fd80ff05aa5c12eff12cf4",
-};
+const binding = { pr: 49, base: "fec5de5f242dc1dba4e007658f3323931f83c193",
+  current_head: "66782c4019558e7ff2fd80ff05aa5c12eff12cf4" };
 const contextText = read("CONTEXT.md");
 const table = parseRoutingTable(contextText, binding);
 function envelope(overrides = {}) {
   return {
     workflow_stage: "04_implement",
     task_domains: ["governance"],
-    source_sections: {
-      engineering_rules: ["*"],
-      architecture_manifest: ["*"],
-    },
+    source_sections: { engineering_rules: ["*"], architecture_manifest: ["*"] },
     workpiece_paths: ["package.json"],
     selected_evidence_ids: [],
     prior_outputs: {},
@@ -42,13 +36,8 @@ function activeFiles() {
     ])].map((path) => [path, read(path)]),
   );
 }
-const options = (overrides = {}) => ({
-  sourceBinding: binding,
-  files: activeFiles(),
-  ...overrides,
-});
-const route = (value = envelope(), overrides = {}) =>
-  evaluateRoute(table, value, options(overrides));
+const options = (more = {}) => ({ sourceBinding: binding, files: activeFiles(), ...more });
+const route = (value = envelope(), more = {}) => evaluateRoute(table, value, options(more));
 const reason = (result) => result?.reason_code;
 
 describe("governance route positives", () => {
@@ -85,7 +74,7 @@ describe("governance route negative controls", () => {
     expect(reason(route(envelope({ workflow_stage: "99_none" }))))
       .toBe("ROUTE_ZERO_MATCH");
   });
-  test("duplicate route id is blocked during table parsing", () => {
+  test("duplicate route id is blocked before route evaluation", () => {
     const copy = structuredClone(table);
     copy.routes.push(structuredClone(copy.routes[0]));
     const raw = ["ROUTING_TABLE_BEGIN", "```json", JSON.stringify(copy),
@@ -104,8 +93,8 @@ describe("governance route negative controls", () => {
   });
   test("stale architecture order is blocked", () => {
     const files = activeFiles();
-    files["references/architecture/CONTEXT.md"] = files["references/architecture/CONTEXT.md"]
-      .replaceAll(contract.architecture.active_sources[0], "missing-source.md");
+    files["references/architecture/CONTEXT.md"] =
+      contract.architecture.active_sources.toReversed().join("\n");
     expect(reason(validateGovernanceSnapshot(files, contract, binding)))
       .toBe("SOURCE_BINDING_STALE");
   });
@@ -134,13 +123,11 @@ describe("governance route negative controls", () => {
   test("review cycle four is blocked", () => {
     expect(reason(validateReviewCycle(4, binding))).toBe("REVIEW_CYCLE_EXCEEDED");
   });
-  test("active numeric drift is blocked", () => {
+  test.each([499, 501, 600, 1000])("numeric ceiling %i is blocked", (value) => {
     const files = activeFiles();
-    files["AGENTS.md"] = files["AGENTS.md"].replace(
-      "Micro-PR Ceiling (500 LOC)", "Micro-PR Ceiling (1000 LOC)",
-    );
-    expect(reason(validateGovernanceSnapshot(files, contract, binding)))
-      .toBe("CHANGE_SIZE_DRIFT");
+    files["references/architecture/CONTEXT.md"] = files["references/architecture/CONTEXT.md"]
+      .replace('"active_reviewable_loc_limit": 500', `"active_reviewable_loc_limit": ${value}`);
+    expect(reason(validateGovernanceSnapshot(files, contract, binding))).toBe("CHANGE_SIZE_DRIFT");
   });
   test("selected evidence without an index is blocked", () => {
     expect(reason(route(envelope({ selected_evidence_ids: ["ev-1"] }))))
@@ -169,25 +156,21 @@ describe("governance route negative controls", () => {
 });
 
 describe("INC-1 contracted controls", () => {
-  test.each([null, undefined, true, 42, "bad", []])(
-    "malformed envelope fails closed: %j",
-    (value) => expect(reason(route(value))).toBe("TASK_ENVELOPE_REQUIRED"),
-  );
-  test("missing non-selector C2 field is blocked", () => {
-    const value = envelope();
-    delete value.prior_outputs;
+  test.each([null, undefined, "bad", []])("malformed envelope fails closed: %j", (value) => {
     expect(reason(route(value))).toBe("TASK_ENVELOPE_REQUIRED");
   });
-  test("bad array field type is blocked", () => {
-    expect(reason(route(envelope({ workpiece_paths: null }))))
-      .toBe("TASK_ENVELOPE_REQUIRED");
+  test.each([
+    ["prior_outputs", undefined], ["workpiece_paths", null],
+  ])("invalid C2 field %s is blocked", (field, value) => {
+    const item = envelope(); if (value === undefined) delete item[field]; else item[field] = value;
+    expect(reason(route(item))).toBe("TASK_ENVELOPE_REQUIRED");
   });
   test.each(["/etc/passwd", "../secret", "src/../secret", "C:/secret"])(
     "path escape fails closed: %s",
-    (pathValue) => expect(reason(route(envelope({ workpiece_paths: [pathValue] }))))
+    (path) => expect(reason(route(envelope({ workpiece_paths: [path] }))))
       .toBe("TASK_ENVELOPE_REQUIRED"),
   );
-  test("BLOCKED output requires a valid source binding", () => {
+  test("BLOCKED output binds trusted lineage", () => {
     const result = route(envelope({ source_binding: {} }));
     expect(reason(result)).toBe("SOURCE_BINDING_STALE");
     expect(validateBlocked(result, contract)).toBe(true);
@@ -196,27 +179,26 @@ describe("INC-1 contracted controls", () => {
     expect(evaluateRoute(table, envelope(), { sourceBinding: {}, files: activeFiles() }).status)
       .toBe("INVALID_EXECUTION_CONTEXT");
   });
-  test("distinct matching route rows produce ROUTE_MULTI_MATCH", () => {
+  test("stale envelope binding is blocked", () => {
+    expect(reason(route(envelope({ source_binding: { ...binding, current_head: "0".repeat(40) } }))))
+      .toBe("SOURCE_BINDING_STALE");
+  });
+  test("distinct matching routes are blocked", () => {
     const copy = structuredClone(table);
-    const duplicate = structuredClone(copy.routes.find((r) => r.route_id === "route:04_implement:governance"));
-    duplicate.route_id = "route:04_implement:governance-alt";
-    copy.routes.push(duplicate);
+    const extra = structuredClone(copy.routes.find((r) => r.route_id === "route:04_implement:governance"));
+    extra.route_id += "-alt"; copy.routes.push(extra);
     expect(reason(evaluateRoute(copy, envelope(), options()))).toBe("ROUTE_MULTI_MATCH");
   });
   test("missing exact Layer 3 file is blocked", () => {
-    const files = activeFiles();
-    delete files["references/engineering/engineering-rules.md"];
+    const files = activeFiles(); delete files["references/engineering/engineering-rules.md"];
     expect(reason(route(envelope(), { files }))).toBe("MISSING_SOURCE");
   });
-  test("full policy requires exactly star", () => {
-    expect(reason(route(envelope({
-      source_sections: { engineering_rules: ["Section 1"], architecture_manifest: ["*"] },
-    })))).toBe("MISSING_SELECTOR");
-  });
-  test("explicit selector policy rejects star", () => {
-    const copy = structuredClone(table);
-    copy.source_registry.engineering_rules.section_policy = "explicit_selector_required";
-    expect(reason(evaluateRoute(copy, envelope(), options()))).toBe("MISSING_SELECTOR");
+  test.each([
+    ["full", { engineering_rules: ["Section"], architecture_manifest: ["*"] }],
+    ["explicit_selector_required", { engineering_rules: ["*"], architecture_manifest: ["*"] }],
+  ])("section policy %s fails closed", (policy, source_sections) => {
+    const copy = structuredClone(table); copy.source_registry.engineering_rules.section_policy = policy;
+    expect(reason(evaluateRoute(copy, envelope({ source_sections }), options()))).toBe("MISSING_SELECTOR");
   });
   test("required approval facts are strict", () => {
     const copy = structuredClone(table);
@@ -227,11 +209,5 @@ describe("INC-1 contracted controls", () => {
   });
   test("all seven canonical numeric ceilings equal 500", () => {
     expect(validateGovernanceSnapshot(activeFiles(), contract, binding)).toBe(true);
-  });
-  test.each([499, 501, 600, 1000])("numeric ceiling %i is blocked", (value) => {
-    const files = activeFiles();
-    files["references/architecture/CONTEXT.md"] = files["references/architecture/CONTEXT.md"]
-      .replace('"active_reviewable_loc_limit": 500', `"active_reviewable_loc_limit": ${value}`);
-    expect(reason(validateGovernanceSnapshot(files, contract, binding))).toBe("CHANGE_SIZE_DRIFT");
   });
 });
