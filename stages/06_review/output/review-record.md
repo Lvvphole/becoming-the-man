@@ -1,6 +1,7 @@
 # Stage 06 Review Record - INC-0
 
-Status: REVIEW_PASS
+Status: REVIEW_CLEAR
+Review verdict: REVIEW_PASS
 Lifecycle stage: 06_review
 Review cycle: 2 of 3
 Review route: route:06_review:governance
@@ -216,10 +217,16 @@ Exact-head CI: PASS.
 G_CHANGE_SIZE: TRUE.
 Review cycle bound: 2 <= 3.
 
-Formal Cycle 2 disposition:
+Formal Cycle 2 reviewer verdict:
 
 ```text
 REVIEW_PASS
+```
+
+Stage 06 lifecycle disposition:
+
+```text
+REVIEW_CLEAR
 ```
 
 The reviewed candidate is eligible for governed Stage 07 release-record creation.
