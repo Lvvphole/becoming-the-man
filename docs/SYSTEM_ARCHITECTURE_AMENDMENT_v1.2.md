@@ -4,7 +4,7 @@ Status: **APPROVED IMPLEMENTATION-GOVERNANCE AMENDMENT**
 Approved: 26 August 2026  
 Amends: Website System Architecture v1.0 — LOCKED, as amended by v1.1; specifically review convergence under A18-03, protected-branch refresh behavior under A18-04, and final evidence under A18-05.
 
-The locked v1.0 architecture and v1.1 amendment remain authoritative in every area not explicitly amended below. This amendment does not change the product goal, user experience, release sequence, technology stack, data ownership, provider boundaries, Definition of Done, 1,000-line reviewability limit, exact-head CI requirement, independent Codex review requirement, or user merge authority.
+The locked v1.0 architecture and v1.1 amendment remain the active architecture sources in every area not explicitly amended below. All architecture sources remain subordinate to root `AGENTS.md` and root `CONTEXT.md`. This amendment does not change the product goal, user experience, release sequence, technology stack, data ownership, provider boundaries, Definition of Done, 500-line reviewability limit, exact-head CI requirement, independent Codex review requirement, or user merge authority.
 
 ## A18-03A — Bounded Codex review convergence
 

@@ -4,11 +4,11 @@ Status: **APPROVED IMPLEMENTATION-GOVERNANCE AMENDMENT**
 Approved: 26 August 2026  
 Amends: Website System Architecture v1.0 — LOCKED, Section 18 (Deployment Topology and CI/CD) and repository implementation controls only.
 
-The locked v1.0 architecture remains authoritative in every area not explicitly amended below. This amendment does not change the product goal, user experience, release sequence, technology stack, data ownership, provider boundaries, or Definition of Done.
+The locked v1.0 architecture remains the active architecture source in every area not explicitly amended below. All architecture sources remain subordinate to root `AGENTS.md` and root `CONTEXT.md`. This amendment does not change the product goal, user experience, release sequence, technology stack, data ownership, provider boundaries, or Definition of Done.
 
 ## A18-01 — Bounded implementation change
 
-A pull request SHALL contain no more than **1,000 reviewable implementation lines changed**, measured as additions plus deletions from the merge base with the target branch to the final PR head.
+A pull request SHALL contain no more than **500 reviewable implementation lines changed**, measured as additions plus deletions from the merge base with the target branch to the final PR head.
 
 Reviewable implementation lines include source code, tests, scripts, SQL, configuration, schemas, and CI/workflow definitions. Markdown/documentation, dependency lockfiles, and deterministic generated framework/build artifacts are excluded from the count.
 
@@ -23,7 +23,7 @@ A PR SHALL NOT be declared `PASS`, complete, or merge-ready while a required che
 For the currently active R1-01 foundation, the persistent verification minimum is:
 
 1. frozen dependency install from the committed lockfile;
-2. 1,000-line change-budget gate;
+2. 500-line change-budget gate;
 3. lint;
 4. typecheck;
 5. unit/smoke tests;

@@ -6,8 +6,8 @@
 
 Version 1.0 • APPROVED & LOCKED
 
-Subordinate to the Website Governing Product Specification v1.0 - LOCKED  
-and the Website Product Specification v1.0 - APPROVED & LOCKED
+Subordinate to root `AGENTS.md` and routed by root `CONTEXT.md`  
+Website Product Specification v1.0 remains the canonical routed PRD.
 
 **PURPOSE**
 
@@ -101,14 +101,14 @@ Prepared 26 August 2026 • Architecture approved • LOCKED • Implementation 
 
 | **Field**                  | **Architecture contract**                                                                                                                                                |
 |----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Governing authority**    | BTMSCT Website Governing Product Specification v1.0 - APPROVED & LOCKED, 26 August 2026.                                                                                 |
-| **Product authority**      | BTMSCT Website Product Specification v1.0 - APPROVED & LOCKED, 26 August 2026.                                                                                           |
+| **Governing authority**    | Root `AGENTS.md` — repository execution constitution and single authority root.                                                                                          |
+| **Product authority**      | BTMSCT Website Product Specification v1.0 - APPROVED & LOCKED — canonical PRD when selected by root `CONTEXT.md`.                                                        |
 | **Architecture state**     | APPROVED & LOCKED. Implementation remains NOT STARTED.                                                                                                             |
 | **Architecture objective** | Select the smallest durable system that can prove DOD-01 through DOD-09 in the approved R1 -\> R2 -\> R3 -\> R4 sequence.                                                |
-| **Precedence**             | If this architecture conflicts with either locked upstream specification, the upstream specification controls. The conflict must be escalated; no silent reconciliation. |
+| **Precedence**             | Root `AGENTS.md` controls. The routed Product Specification controls product requirements in its domain. Any unresolved subordinate conflict is `BLOCKED`; no silent reconciliation. |
 | **Optimization rule**      | Prefer direct, provider-native capabilities and explicit ownership. Service count, code volume, model sophistication, and architectural novelty are not outcomes.        |
 | **Regression rule**        | No architecture change may weaken a locked journey, canonical principle, safety boundary, operator capability, or previously accepted release.                           |
-| **Next control artifact**  | After explicit lock, create a root AGENTS.md under 150 lines from this architecture before any coding agent operates in the repository.                                  |
+| **Next control artifact**  | Root `AGENTS.md` routes task/stage selection to root `CONTEXT.md`; all Layer 2 stage contracts and Layer 3 references remain subordinate.                                |
 
 <table>
 <colgroup>
@@ -982,8 +982,8 @@ The R4 runtime is promoted because it passes the frozen release contract, not be
 
 | **Authority / source**                                                              | **Architecture role**                                                                                                                                                                                           |
 |-------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **BTMSCT Website Governing Product Specification v1.0 - LOCKED**                    | Controls objective, governed users/user stories, experience, DOD-01 through DOD-09, release order, R4 canonical/safety hierarchy, measurement, regression, and change control.                                  |
-| **BTMSCT Website Product Specification v1.0 - APPROVED & LOCKED**                   | Controls selected core technology, routes, requirements, Supabase-backed R2 publishing, core visitor-capture tables, email/analytics/admin/SEO/assessment contracts, NFRs, release backlog, and open decisions. |
+| **Root `AGENTS.md`**                                                               | Repository execution constitution: authority root, mandatory routing boundary, approval/review/merge gates, security/non-bypass controls, and 500-LOC reviewability ceiling.                                  |
+| **BTMSCT Website Product Specification v1.0 - APPROVED & LOCKED**                   | Canonical routed PRD: controls objective, users/user stories, experience, DOD-01 through DOD-09, release order, product requirements, selected technology, NFRs, backlog, measurement, and change constraints. |
 | **Published Becoming the Man She Can Trust manuscript**                             | Public book identity, Twenty-Four Non-Negotiables, trust-centered thesis, reader-facing language, chapter/examples layer.                                                                                       |
 | **LOVE • PURPOSE • FLOURISH Master Relationship Operating System v1.4**             | R4 protocols, evidence calibration, safety/referral boundaries, autonomy/consent/dignity/privacy/right-to-stop constraints.                                                                                     |
 | **Project Architecture / Master Story Bible / Product Vision**                      | Narrative/theme continuity, transformation framing, symbolic language, quality gates, and book \<-\> Operating-System synchronization.                                                                          |

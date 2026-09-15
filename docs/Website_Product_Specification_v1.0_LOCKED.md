@@ -6,7 +6,7 @@
 
 **Version 1.0 • APPROVED & LOCKED**
 
-*Subordinate to the locked Website Governing Product Specification v1.0*
+*Canonical Website PRD subordinate to root `AGENTS.md` and routed by root `CONTEXT.md`*
 
 <table>
 <colgroup>
@@ -28,10 +28,10 @@ Prepared 26 August 2026
 
 | **Field**      | **Specification**                                                                                                                                                                           |
 |----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Authority      | Subordinate to BTMSCT Website Governing Product Specification v1.0 — LOCKED 26 August 2026.                                                                                                 |
+| Authority      | Subordinate to root `AGENTS.md`. When selected by root `CONTEXT.md`, this document is the canonical Website PRD/product authority for the routed task.                                    |
 | Status         | APPROVED & LOCKED — explicit approval and lock recorded. No implementation is authorized by this document alone.                                                                            |
 | Purpose        | Decompose the locked outcome, user stories, DoD, experience, and releases into testable requirements, data/product contracts, operator workflows, and release backlog.                      |
-| Precedence     | If this specification conflicts with the locked governing baseline, the baseline controls and the conflict is escalated.                                                                    |
+| Precedence     | Root `AGENTS.md` controls. Any unresolved conflict among routed subordinate sources is `BLOCKED`; no agent may silently reconcile or choose a competing source.                              |
 | Admission rule | Every product requirement must map to a verified desired-state gap, governed user story, DoD capability, release, observable behavior, acceptance evidence, invariants, and stop condition. |
 | Change rule    | Implementation details may change downstream only when the governed outcome, release contract, trust constraints, and acceptance criteria remain satisfied.                                 |
 
@@ -628,7 +628,7 @@ The admin dashboard is not the operator outcome by itself. It exists to make the
 <thead>
 <tr class="header">
 <th><p><strong>PRODUCT-SPECIFICATION VERDICT</strong></p>
-<p>APPROVED & LOCKED v1.0 is internally aligned with the locked governing baseline and the user’s requested capability set. Explicit approval and lock are recorded. No implementation is authorized by this document alone.</p></th>
+<p>APPROVED & LOCKED v1.0 is internally aligned with root `AGENTS.md` and the routed product contract. Explicit approval and lock are recorded. No implementation is authorized by this document alone.</p></th>
 </tr>
 </thead>
 <tbody>
@@ -637,13 +637,13 @@ The admin dashboard is not the operator outcome by itself. It exists to make the
 
 ## Next authorized artifact after approval
 
-Website System Architecture v1.0: select the exact rendering/runtime topology, repository layout, API contracts, database migrations/RLS policies, email webhook architecture, PostHog instrumentation boundaries, admin authentication, SEO rendering path, R4 File Search/eval/security architecture, deployment topology, and observability. It must remain subordinate to this Product Specification and the locked governing baseline.
+Website System Architecture v1.0: select the exact rendering/runtime topology, repository layout, API contracts, database migrations/RLS policies, email webhook architecture, PostHog instrumentation boundaries, admin authentication, SEO rendering path, R4 File Search/eval/security architecture, deployment topology, and observability. It must remain subordinate to root `AGENTS.md` and preserve the routed requirements of this Product Specification.
 
 # Appendix A • Evidence Basis
 
-Governing sources
+Routed reference sources
 
-- BTMSCT Website Governing Product Specification v1.0 — LOCKED 26 August 2026.
+- Root `AGENTS.md` — repository execution constitution; root `CONTEXT.md` selects the subordinate sources applicable to the task.
 
 - Published Becoming the Man She Can Trust manuscript — public book identity and Twenty-Four Non-Negotiables.
 
