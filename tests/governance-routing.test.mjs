@@ -37,7 +37,7 @@ function activeFiles() {
   );
 }
 const options = (more = {}) => ({ sourceBinding: binding, files: activeFiles(), ...more });
-const route = (value = envelope(), more = {}) => evaluateRoute(table, value, options(more));
+const route = (...args) => evaluateRoute(table, args.length ? args[0] : envelope(), options(args[1] ?? {}));
 const reason = (result) => result?.reason_code;
 
 describe("governance route positives", () => {
@@ -93,8 +93,12 @@ describe("governance route negative controls", () => {
   });
   test("stale architecture order is blocked", () => {
     const files = activeFiles();
-    files["references/architecture/CONTEXT.md"] =
-      contract.architecture.active_sources.toReversed().join("\n");
+    files["references/architecture/CONTEXT.md"] = [
+      "ARCHITECTURE_MANIFEST_BEGIN", "```json",
+      JSON.stringify({ active_reviewable_loc_limit: 500 }),
+      "```", "ARCHITECTURE_MANIFEST_END",
+      ...contract.architecture.active_sources.toReversed(),
+    ].join("\n");
     expect(reason(validateGovernanceSnapshot(files, contract, binding)))
       .toBe("SOURCE_BINDING_STALE");
   });
