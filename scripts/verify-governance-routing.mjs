@@ -3,35 +3,27 @@ const requiredEnvelopeFields = [
   "selected_evidence_ids", "prior_outputs", "authorized_candidate_paths",
   "approvals", "source_binding",
 ];
-const stages = new Set([
-  "UNKNOWN", "01_scout", "02_plan", "03_contract", "04_implement",
-  "05_verify", "06_review", "07_release",
-]);
+const stages = new Set(["UNKNOWN", "01_scout", "02_plan", "03_contract", "04_implement", "05_verify", "06_review", "07_release"]);
 const gitOid = /^[0-9a-f]{40}$/;
-const object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
-const strings = (value) => Array.isArray(value) &&
-  value.every((item) => typeof item === "string") && new Set(value).size === value.length;
-const stage = (value) => stages.has(value) && value !== "UNKNOWN";
-const ids = (value) => strings(value) && value.every((item) => /^[a-z][a-z0-9_.:-]*$/.test(item));
-const exactKeys = (value, keys) => object(value) && Object.keys(value).length === keys.length &&
-  keys.every((key) => Object.hasOwn(value, key));
-function validRoute(route) {
-  const s = route?.selectors, p = route?.predicate, t = route?.transition;
-  return exactKeys(route, ["route_id", "selectors", "predicate", "required_layer3_bundle", "allowed_evidence_ids", "target_stage", "transition"]) &&
-    /^route:[a-z0-9_.:-]+$/.test(route.route_id) && exactKeys(s, ["workflow_stage", "task_domains"]) &&
-    stage(s.workflow_stage) && ids(s.task_domains) && s.task_domains.length > 0 &&
-    exactKeys(p, ["operator", "required_envelope_fields", "required_approval_facts"]) && p.operator === "ALL_EXACT" &&
-    ids(p.required_envelope_fields) && ids(p.required_approval_facts) && ids(route.required_layer3_bundle) &&
-    ids(route.allowed_evidence_ids) && stage(route.target_stage) &&
-    exactKeys(t, ["from_stage", "to_stage", "required_facts", "automatic"]) &&
-    (t.from_stage === null || stage(t.from_stage)) && (t.to_stage === null || stage(t.to_stage)) &&
-    ids(t.required_facts) && typeof t.automatic === "boolean";
+const object = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+const strings = (v) => Array.isArray(v) && v.every((x) => typeof x === "string") && new Set(v).size === v.length;
+const stage = (v) => stages.has(v) && v !== "UNKNOWN";
+const ids = (v) => strings(v) && v.every((x) => /^[a-z][a-z0-9_.:-]*$/.test(x));
+const facts = (v) => strings(v) && v.every((x) => /^[A-Za-z][A-Za-z0-9_.:-]*$/.test(x));
+const exactKeys = (v, keys) => object(v) && Object.keys(v).length === keys.length && keys.every((k) => Object.hasOwn(v, k));
+function validRoute(r) {
+  const s = r?.selectors, p = r?.predicate, t = r?.transition;
+  return exactKeys(r, ["route_id", "selectors", "predicate", "required_layer3_bundle", "allowed_evidence_ids", "target_stage", "transition"]) &&
+    /^route:[a-z0-9_.:-]+$/.test(r.route_id) && exactKeys(s, ["workflow_stage", "task_domains"]) && stage(s.workflow_stage) &&
+    ids(s.task_domains) && s.task_domains.length > 0 && exactKeys(p, ["operator", "required_envelope_fields", "required_approval_facts"]) &&
+    p.operator === "ALL_EXACT" && ids(p.required_envelope_fields) && ids(p.required_approval_facts) &&
+    ids(r.required_layer3_bundle) && ids(r.allowed_evidence_ids) && stage(r.target_stage) &&
+    exactKeys(t, ["from_stage", "to_stage", "required_facts", "automatic"]) && (t.from_stage === null || stage(t.from_stage)) &&
+    (t.to_stage === null || stage(t.to_stage)) && facts(t.required_facts) && typeof t.automatic === "boolean";
 }
-const validBinding = (value) => object(value) && Number.isInteger(value.pr) && value.pr >= 1 &&
-  gitOid.test(value.base) && gitOid.test(value.current_head) && Object.keys(value).length === 3;
-const sameBinding = (a, b) => validBinding(a) && validBinding(b) &&
-  a.pr === b.pr && a.base === b.base && a.current_head === b.current_head;
-const normalizeStage = (value) => stages.has(value) ? value : "UNKNOWN";
+const validBinding = (v) => object(v) && Number.isInteger(v.pr) && v.pr >= 1 && gitOid.test(v.base) && gitOid.test(v.current_head) && Object.keys(v).length === 3;
+const sameBinding = (a, b) => validBinding(a) && validBinding(b) && a.pr === b.pr && a.base === b.base && a.current_head === b.current_head;
+const normalizeStage = (v) => stages.has(v) ? v : "UNKNOWN";
 
 export function makeBlocked(reasonCode, gateId, stageId, sourceBinding) {
   if (!validBinding(sourceBinding)) return { status: "INVALID_EXECUTION_CONTEXT" };
@@ -187,18 +179,12 @@ export function evaluateRoute(table, envelope, options = {}) {
 }
 
 export function validateBlocked(record, contract) {
-  const required = contract.blocked_record.required_fields;
-  return object(record) && record.status === "BLOCKED" &&
-    Object.keys(record).length === required.length &&
-    required.every((field) => Object.hasOwn(record, field)) &&
-    contract.blocked_record.reason_codes.includes(record.reason_code) &&
-    /^G_[A-Z0-9_]+$/.test(record.gate_id) && stages.has(record.stage_id) &&
-    validBinding(record.source_binding) &&
-    ["route_candidates", "missing_inputs", "conflicts", "resolution_required"].every((field) =>
-      strings(record[field]) && (field === "route_candidates" ||
-        record[field].every((item) => item.length > 0))) &&
-    record.route_candidates.every((id) => /^route:[a-z0-9_.:-]+$/.test(id)) &&
-    record.resolution_required.length > 0;
+  const required = contract.blocked_record.required_fields, arrays = ["route_candidates", "missing_inputs", "conflicts", "resolution_required"];
+  return object(record) && record.status === "BLOCKED" && Object.keys(record).length === required.length &&
+    required.every((f) => Object.hasOwn(record, f)) && contract.blocked_record.reason_codes.includes(record.reason_code) &&
+    /^G_[A-Z0-9_]+$/.test(record.gate_id) && stages.has(record.stage_id) && validBinding(record.source_binding) &&
+    arrays.every((f) => strings(record[f]) && (f === "route_candidates" || record[f].every(Boolean))) &&
+    record.route_candidates.every((id) => /^route:[a-z0-9_.:-]+$/.test(id)) && record.resolution_required.length > 0;
 }
 
 export function validateStageContract(stageId, text, contract, sourceBinding) {
@@ -249,6 +235,10 @@ export function validateReviewCycle(cycle, sourceBinding) {
 }
 
 function limits(path, text) {
+  if (path === "references/architecture/CONTEXT.md") {
+    const m = text.match(/ARCHITECTURE_MANIFEST_BEGIN\s*```json\s*([\s\S]*?)\s*```\s*ARCHITECTURE_MANIFEST_END/);
+    try { return m ? [JSON.parse(m[1]).active_reviewable_loc_limit] : []; } catch { return []; }
+  }
   const patterns = {
     "AGENTS.md": [/Micro-PR Ceiling \((\d+) LOC\)/, /at most (\d+) reviewable implementation lines/],
     "references/engineering/engineering-rules.md": [/reviewable_lines <= (\d+)/, /active ceiling is (\d+)/],
@@ -257,19 +247,8 @@ function limits(path, text) {
     "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md": [/(\d+)-line reviewability limit/],
     "scripts/check-change-size.sh": [/^MAX_LINES=(\d+)$/m],
   };
-  if (path === "references/architecture/CONTEXT.md") {
-    const match = text.match(
-      /ARCHITECTURE_MANIFEST_BEGIN\s*```json\s*([\s\S]*?)\s*```\s*ARCHITECTURE_MANIFEST_END/,
-    );
-    try {
-      return match ? [JSON.parse(match[1]).active_reviewable_loc_limit] : [];
-    } catch {
-      return [];
-    }
-  }
-  return (patterns[path] ?? []).map((pattern) => Number(text.match(pattern)?.[1]));
+  return (patterns[path] ?? []).map((re) => Number(text.match(re)?.[1]));
 }
-
 export function validateGovernanceSnapshot(files, contract, sourceBinding) {
   for (const path of contract.governance.active_500_paths) {
     const values = limits(path, files[path] ?? "");

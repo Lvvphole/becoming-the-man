@@ -45,6 +45,7 @@ describe("governance route positives", () => {
     const result = route();
     expect(result.stage_id).toBe("04_implement");
     expect(result.layer3).toEqual(["architecture_manifest", "engineering_rules"]);
+    expect(table.routes.some((r) => r.transition.required_facts.includes("G_PRE_CODE_READY"))).toBe(true);
   });
   test("undeclared cross-domain input fails closed", () => {
     const result = route(envelope({
@@ -162,38 +163,26 @@ describe("governance route negative controls", () => {
 });
 
 describe("INC-1 contracted controls", () => {
-  test.each([null, undefined, "bad", [], {}])("malformed envelope fails closed: %j", (value) => {
-    expect(reason(route(value))).toBe("TASK_ENVELOPE_REQUIRED");
-  });
-  test.each([
-    ["prior_outputs", undefined], ["workpiece_paths", null],
-  ])("invalid C2 field %s is blocked", (field, value) => {
+  test.each([null, undefined, "bad", [], {}])("malformed envelope fails closed: %j",
+    (value) => expect(reason(route(value))).toBe("TASK_ENVELOPE_REQUIRED"));
+  test.each([["prior_outputs", undefined], ["workpiece_paths", null]])("invalid C2 field %s is blocked", (field, value) => {
     const item = envelope(); if (value === undefined) delete item[field]; else item[field] = value;
     expect(reason(route(item))).toBe("TASK_ENVELOPE_REQUIRED");
   });
-  test.each(["/etc/passwd", "../secret", "src/../secret", "C:/secret"])(
-    "path escape fails closed: %s",
-    (path) => {
-      if (path.startsWith("/")) expect(new RegExp(contract.task_envelope.repo_path_pattern).test(path)).toBe(false);
-      expect(reason(route(envelope({ workpiece_paths: [path] })))).toBe("TASK_ENVELOPE_REQUIRED");
-    },
-  );
+  test.each(["/etc/passwd", "../secret", "src/../secret", "C:/secret"])("path escape fails closed: %s", (path) => {
+    if (path.startsWith("/")) expect(new RegExp(contract.task_envelope.repo_path_pattern).test(path)).toBe(false);
+    expect(reason(route(envelope({ workpiece_paths: [path] })))).toBe("TASK_ENVELOPE_REQUIRED");
+  });
   test("BLOCKED output binds trusted lineage", () => {
     const result = route(envelope({ source_binding: {} }));
-    expect(reason(result)).toBe("SOURCE_BINDING_STALE");
-    expect(validateBlocked(result, contract)).toBe(true);
+    expect(reason(result)).toBe("SOURCE_BINDING_STALE"); expect(validateBlocked(result, contract)).toBe(true);
   });
-  test("malformed trusted binding cannot route", () => {
-    expect(evaluateRoute(table, envelope(), { sourceBinding: {}, files: activeFiles() }).status)
-      .toBe("INVALID_EXECUTION_CONTEXT");
-  });
-  test("stale envelope binding is blocked", () => {
-    expect(reason(route(envelope({ source_binding: { ...binding, current_head: "0".repeat(40) } }))))
-      .toBe("SOURCE_BINDING_STALE");
-  });
+  test("malformed trusted binding cannot route", () =>
+    expect(evaluateRoute(table, envelope(), { sourceBinding: {}, files: activeFiles() }).status).toBe("INVALID_EXECUTION_CONTEXT"));
+  test("stale envelope binding is blocked", () =>
+    expect(reason(route(envelope({ source_binding: { ...binding, current_head: "0".repeat(40) } })))).toBe("SOURCE_BINDING_STALE"));
   test("distinct matching routes are blocked", () => {
-    const copy = structuredClone(table);
-    const extra = structuredClone(copy.routes.find((r) => r.route_id === "route:04_implement:governance"));
+    const copy = structuredClone(table), extra = structuredClone(copy.routes.find((r) => r.route_id === "route:04_implement:governance"));
     extra.route_id += "-alt"; copy.routes.push(extra);
     expect(reason(evaluateRoute(copy, envelope(), options()))).toBe("ROUTE_MULTI_MATCH");
   });
@@ -210,12 +199,9 @@ describe("INC-1 contracted controls", () => {
   });
   test("required approval facts are strict", () => {
     const copy = structuredClone(table);
-    copy.routes.find((r) => r.route_id === "route:04_implement:governance")
-      .predicate.required_approval_facts = ["approved"];
-    expect(reason(evaluateRoute(copy, envelope({ approvals: { approved: false } }), options())))
-      .toBe("ROUTE_ZERO_MATCH");
+    copy.routes.find((r) => r.route_id === "route:04_implement:governance").predicate.required_approval_facts = ["approved"];
+    expect(reason(evaluateRoute(copy, envelope({ approvals: { approved: false } }), options()))).toBe("ROUTE_ZERO_MATCH");
   });
-  test("all seven canonical numeric ceilings equal 500", () => {
-    expect(validateGovernanceSnapshot(activeFiles(), contract, binding)).toBe(true);
-  });
+  test("all seven canonical numeric ceilings equal 500", () =>
+    expect(validateGovernanceSnapshot(activeFiles(), contract, binding)).toBe(true));
 });
