@@ -11,6 +11,22 @@ const gitOid = /^[0-9a-f]{40}$/;
 const object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const strings = (value) => Array.isArray(value) &&
   value.every((item) => typeof item === "string") && new Set(value).size === value.length;
+const stage = (value) => stages.has(value) && value !== "UNKNOWN";
+const ids = (value) => strings(value) && value.every((item) => /^[a-z][a-z0-9_.:-]*$/.test(item));
+const exactKeys = (value, keys) => object(value) && Object.keys(value).length === keys.length &&
+  keys.every((key) => Object.hasOwn(value, key));
+function validRoute(route) {
+  const s = route?.selectors, p = route?.predicate, t = route?.transition;
+  return exactKeys(route, ["route_id", "selectors", "predicate", "required_layer3_bundle", "allowed_evidence_ids", "target_stage", "transition"]) &&
+    /^route:[a-z0-9_.:-]+$/.test(route.route_id) && exactKeys(s, ["workflow_stage", "task_domains"]) &&
+    stage(s.workflow_stage) && ids(s.task_domains) && s.task_domains.length > 0 &&
+    exactKeys(p, ["operator", "required_envelope_fields", "required_approval_facts"]) && p.operator === "ALL_EXACT" &&
+    ids(p.required_envelope_fields) && ids(p.required_approval_facts) && ids(route.required_layer3_bundle) &&
+    ids(route.allowed_evidence_ids) && stage(route.target_stage) &&
+    exactKeys(t, ["from_stage", "to_stage", "required_facts", "automatic"]) &&
+    (t.from_stage === null || stage(t.from_stage)) && (t.to_stage === null || stage(t.to_stage)) &&
+    ids(t.required_facts) && typeof t.automatic === "boolean";
+}
 const validBinding = (value) => object(value) && Number.isInteger(value.pr) && value.pr >= 1 &&
   gitOid.test(value.base) && gitOid.test(value.current_head) && Object.keys(value).length === 3;
 const sameBinding = (a, b) => validBinding(a) && validBinding(b) &&
@@ -42,13 +58,9 @@ export function parseRoutingTable(text, sourceBinding) {
   }
   try {
     const table = JSON.parse(match[1]);
-    if (!Array.isArray(table.routes) || !table.routes.length || !object(table.source_registry) ||
-        table.routes.some((route) => !object(route) || typeof route.route_id !== "string" ||
-          !object(route.selectors) || !object(route.predicate) ||
-          !Array.isArray(route.predicate.required_approval_facts) ||
-          !Array.isArray(route.required_layer3_bundle) || !Array.isArray(route.allowed_evidence_ids) ||
-          !object(route.transition)) ||
-        new Set(table.routes.map((route) => route.route_id)).size !== table.routes.length) {
+    if (!exactKeys(table, ["version", "routes", "source_registry"]) || table.version !== "1.0.0" ||
+        !Array.isArray(table.routes) || !table.routes.length || !object(table.source_registry) ||
+        !table.routes.every(validRoute) || new Set(table.routes.map((route) => route.route_id)).size !== table.routes.length) {
       return makeBlocked("ROUTING_TABLE_INVALID", "G_ROUTE_UNIQUE", "UNKNOWN", sourceBinding);
     }
     return table;
@@ -86,15 +98,11 @@ export function evaluateRoute(table, envelope, options = {}) {
     return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", "UNKNOWN", binding);
   }
   const stage = normalizeStage(envelope.workflow_stage);
-  if (!Object.hasOwn(envelope, "workflow_stage") || envelope.workflow_stage === null ||
-      !Object.hasOwn(envelope, "task_domains") || envelope.task_domains === null) {
-    return makeBlocked("MISSING_SELECTOR", "G_ROUTE_UNIQUE", stage, binding);
+  const missing = requiredEnvelopeFields.filter((field) => !Object.hasOwn(envelope, field) || envelope[field] === null);
+  if (missing.some((field) => field !== "workflow_stage" && field !== "task_domains")) {
+    return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stage, binding);
   }
-  for (const field of requiredEnvelopeFields.slice(2)) {
-    if (!Object.hasOwn(envelope, field) || envelope[field] === null) {
-      return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stage, binding);
-    }
-  }
+  if (missing.length) return makeBlocked("MISSING_SELECTOR", "G_ROUTE_UNIQUE", stage, binding);
   if (typeof envelope.workflow_stage !== "string" || !strings(envelope.task_domains) ||
       !object(envelope.source_sections) || !Array.isArray(envelope.workpiece_paths) ||
       !strings(envelope.selected_evidence_ids) || !object(envelope.prior_outputs) ||

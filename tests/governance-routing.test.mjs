@@ -53,14 +53,13 @@ describe("governance route positives", () => {
     expect(result.status).toBe("BLOCKED");
     expect(result.reason_code).toBe("ROUTE_ZERO_MATCH");
   });
-  test("validates BLOCKED records and stage contracts", () => {
-    const blocked = makeBlocked("ROUTE_ZERO_MATCH", "G_ROUTE_UNIQUE", "UNKNOWN", binding);
-    expect(validateBlocked(blocked, contract)).toBe(true);
-    const stage = validateStageContract(
-      "04_implement", read("stages/04_implement/CONTEXT.md"), contract, binding,
-    );
-    expect(stage.stage_id).toBe("04_implement");
-  });
+  test.each([["04_implement", "CANDIDATE_READY"], ["05_verify", "PASS"]])(
+    "validates BLOCKED records and %s disposition", (stageId, disposition) => {
+      expect(validateBlocked(makeBlocked("ROUTE_ZERO_MATCH", "G_ROUTE_UNIQUE", "UNKNOWN", binding), contract)).toBe(true);
+      expect(validateStageContract(stageId, read(`stages/${stageId}/CONTEXT.md`), contract).stage_id).toBe(stageId);
+      expect(contract.stage_contract.success_dispositions).toContain(disposition);
+    },
+  );
   test("allows a transition only when every required fact is true", () => {
     const result = validateTransition(table, "02_plan->03_contract", {
       plan_ready: true, explicit_user_approval: true, plan_binding_current: true,
@@ -74,11 +73,14 @@ describe("governance route negative controls", () => {
     expect(reason(route(envelope({ workflow_stage: "99_none" }))))
       .toBe("ROUTE_ZERO_MATCH");
   });
-  test("duplicate route id is blocked before route evaluation", () => {
-    const copy = structuredClone(table);
-    copy.routes.push(structuredClone(copy.routes[0]));
-    const raw = ["ROUTING_TABLE_BEGIN", "```json", JSON.stringify(copy),
-      "```", "ROUTING_TABLE_END"].join("\n");
+  test.each([
+    ["duplicate id", (x) => x.routes.push(structuredClone(x.routes[0]))],
+    ["missing target", (x) => delete x.routes[0].target_stage],
+    ["bad domains", (x) => { x.routes[0].selectors.task_domains = [1]; }],
+    ["extra property", (x) => { x.routes[0].extra = true; }],
+  ])("invalid route table %s is blocked", (_name, mutate) => {
+    const copy = structuredClone(table); mutate(copy);
+    const raw = ["ROUTING_TABLE_BEGIN", "```json", JSON.stringify(copy), "```", "ROUTING_TABLE_END"].join("\n");
     expect(reason(parseRoutingTable(raw, binding))).toBe("ROUTING_TABLE_INVALID");
   });
   test("missing selector is blocked", () => {
@@ -160,7 +162,7 @@ describe("governance route negative controls", () => {
 });
 
 describe("INC-1 contracted controls", () => {
-  test.each([null, undefined, "bad", []])("malformed envelope fails closed: %j", (value) => {
+  test.each([null, undefined, "bad", [], {}])("malformed envelope fails closed: %j", (value) => {
     expect(reason(route(value))).toBe("TASK_ENVELOPE_REQUIRED");
   });
   test.each([
@@ -171,8 +173,10 @@ describe("INC-1 contracted controls", () => {
   });
   test.each(["/etc/passwd", "../secret", "src/../secret", "C:/secret"])(
     "path escape fails closed: %s",
-    (path) => expect(reason(route(envelope({ workpiece_paths: [path] }))))
-      .toBe("TASK_ENVELOPE_REQUIRED"),
+    (path) => {
+      if (path.startsWith("/")) expect(new RegExp(contract.task_envelope.repo_path_pattern).test(path)).toBe(false);
+      expect(reason(route(envelope({ workpiece_paths: [path] })))).toBe("TASK_ENVELOPE_REQUIRED");
+    },
   );
   test("BLOCKED output binds trusted lineage", () => {
     const result = route(envelope({ source_binding: {} }));

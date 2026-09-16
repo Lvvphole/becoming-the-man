@@ -16,7 +16,7 @@
       "workpiece_paths",
       "authorized_candidate_paths"
     ],
-    "repo_path_pattern": "^[A-Za-z0-9._/-]+$",
+    "repo_path_pattern": "^(?![/])[A-Za-z0-9._/-]+$",
     "forbid_parent_traversal": true
   },
   "blocked_record": {
@@ -58,7 +58,8 @@
     ]
   },
   "stage_contract": {
-    "success_dispositions": ["SCOUT_READY", "PLAN_READY", "CONTRACT_READY", "IMPLEMENTATION_CANDIDATE_READY", "VERIFICATION_PASS", "REVIEW_CLEAR", "RELEASE_ELIGIBLE"],
+    "success_dispositions": ["SCOUT_READY", "PLAN_READY", "CONTRACT_READY", "CANDIDATE_READY", "PASS", "REVIEW_CLEAR", "RELEASE_ELIGIBLE"],
+    "artifact_dispositions": ["IMPLEMENTATION_CANDIDATE_READY", "VERIFICATION_PASS"],
     "required_fields": [
       "stage_id",
       "job",
