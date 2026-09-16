@@ -124,6 +124,10 @@ The canonical matrix payload must conform to this Draft 2020-12 schema.
       "type": "string",
       "pattern": "^[a-z][a-z0-9_.:-]*$"
     },
+    "factIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.:-]*$"
+    },
     "route": {
       "type": "object",
       "additionalProperties": false,
@@ -238,7 +242,7 @@ The canonical matrix payload must conform to this Draft 2020-12 schema.
               "type": "array",
               "uniqueItems": true,
               "items": {
-                "$ref": "#/$defs/identifier"
+                "$ref": "#/$defs/factIdentifier"
               }
             },
             "automatic": {
@@ -289,6 +293,26 @@ The canonical matrix payload must conform to this Draft 2020-12 schema.
   }
 }
 ```
+
+### 3.3.1 Redesign Path A - transition fact grammar
+
+C1 transition fact tokens use this dedicated grammar:
+
+```text
+^[A-Za-z][A-Za-z0-9_.:-]*$
+```
+
+This grammar applies only to `transition.required_facts`. The lowercase-only generic C1 `identifier` grammar remains unchanged for task domains, source IDs, evidence IDs, envelope-field IDs, and approval-fact IDs.
+
+Mechanical gate identifiers are valid canonical transition fact tokens. For example:
+
+```text
+G_PRE_CODE_READY
+```
+
+is valid under `factIdentifier` and may appear in root `CONTEXT.md` transition `required_facts`.
+
+The amendment changes token syntax only. It does not change route selection, transition truth conditions, automatic-transition semantics, or the authority of root `CONTEXT.md`.
 
 ### 3.4 Closed route predicate
 
@@ -1314,7 +1338,9 @@ Approved Plan:
 - SHA-256: `9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87ebd511a7`
 - approved at repository head: `58a0e10c5bddf8eabec65a9c90ac4e740c35f8d3`
 
-This INC-1 contract narrows implementation to the mechanical governance verifier. It does not alter C1 through C7, root routing semantics, architecture authority, product behavior, or merge authority.
+This INC-1 contract narrows implementation to the mechanical governance verifier. Redesign Path A amends only the C1 transition fact-token grammar defined in Section 3.3.1. C2 through C7, root routing semantics, architecture authority, product behavior, and merge authority remain unchanged.
+
+The human operator also narrows the INC-1 reviewable implementation target from <= 380 to <= 350 for the redesigned implementation. The 420 internal stop threshold, 500 absolute ceiling, and 80-line reserve from the stop threshold to the absolute ceiling remain unchanged.
 
 ### 13.2 Stage 04 implementation workpiece authorization
 
@@ -1622,7 +1648,7 @@ The focused governance-routing test file must report all 30 controls executed an
 For the INC-1 implementation diff against merge base `fec5de5f242dc1dba4e007658f3323931f83c193`:
 
 ```text
-TARGET_REVIEWABLE_LINES <= 380
+TARGET_REVIEWABLE_LINES <= 350
 INTERNAL_STOP_THRESHOLD = 420
 G_CHANGE_SIZE absolute ceiling = 500
 RESERVED_REPAIR_MARGIN at stop threshold >= 80
@@ -1630,8 +1656,8 @@ RESERVED_REPAIR_MARGIN at stop threshold >= 80
 
 Normative behavior:
 
-1. <= 380 is the implementation target.
-2. 381 through 419 does not automatically fail G_CHANGE_SIZE, but must be explicitly reported as target overrun before candidate completion.
+1. <= 350 is the implementation target.
+2. 351 through 419 does not automatically fail G_CHANGE_SIZE, but must be explicitly reported as target overrun before candidate completion.
 3. At 420 or more reviewable implementation lines before the initial candidate is complete, stop implementation and return `REDUCE OR REDESIGN`.
 4. Stage 04 must not consume the 80-line reserved repair margin merely to finish the initial implementation.
 5. Greater than 500 fails `G_CHANGE_SIZE` unless the pre-existing owner exception is separately and exactly authorized under `AGENTS.md`.
@@ -1725,7 +1751,7 @@ In addition to the baseline oracle in Section 12, the Stage 03 contract is compl
 - all seven numeric 500 sources are listed exactly;
 - all 30 test controls are listed with required oracles;
 - zero skipped focused tests is required;
-- the <= 380 target, 420 stop threshold, >= 80 repair margin, and 500 absolute ceiling are frozen;
+- the <= 350 target, 420 stop threshold, >= 80 repair margin, and 500 absolute ceiling are frozen;
 - all Stage 04 stop conditions are explicit;
 - no root-governance or application mutation is authorized.
 
