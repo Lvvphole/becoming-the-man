@@ -1,69 +1,128 @@
-# Stage 04 Candidate Manifest - INC-0 Atomic Authority and ICM Bootstrap
+# Stage 04 Candidate Manifest - INC-1 Mechanical Routing Contracts and Verifier
 
-Status: CANDIDATE_READY_FOR_VERIFY
-Stage: `04_implement`
-PR: `48`
-Merge base: `bfe440cef162182ca35af7744ef623b61f8eb8cd`
-Parent anchor: `3ba97b3c3270897a9a2f5b341f3a6049310ab942`
+Artifact disposition: IMPLEMENTATION_CANDIDATE_READY
+Stage lifecycle disposition: CANDIDATE_READY
+Stage: 04_implement
+PR: 49
+Merge base: fec5de5f242dc1dba4e007658f3323931f83c193
+Implementation head: b0018d6ed9bacadeffe32e9edb8498a9eda7f812
+Verified PR Verification run: 35010362929
 
-## Authorized Surface
+## Candidate Lineage
 
-This candidate is confined to the 17 paths authorized by the supervising directive. The atomic Git tree includes every path below. Paths marked "reused anchor blob" were already compliant at the parent anchor and are carried into the same coherent tree without byte mutation.
+This manifest binds the INC-1 technical implementation to:
 
-| Path | Additions | Deletions | Atomic-tree disposition |
-|---|---:|---:|---|
-| `AGENTS.md` | 0 | 0 | reused anchor blob |
-| `CLAUDE.md` | 0 | 0 | reused anchor blob |
-| `CONTEXT.md` | 4504 | 206 | changed in atomic INC-0 tree |
-| `stages/01_scout/CONTEXT.md` | 47 | 22 | changed in atomic INC-0 tree |
-| `stages/02_plan/CONTEXT.md` | 47 | 34 | changed in atomic INC-0 tree |
-| `stages/03_contract/CONTEXT.md` | 48 | 33 | changed in atomic INC-0 tree |
-| `stages/04_implement/CONTEXT.md` | 44 | 37 | changed in atomic INC-0 tree |
-| `stages/05_verify/CONTEXT.md` | 48 | 34 | changed in atomic INC-0 tree |
-| `stages/06_review/CONTEXT.md` | 48 | 35 | changed in atomic INC-0 tree |
-| `stages/07_release/CONTEXT.md` | 54 | 38 | changed in atomic INC-0 tree |
-| `references/architecture/CONTEXT.md` | 62 | 28 | changed in atomic INC-0 tree |
-| `references/engineering/engineering-rules.md` | 128 | 211 | changed in atomic INC-0 tree |
-| `docs/Website_Product_Specification_v1.0_LOCKED.md` | 0 | 0 | reused anchor blob |
-| `docs/Website_System_Architecture_v1.0_LOCKED.md` | 0 | 0 | reused anchor blob |
-| `docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md` | 0 | 0 | reused anchor blob |
-| `docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md` | 0 | 0 | reused anchor blob |
-| `stages/04_implement/output/candidate-manifest.md` | 69 | 0 | changed in atomic INC-0 tree |
+- PR #49
+- base fec5de5f242dc1dba4e007658f3323931f83c193
+- implementation head b0018d6ed9bacadeffe32e9edb8498a9eda7f812
+- approved Plan SHA-256 9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87ebd511a7
+- implementation Contract SHA-256 d2a34b74c83f0c78af3968207f3b96bf83ba9332e0b44f42292781ecea5aa89c
 
-## Bootstrap Realization
+The implementation head above is the exact code/test/schema state verified before this documentation-only manifest commit.
 
-- `CLAUDE.md -> AGENTS.md -> CONTEXT.md` remains single-rooted and non-circular.
-- Root `CONTEXT.md` now realizes C1 as a closed route-row matrix with stable route IDs, exact selectors, closed predicates, Layer 3 bundles, evidence allowlists, target stages, and transition requirements.
-- The seven Layer 2 stage contracts expose the C3 Markdown interface and fail-closed BLOCKED conditions.
-- `references/architecture/CONTEXT.md` realizes C6 with the explicit `v1.0 -> v1.1 -> v1.2` supersession chain and active 500-LOC ceiling.
-- `references/engineering/engineering-rules.md` exposes the required mathematical routing, input, evidence, transition, change-size, review, and Pre-Code Readiness gates.
-- The Website Product Specification remains the canonical routed PRD beneath `AGENTS.md`.
-- The active System Architecture source chain contains no 1,000-line ceiling; the active ceiling is 500.
-- No `docs/evidence/**` file is loaded, modified, or promoted to authority.
-- No application feature, test, build script, workflow, verifier, schema, or migration is mutated by this atomic commit.
+## Implementation Workpiece Attestation
 
-## Reviewable Change-Size Attestation
+The INC-1 implementation mutation surface is exactly:
 
-At the parent anchor, the PR diff against merge base contains 207 reviewable implementation lines across 2 counted files under the exact exclusions in `scripts/check-change-size.sh`.
+1. contracts/governance-routing-contract.json
+2. scripts/verify-governance-routing.mjs
+3. tests/governance-routing.test.mjs
 
-Every INC-0 atomic-tree mutation in this manifest is Markdown and therefore excluded by that gate. The projected post-commit reviewable implementation footprint remains 207 / 500.
+No application source, package manifest, dependency lockfile, root CONTEXT.md, AGENTS.md, stage CONTEXT file, architecture source, CI workflow, database schema, migration, review record, or release record is part of the INC-1 implementation mutation surface.
 
-This statement is an implementation attestation, not verification PASS. Stage 05 or persistent CI must execute the actual gate on the resulting exact head.
+Documentation artifacts from earlier lifecycle stages are present in the PR history but are not counted as implementation workpieces.
 
-## Atomic Consistency
+## Reviewable Change-Size Evidence
 
-The candidate tree is constructed from parent `3ba97b3c3270897a9a2f5b341f3a6049310ab942` in one Git tree and one child commit. The branch ref must move only after the complete tree exists.
-
-Required invariants at ref move:
+Exact-head PR Verification run 35010362929 executed the repository change-size gate against the PR base and reported:
 
 ```text
-AuthorityRoot = AGENTS.md
-TaskStageRouter = CONTEXT.md
-StageContracts = {01_scout, 02_plan, 03_contract, 04_implement, 05_verify, 06_review, 07_release}
-ArchitectureOrder = [v1.0, v1.1, v1.2]
-ActiveReviewableLOCLimit = 500
-EvidenceAuthority = false
-INC0PathSet subset_of AuthorizedCandidatePaths
+Reviewable implementation lines: 353 / 500 across 3 counted files.
+PASS: implementation change is within the 500-line governance limit.
 ```
 
-The final commit SHA is intentionally not embedded in this file; it is externally bound after commit creation to avoid self-reference.
+Contracted thresholds:
+
+- target: <= 380 reviewable lines
+- internal stop threshold: < 420 reviewable lines
+- absolute G_CHANGE_SIZE ceiling: <= 500 reviewable lines
+
+Observed result:
+
+```text
+353 <= 380
+353 < 420
+353 <= 500
+```
+
+All three change-size predicates are satisfied.
+
+## Verification Evidence
+
+Verified CI run: 35010362929
+
+Exact verified implementation head:
+
+```text
+b0018d6ed9bacadeffe32e9edb8498a9eda7f812
+```
+
+Observed test results:
+
+```text
+tests/governance-routing.test.mjs: 42 passed / 42
+Repository test files: 18 passed / 18
+Repository tests: 151 passed / 151
+```
+
+The PR Verification workflow also completed its remaining required steps successfully, including exact-SHA binding:
+
+```text
+PASS: PR Verification tested exact SHA b0018d6ed9bacadeffe32e9edb8498a9eda7f812
+```
+
+This manifest records existing verified evidence. It does not itself convert implementation evidence into Stage 05 verification PASS.
+
+## Contracted INC-1 Realization
+
+The candidate implements the six frozen verifier modules:
+
+1. Defensive envelope validation before untrusted property dereference.
+2. Repository-relative path confinement for workpiece and authorized candidate paths.
+3. Strict C4 BLOCKED-record lineage and schema validation with no empty source-binding fallback.
+4. Global uniqueness checking for table.routes[*].route_id and removal of legacy stage_registry collision acceptance logic.
+5. Layer 3 exact-source, section-policy, approval-fact, and source-binding validation before ROUTE_MATCH.
+6. Positive numeric verification of the active 500-line ceiling across the seven canonical governance sources.
+
+The focused governance suite preserves the contracted malformed-input, path-escape, C4, route-collision, Layer 3, section-policy, source-binding, approval, and numeric-drift controls.
+
+## Candidate Manifest Validity Facts
+
+```text
+candidate_manifest_valid = true
+implementation_paths_confined = true
+active_stop_condition_clear = true
+reviewable_lines = 353
+reviewable_target_met = true
+internal_stop_threshold_clear = true
+absolute_change_size_gate_clear = true
+pre_manifest_exact_head_ci_pass = true
+```
+
+The documentation-only manifest commit will create a new repository head. Under AGENTS.md, Stage 05 admission requires PR Verification to pass again on that resulting exact head.
+
+## Disposition
+
+Artifact disposition:
+
+```text
+IMPLEMENTATION_CANDIDATE_READY
+```
+
+Canonical Stage 04 lifecycle success_disposition from stages/04_implement/CONTEXT.md:
+
+```text
+CANDIDATE_READY
+```
+
+No merge, review PASS, release eligibility, or Stage 05 verification PASS is granted by this manifest.
