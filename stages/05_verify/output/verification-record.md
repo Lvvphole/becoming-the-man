@@ -1,50 +1,73 @@
-# Stage 05 Verification Record - INC-0
+# Stage 05 Verification Record - INC-1 Mechanical Routing Contracts and Verifier
 
-Status: VERIFICATION_PASS
+Artifact disposition: VERIFICATION_PASS
+Stage lifecycle result: PASS
 Lifecycle stage: 05_verify
 Task domain: governance
 Route ID: route:05_verify:governance
+Pull request: 49
 
 ## 1. Verification Subject
 
 Repository: Lvvphole/becoming-the-man
-Pull request: 48
-Base SHA: bfe440cef162182ca35af7744ef623b61f8eb8cd
-Verified candidate head SHA: 5c1e228b2ded10ed0b1ee13a2dadde4b0731c827
 
-This record verifies observable repository and CI state for the candidate head above. It is non-authoritative Layer 4 verification evidence. It does not create requirements, waive governance, authorize review, authorize release, or authorize merge.
+Source binding:
 
-## 2. Prior-Stage Bindings
+```text
+PR base: fec5de5f242dc1dba4e007658f3323931f83c193
+Candidate head: 056a8da9a89f33d17bdb246f7439be148b641932
+```
+
+This record verifies the frozen INC-1 candidate at the candidate head above. It is Stage 05 verification evidence. It does not create new requirements, waive governance, authorize release, authorize merge, or substitute for Stage 06 independent review.
+
+## 2. Prior-Stage Cryptographic Bindings
 
 Approved Plan:
-- path: stages/02_plan/output/implementation-plan.md
-- disposition: PLAN_READY
-- SHA-256: 0b0039d77ff4a5f967339742f24d48741d877489f258b9a73ad14459d69fb5f4
-- verification note: the artifact was revalidated from the available authoring workspace and its SHA-256 matched the supplied binding exactly.
+
+```text
+path: stages/02_plan/output/implementation-plan.md
+disposition: PLAN_READY
+SHA-256: 9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87ebd511a7
+binding result: MATCH
+```
 
 Implementation Contract:
-- path: stages/03_contract/output/implementation-contract.md
-- disposition: CONTRACT_PASS
-- Git blob SHA: 57679abdba5965164fd221442e41059093357d84
+
+```text
+path: stages/03_contract/output/implementation-contract.md
+disposition: CONTRACT_READY
+SHA-256: d2a34b74c83f0c78af3968207f3b96bf83ba9332e0b44f42292781ecea5aa89c
+binding result: MATCH
+```
 
 Candidate Manifest:
-- path: stages/04_implement/output/candidate-manifest.md
-- disposition: IMPLEMENTATION_CANDIDATE_READY
-- Git blob SHA: 97c7a0f8f09f65c6c43d6e6d154c2125396c0caf
 
-The candidate manifest recorded the pre-repair reviewable footprint as 207 lines. The Stage 04 lint repair added exactly two reviewable lines to tests/governance-routing.test.mjs, producing the exact-head Stage 05 footprint of 209 lines.
+```text
+path: stages/04_implement/output/candidate-manifest.md
+artifact disposition: IMPLEMENTATION_CANDIDATE_READY
+SHA-256: 94d05f7f3a45d599465d623f7116c20ab4404d99b216bb018b89e6a73687912c
+binding result: MATCH
+```
+
+All supplied prior-stage artifact identities were recomputed against the exact repository content at candidate head 056a8da9a89f33d17bdb246f7439be148b641932 and matched.
 
 ## 3. Route Verification
 
-Input route selectors:
-- workflow_stage: 05_verify
-- task_domains: ["governance"]
+Input selectors:
 
-Observed canonical route result:
-- matching route count: 1
-- route ID: route:05_verify:governance
-- target stage: 05_verify
-- required Layer 3 bundle: ["engineering_rules", "architecture_manifest"]
+```text
+workflow_stage = 05_verify
+task_domains = ["governance"]
+```
+
+Observed canonical route:
+
+```text
+matching route count = 1
+route_id = route:05_verify:governance
+target_stage = 05_verify
+required_layer3_bundle = ["engineering_rules", "architecture_manifest"]
+```
 
 Gate result:
 
@@ -53,113 +76,194 @@ G_ROUTE_UNIQUE = TRUE
 |M(E)| = 1
 ```
 
-No fallback, inferred, or competing route was used.
+No fallback, inferred, synthesized, or competing route was used.
 
-## 4. Exact-Head CI Evidence
+## 4. Exact-Candidate CI Evidence
 
 GitHub Actions workflow: PR Verification
-Workflow file blob: 87328d05b5be848653f7e75e25cfb0b978d37950
-CI run ID: 34905032232
-CI run head SHA: 5c1e228b2ded10ed0b1ee13a2dadde4b0731c827
-CI run status: completed
-CI run conclusion: success
+Run ID: 35103022466
+Run head SHA: 056a8da9a89f33d17bdb246f7439be148b641932
+Run status: completed
+Run conclusion: success
 
-Required verifier mapping:
-
-| Verifier ID | Workflow step | Command | Observed result |
-|---|---|---|---|
-| verify_change_size | Enforce bounded change size | npm run verify:change-size -- "$base_ref" | success |
-| verify_code | Verify code | npm run verify | success |
-
-The workflow definition binds the "Verify code" step directly to `npm run verify`.
-
-Repository command contract defines:
+Observed workflow results:
 
 ```text
-npm run verify
-= npm run lint
-&& npm run typecheck
-&& npm run test
-&& npm run build
+Enforce bounded change size: success
+Verify code: success
+Verify Supabase migration and RLS: success
+Verify first-response SSR and rendered Home journey: success
+Bind evidence to tested SHA: success
 ```
 
-Therefore the successful "Verify code" step proves the composite verification command exited successfully on the exact candidate head.
-
-The same exact-head workflow also recorded successful completion of:
-- Verify Supabase migration and RLS
-- Verify first-response SSR and rendered Home journey
-- Bind evidence to tested SHA
-
-## 5. G_CHANGE_SIZE
-
-Observed reviewable implementation footprint from merge base bfe440cef162182ca35af7744ef623b61f8eb8cd to verified head 5c1e228b2ded10ed0b1ee13a2dadde4b0731c827:
-
-| Counted path | Additions | Deletions | Reviewable lines |
-|---|---:|---:|---:|
-| contracts/governance-routing-contract.json | 52 | 0 | 52 |
-| tests/governance-routing.test.mjs | 157 | 0 | 157 |
-| Total | 209 | 0 | 209 |
-
-Gate:
+Exact-SHA evidence:
 
 ```text
-G_CHANGE_SIZE := 209 <= 500
+PASS: PR Verification tested exact SHA 056a8da9a89f33d17bdb246f7439be148b641932
+```
+
+Observed test results:
+
+```text
+tests/governance-routing.test.mjs: 42 passed / 42
+Repository test files: 18 passed / 18
+Repository tests: 151 passed / 151
+```
+
+The focused governance suite executed with zero observed failures. No skipped or todo governance test declaration exists in the verified test source.
+
+## 5. G_CHANGE_SIZE Audit
+
+Merge base:
+
+```text
+fec5de5f242dc1dba4e007658f3323931f83c193
+```
+
+Exact-head CI reported:
+
+```text
+Reviewable implementation lines: 353 / 500 across 3 counted files.
+PASS: implementation change is within the 500-line governance limit.
+```
+
+Contracted thresholds:
+
+| Predicate | Requirement | Observed | Result |
+|---|---:|---:|---|
+| Plan target | <= 380 | 353 | PASS |
+| Internal implementation stop threshold | < 420 | 353 | PASS |
+| G_CHANGE_SIZE absolute ceiling | <= 500 | 353 | PASS |
+
+Therefore:
+
+```text
+353 <= 380 = TRUE
+353 < 420 = TRUE
+353 <= 500 = TRUE
 G_CHANGE_SIZE = TRUE
 ```
 
-The exact-head CI step "Enforce bounded change size" also concluded success.
+## 6. Workpiece Confinement
 
-## 6. Stage 04 Repair Boundary
+The Stage 04 candidate delta from the Contract-authoring head through the candidate head is confined to exactly:
 
-Repair parent head: e03a1d00e395add505dc13b618b10e35326842ba
-Repair result head: 5c1e228b2ded10ed0b1ee13a2dadde4b0731c827
+1. contracts/governance-routing-contract.json
+2. scripts/verify-governance-routing.mjs
+3. tests/governance-routing.test.mjs
+4. stages/04_implement/output/candidate-manifest.md
 
-Observed repair diff:
-- modified path count: 1
-- path: tests/governance-routing.test.mjs
-- additions: 2
-- deletions: 0
+The first three are the frozen implementation workpieces. The fourth is the Stage 04 primary output authorized by the Stage 04 contract.
 
-No other path changed in the repair commit.
+No application source, package manifest, dependency lockfile, root CONTEXT.md, AGENTS.md, stage CONTEXT file, architecture source, database schema, migration, CI workflow, review record, or release record was added to the Stage 04 candidate mutation boundary.
 
-The repair added only:
-- an explicit structuredClone global declaration;
-- an explicit URL import from node:url.
-
-The existing test assertions, fixtures, and test cases remained otherwise unchanged by that repair.
-
-## 7. Authority Graph Coherence
-
-Observed routing chain:
+Workpiece confinement result:
 
 ```text
-CLAUDE.md -> AGENTS.md -> CONTEXT.md
+implementation_paths_confined = TRUE
+candidate_manifest_path_authorized = TRUE
 ```
 
-Verified properties:
-- CLAUDE.md routes to AGENTS.md.
-- AGENTS.md is the repository execution constitution.
-- AGENTS.md delegates task/stage routing to root CONTEXT.md.
-- CONTEXT.md declares itself subordinate to AGENTS.md.
-- no reverse CONTEXT.md -> AGENTS.md -> CONTEXT.md authority cycle was observed.
+## 7. Technical Invariant Conformance Matrix
 
-Authority graph result: coherent and non-circular for the verified routing chain.
+| Module | Contracted invariant | Observable verification | Result |
+|---|---|---|---|
+| 1 - Defensive Input Gate | Malformed envelopes fail closed as TASK_ENVELOPE_REQUIRED or MISSING_SELECTOR without uncaught TypeError | The verifier validates object shape before untrusted field operations. The focused suite covers null, undefined, primitive, array, missing-selector, missing-field, and wrong-type cases. Exact-head governance suite passed 42/42. | PASS |
+| 2 - Repository Path Confinement | Repository paths must be non-empty, match ^[A-Za-z0-9._/-]+$, and reject absolute paths, parent traversal, wildcards, drive paths, and backslashes | isRepoRelativePath implements the frozen predicate. Tests cover /etc/passwd, ../secret, src/../secret, C:/secret, and wildcard src/**. | PASS |
+| 3 - Strict C4 BLOCKED Records | Trusted execution lineage is required; no empty source-binding fallback; emitted BLOCKED records satisfy the verifier's C4 validator | makeBlocked has no sourceBinding = {} default. Trusted binding is validated before routing. Stale or empty envelope binding fails with SOURCE_BINDING_STALE; malformed trusted context cannot produce ROUTE_MATCH; validateBlocked checks exact required fields, reason code, gate/stage identity, binding shape, and array constraints. | PASS |
+| 4 - Route-Table Integrity | table.routes[*].route_id is globally unique; duplicate IDs are ROUTING_TABLE_INVALID; legacy stage_registry collision logic is not the acceptance oracle | parseRoutingTable rejects duplicate route IDs using Set cardinality. The verified verifier source contains no stage_registry duplicate-check logic. Tests cover duplicate route_id and distinct matching routes. | PASS |
+| 5 - Layer 3 Resolution Pipeline | Every required Layer 3 source must resolve exactly, satisfy section policy, use current source binding, and satisfy required approval facts before ROUTE_MATCH | Repository sources are checked by exact options.files key membership; full requires exactly ["*"]; explicit_selector_required requires a non-empty unique string array and rejects "*"; envelope binding must equal trusted binding; required approval facts must be strictly true. Focused controls for missing source, missing exact file, invalid policies, stale binding, and false approvals passed. | PASS |
+| 6 - Positive 500-LOC Verification | The active reviewability limit must positively resolve to numeric 500 across exactly seven canonical governance sources | The machine contract declares active_reviewable_loc_limit = 500 and exactly seven source paths. The verifier parses the architecture manifest JSON block with JSON.parse and extracts anchored numeric values from the remaining normative sources, including MAX_LINES from scripts/check-change-size.sh. The positive seven-source test and drift controls for 499, 501, 600, and 1000 passed. | PASS |
 
-## 8. Evidence Qualification
+### Module 6 evidence qualification
 
-The GitHub Actions job-level evidence establishes that "Verify code" completed successfully with conclusion "success" on the exact candidate head.
+The approved Contract requires deterministic structured extraction: JSON parsing where a machine-readable JSON block exists and anchored numeric regex extraction elsewhere.
 
-Raw stdout/stderr for the nested `npm run lint` command was not retrievable through the available GitHub connector in this verification session. Therefore this record does not claim an independently inspected literal warning count from raw lint output.
+The implementation does not use an AST parser for this invariant. Therefore this record does not claim AST execution. The verified mechanism is:
 
-This qualification is non-blocking for the two required verifier IDs because:
-- the exact-head workflow step "Verify code" ran `npm run verify`;
-- that step concluded success;
-- `npm run verify` is the repository-defined composite of lint, typecheck, test, and build;
-- the prior lint-blocking errors could not remain fatal while the composite command exited successfully.
+```text
+architecture manifest -> JSON.parse -> active_reviewable_loc_limit
+remaining canonical sources -> anchored numeric regular expressions
+all extracted active values -> numeric equality with 500
+```
 
-No claim is made beyond the evidence above.
+The seven canonical sources are:
 
-## 9. Workspace Mutation Boundary
+1. AGENTS.md
+2. references/engineering/engineering-rules.md
+3. references/architecture/CONTEXT.md
+4. docs/Website_System_Architecture_v1.0_LOCKED.md
+5. docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md
+6. docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md
+7. scripts/check-change-size.sh
+
+## 8. Thirty-Control Contract
+
+The Stage 03 Contract freezes controls T01 through T30.
+
+The verified governance test source contains the required control classes for:
+
+- malformed envelopes;
+- missing selectors and C2 fields;
+- unsafe repository paths;
+- C4 source-binding behavior;
+- duplicate and multi-match routes;
+- missing Layer 3 registry and exact-file sources;
+- full and explicit section policies;
+- strict approval facts;
+- positive seven-source reviewability verification;
+- 499, 501, 600, and 1000 drift rejection;
+- existing valid governance routing;
+- undeclared cross-domain fail-closed behavior;
+- evidence, transition, review-cycle, and stage-contract regressions.
+
+Parameterized test.each cases expand the focused file to 42 executed tests. Exact-head CI reported all 42 passed.
+
+Result:
+
+```text
+contracted_control_set_exercised = TRUE
+focused_governance_tests = 42 / 42 PASS
+skipped_or_todo_controls_observed = 0
+```
+
+## 9. Required Verifier Set
+
+Stage 05 requires independent evaluation of the frozen candidate against the exact required verifiers.
+
+Observed required verification surface:
+
+```text
+verify_change_size = PASS
+verify_code = PASS
+exact_candidate_state_binding = TRUE
+prior_artifact_bindings_current = TRUE
+route_unique = TRUE
+implementation_contract_conformance = TRUE
+workpiece_confinement = TRUE
+active_stop_condition_clear = TRUE
+```
+
+The successful "Verify code" workflow step executes the repository's bounded verification command, which includes lint, typecheck, tests, and build under the repository command contract.
+
+## 10. Evidence Qualification and Authority Boundary
+
+This record is evidence of Stage 05 verification only.
+
+It does not:
+
+- create a new requirement;
+- change the approved Plan;
+- change the implementation Contract;
+- mutate candidate files;
+- authorize a waiver;
+- grant review approval;
+- grant release eligibility;
+- authorize merge.
+
+The Stage 06 reviewer must independently evaluate the candidate and this verification record under the current Stage 06 route and exact repository state.
+
+## 11. Stage 05 Mutation Boundary
 
 Authorized Stage 05 mutation path:
 
@@ -167,29 +271,37 @@ Authorized Stage 05 mutation path:
 stages/05_verify/output/verification-record.md
 ```
 
-No source code, test, configuration, contract, governance, or application file is authorized for mutation in Stage 05.
+No source code, tests, machine contract, package file, application file, governance source, candidate file, review record, release record, or merge state is authorized for mutation in this Stage 05 write.
 
-Because this verification session operates through a remote repository connector rather than a mutable local checkout, a literal local `git status` command is not available as evidence. The repository write must therefore be validated by the resulting Git commit diff, which must contain exactly the single authorized path above. Any additional changed path invalidates this record.
+The resulting commit must contain exactly the verification-record path. Any second changed path invalidates this Stage 05 authoring action.
 
-## 10. Stage Verdict
+## 12. Stage Verdict
 
-Required verifiers:
-- verify_change_size: PASS
-- verify_code: PASS
+Verified predicates:
 
-Required invariants:
-- G_ROUTE_UNIQUE: TRUE
-- G_CHANGE_SIZE: TRUE
-- exact candidate-head CI binding: TRUE
-- implementation contract binding present: TRUE
-- candidate manifest binding present: TRUE
-- authority graph coherence: TRUE
-- Stage 04 repair single-path boundary: TRUE
+```text
+G_ROUTE_UNIQUE = TRUE
+G_CHANGE_SIZE = TRUE
+all_six_INC1_modules = PASS
+focused_governance_suite = PASS
+repository_suite = PASS
+candidate_exact_head_CI = PASS
+prior_artifact_bindings = CURRENT
+candidate_state_binding = TRUE
+workpiece_confinement = TRUE
+active_stop_condition_clear = TRUE
+```
 
-Formal Stage 05 disposition:
+Formal verification artifact disposition:
 
 ```text
 VERIFICATION_PASS
 ```
 
-This disposition verifies the candidate for the Stage 05 verification scope only. It prepares the governed transition to Stage 06 review. It does not establish review approval, release eligibility, or merge authority.
+Canonical Stage 05 lifecycle success condition:
+
+```text
+PASS
+```
+
+This verification record establishes Stage 05 verification for candidate head 056a8da9a89f33d17bdb246f7439be148b641932. It does not establish Stage 06 review clearance, release eligibility, or merge authority.
