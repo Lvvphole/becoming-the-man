@@ -4,22 +4,18 @@ const requiredEnvelopeFields = [
   "approvals", "source_binding",
 ];
 const stages = new Set(["UNKNOWN", "01_scout", "02_plan", "03_contract", "04_implement", "05_verify", "06_review", "07_release"]);
-const gitOid = /^[0-9a-f]{40}$/;
-const object = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+const gitOid = /^[0-9a-f]{40}$/, object = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const strings = (v) => Array.isArray(v) && v.every((x) => typeof x === "string") && new Set(v).size === v.length;
-const stage = (v) => stages.has(v) && v !== "UNKNOWN";
-const ids = (v) => strings(v) && v.every((x) => /^[a-z][a-z0-9_.:-]*$/.test(x));
-const facts = (v) => strings(v) && v.every((x) => /^[A-Za-z][A-Za-z0-9_.:-]*$/.test(x));
-const exactKeys = (v, keys) => object(v) && Object.keys(v).length === keys.length && keys.every((k) => Object.hasOwn(v, k));
+const stage = (v) => stages.has(v) && v !== "UNKNOWN", ids = (v) => strings(v) && v.every((x) => /^[a-z][a-z0-9_.:-]*$/.test(x));
+const facts = (v) => strings(v) && v.every((x) => /^[A-Za-z][A-Za-z0-9_.:-]*$/.test(x)), exactKeys = (v, keys) => object(v) && Object.keys(v).length === keys.length && keys.every((k) => Object.hasOwn(v, k));
+const loaded = (v) => typeof v === "string" ? v.length > 0 : object(v) && Object.keys(v).length > 0;
 function validRoute(r) {
   const s = r?.selectors, p = r?.predicate, t = r?.transition;
-  return exactKeys(r, ["route_id", "selectors", "predicate", "required_layer3_bundle", "allowed_evidence_ids", "target_stage", "transition"]) &&
-    /^route:[a-z0-9_.:-]+$/.test(r.route_id) && exactKeys(s, ["workflow_stage", "task_domains"]) && stage(s.workflow_stage) &&
-    ids(s.task_domains) && s.task_domains.length > 0 && exactKeys(p, ["operator", "required_envelope_fields", "required_approval_facts"]) &&
-    p.operator === "ALL_EXACT" && ids(p.required_envelope_fields) && ids(p.required_approval_facts) &&
-    ids(r.required_layer3_bundle) && ids(r.allowed_evidence_ids) && stage(r.target_stage) &&
-    exactKeys(t, ["from_stage", "to_stage", "required_facts", "automatic"]) && (t.from_stage === null || stage(t.from_stage)) &&
-    (t.to_stage === null || stage(t.to_stage)) && facts(t.required_facts) && typeof t.automatic === "boolean";
+  return exactKeys(r, ["route_id", "selectors", "predicate", "required_layer3_bundle", "allowed_evidence_ids", "target_stage", "transition"]) && /^route:[a-z0-9_.:-]+$/.test(r.route_id) &&
+    exactKeys(s, ["workflow_stage", "task_domains"]) && stage(s.workflow_stage) && ids(s.task_domains) && s.task_domains.length > 0 &&
+    exactKeys(p, ["operator", "required_envelope_fields", "required_approval_facts"]) && p.operator === "ALL_EXACT" && ids(p.required_envelope_fields) && ids(p.required_approval_facts) &&
+    ids(r.required_layer3_bundle) && ids(r.allowed_evidence_ids) && stage(r.target_stage) && r.target_stage === s.workflow_stage && exactKeys(t, ["from_stage", "to_stage", "required_facts", "automatic"]) &&
+    (t.from_stage === null || stage(t.from_stage)) && (t.to_stage === null || stage(t.to_stage)) && facts(t.required_facts) && typeof t.automatic === "boolean";
 }
 const validBinding = (v) => object(v) && Number.isInteger(v.pr) && v.pr >= 1 && gitOid.test(v.base) && gitOid.test(v.current_head) && Object.keys(v).length === 3;
 const sameBinding = (a, b) => validBinding(a) && validBinding(b) && a.pr === b.pr && a.base === b.base && a.current_head === b.current_head;
@@ -62,12 +58,9 @@ export function parseRoutingTable(text, sourceBinding) {
 }
 
 function sameSet(left, right) {
-  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
-    return false;
-  }
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
   return [...left].sort().every((value, index) => value === [...right].sort()[index]);
 }
-
 function hasWildcard(path) {
   return typeof path === "string" && ["*", "?", "[", "]"].some((token) => path.includes(token));
 }
@@ -81,91 +74,59 @@ function evidenceEntry(index, id) {
   if (Array.isArray(index.entries)) return index.entries.find((entry) => entry.id === id);
   return index.entries?.[id];
 }
+function sourceIssue(table, route, envelope, options, stageId, binding) {
+  for (const sourceId of route.required_layer3_bundle) {
+    const source = table.source_registry[sourceId], policy = source?.section_policy, selector = envelope.source_sections[sourceId];
+    if (!object(source) || source.kind !== "layer3" || !["repository", "task_context"].includes(source.location)) return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", stageId, binding);
+    if (policy === "full" ? !(Array.isArray(selector) && selector.length === 1 && selector[0] === "*") : policy !== "explicit_selector_required" || !strings(selector) || !selector.length || selector.includes("*") || selector.some((item) => !item.length)) return makeBlocked("MISSING_SELECTOR", "G_SOURCE_PRESENT", stageId, binding);
+    const value = source.location === "repository" ? (options.files ?? {})[source.path] : (options.taskContext ?? {})[sourceId];
+    if ((source.location === "repository" && !isRepoRelativePath(source.path)) || !loaded(value)) return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", stageId, binding);
+  }
+}
 
 export function evaluateRoute(table, envelope, options = {}) {
   const binding = options.sourceBinding;
   if (!validBinding(binding)) return { status: "INVALID_EXECUTION_CONTEXT" };
   if (table?.status === "BLOCKED" || table?.status === "INVALID_EXECUTION_CONTEXT") return table;
-  if (!object(envelope)) {
-    return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", "UNKNOWN", binding);
-  }
-  const stage = normalizeStage(envelope.workflow_stage);
+  if (!object(envelope)) return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", "UNKNOWN", binding);
+  const stageId = normalizeStage(envelope.workflow_stage);
   const missing = requiredEnvelopeFields.filter((field) => !Object.hasOwn(envelope, field) || envelope[field] === null);
-  if (missing.some((field) => field !== "workflow_stage" && field !== "task_domains")) {
-    return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stage, binding);
-  }
-  if (missing.length) return makeBlocked("MISSING_SELECTOR", "G_ROUTE_UNIQUE", stage, binding);
-  if (typeof envelope.workflow_stage !== "string" || !strings(envelope.task_domains) ||
-      !object(envelope.source_sections) || !Array.isArray(envelope.workpiece_paths) ||
-      !strings(envelope.selected_evidence_ids) || !object(envelope.prior_outputs) ||
-      !Array.isArray(envelope.authorized_candidate_paths) || !object(envelope.approvals) ||
-      !object(envelope.source_binding)) {
-    return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stage, binding);
-  }
-  if (!sameBinding(envelope.source_binding, binding)) {
-    return makeBlocked("SOURCE_BINDING_STALE", "G_SOURCE_PRESENT", stage, binding);
-  }
+  if (missing.some((field) => field !== "workflow_stage" && field !== "task_domains")) return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stageId, binding);
+  if (missing.length) return makeBlocked("MISSING_SELECTOR", "G_ROUTE_UNIQUE", stageId, binding);
+  if (typeof envelope.workflow_stage !== "string" || !strings(envelope.task_domains) || !object(envelope.source_sections) ||
+      !Array.isArray(envelope.workpiece_paths) || !strings(envelope.selected_evidence_ids) || !object(envelope.prior_outputs) ||
+      !Array.isArray(envelope.authorized_candidate_paths) || !object(envelope.approvals) || !object(envelope.source_binding)) return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stageId, binding);
+  if (!sameBinding(envelope.source_binding, binding)) return makeBlocked("SOURCE_BINDING_STALE", "G_SOURCE_PRESENT", stageId, binding);
   for (const field of ["workpiece_paths", "authorized_candidate_paths"]) {
-    if (envelope[field].some(hasWildcard)) {
-      return makeBlocked("WILDCARD_INPUT", "G_ROUTE_UNIQUE", stage, binding);
-    }
-    if (!envelope[field].every(isRepoRelativePath)) {
-      return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stage, binding);
-    }
+    if (envelope[field].some(hasWildcard)) return makeBlocked("WILDCARD_INPUT", "G_ROUTE_UNIQUE", stageId, binding);
+    if (!envelope[field].every(isRepoRelativePath)) return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stageId, binding);
   }
 
-  const matches = table.routes.filter((route) =>
-    route.selectors?.workflow_stage === envelope.workflow_stage &&
-    sameSet(route.selectors?.task_domains, envelope.task_domains) &&
-    route.predicate.required_approval_facts.every((fact) => envelope.approvals[fact] === true)
-  );
-  if (matches.length === 0) {
-    return makeBlocked("ROUTE_ZERO_MATCH", "G_ROUTE_UNIQUE", stage, binding);
-  }
+  const candidates = table.routes.filter((route) => route.selectors?.workflow_stage === envelope.workflow_stage && sameSet(route.selectors?.task_domains, envelope.task_domains) && route.predicate.required_approval_facts.every((fact) => envelope.approvals[fact] === true));
+  const checked = candidates.map((route) => [route, sourceIssue(table, route, envelope, options, stageId, binding)]), matches = checked.filter(([, issue]) => !issue).map(([route]) => route);
+  if (!matches.length) return candidates.length === 1 ? checked[0][1] : makeBlocked("ROUTE_ZERO_MATCH", "G_ROUTE_UNIQUE", stageId, binding);
   if (matches.length > 1) {
-    const blocked = makeBlocked("ROUTE_MULTI_MATCH", "G_ROUTE_UNIQUE", stage, binding);
+    const blocked = makeBlocked("ROUTE_MULTI_MATCH", "G_ROUTE_UNIQUE", stageId, binding);
     blocked.route_candidates = matches.map((route) => route.route_id);
     return blocked;
   }
 
   const route = matches[0];
-  for (const sourceId of route.required_layer3_bundle) {
-    const source = table.source_registry[sourceId];
-    const policy = source?.section_policy;
-    const selector = envelope.source_sections[sourceId];
-    if (!object(source) || source.kind !== "layer3" ||
-        !["repository", "task_context"].includes(source.location)) {
-      return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", stage, binding);
-    }
-    if (policy === "full" ? !(Array.isArray(selector) && selector.length === 1 && selector[0] === "*") :
-        policy !== "explicit_selector_required" || !strings(selector) || !selector.length ||
-        selector.includes("*") || selector.some((item) => !item.length)) {
-      return makeBlocked("MISSING_SELECTOR", "G_SOURCE_PRESENT", stage, binding);
-    }
-    if (source.location === "repository" &&
-        (!isRepoRelativePath(source.path) || !Object.hasOwn(options.files ?? {}, source.path))) {
-      return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", stage, binding);
-    }
-    if (source.location === "task_context" && !Object.hasOwn(options.taskContext ?? {}, sourceId)) {
-      return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", stage, binding);
-    }
-  }
-
   if (envelope.selected_evidence_ids.length > 0) {
     const index = options.evidenceIndex;
     if (!index) {
-      return makeBlocked("EVIDENCE_INDEX_MISSING", "G_EVIDENCE_CURRENT", stage, binding);
+      return makeBlocked("EVIDENCE_INDEX_MISSING", "G_EVIDENCE_CURRENT", stageId, binding);
     }
     for (const id of envelope.selected_evidence_ids) {
       const entry = evidenceEntry(index, id);
       if (!entry) {
-        return makeBlocked("EVIDENCE_ID_UNKNOWN", "G_EVIDENCE_CURRENT", stage, binding);
+        return makeBlocked("EVIDENCE_ID_UNKNOWN", "G_EVIDENCE_CURRENT", stageId, binding);
       }
       if (entry.freshness !== "current") {
-        return makeBlocked("EVIDENCE_BINDING_STALE", "G_EVIDENCE_CURRENT", stage, binding);
+        return makeBlocked("EVIDENCE_BINDING_STALE", "G_EVIDENCE_CURRENT", stageId, binding);
       }
       if (!route.allowed_evidence_ids.includes(id)) {
-        return makeBlocked("UNLISTED_INPUT", "G_ALLOWED_INPUTS", stage, binding);
+        return makeBlocked("UNLISTED_INPUT", "G_ALLOWED_INPUTS", stageId, binding);
       }
     }
   }
@@ -180,10 +141,8 @@ export function evaluateRoute(table, envelope, options = {}) {
 
 export function validateBlocked(record, contract) {
   const required = contract.blocked_record.required_fields, arrays = ["route_candidates", "missing_inputs", "conflicts", "resolution_required"];
-  return object(record) && record.status === "BLOCKED" && Object.keys(record).length === required.length &&
-    required.every((f) => Object.hasOwn(record, f)) && contract.blocked_record.reason_codes.includes(record.reason_code) &&
-    /^G_[A-Z0-9_]+$/.test(record.gate_id) && stages.has(record.stage_id) && validBinding(record.source_binding) &&
-    arrays.every((f) => strings(record[f]) && (f === "route_candidates" || record[f].every(Boolean))) &&
+  return object(record) && record.status === "BLOCKED" && Object.keys(record).length === required.length && required.every((f) => Object.hasOwn(record, f)) && contract.blocked_record.reason_codes.includes(record.reason_code) &&
+    /^G_[A-Z0-9_]+$/.test(record.gate_id) && stages.has(record.stage_id) && validBinding(record.source_binding) && arrays.every((f) => strings(record[f]) && (f === "route_candidates" || record[f].every(Boolean))) &&
     record.route_candidates.every((id) => /^route:[a-z0-9_.:-]+$/.test(id)) && record.resolution_required.length > 0;
 }
 
@@ -195,10 +154,8 @@ export function validateStageContract(stageId, text, contract, sourceBinding) {
       return makeBlocked("STAGE_CONTRACT_INVALID", "G_STAGE_CONTRACT", stageId, sourceBinding);
     }
   }
-  const declared = yaml.match(/^stage_id:\s*(.+)$/m)?.[1]?.trim();
-  if (declared !== stageId) {
-    return makeBlocked("STAGE_CONTRACT_INVALID", "G_STAGE_CONTRACT", stageId, sourceBinding);
-  }
+  const declared = yaml.match(/^stage_id:\s*(.+)$/m)?.[1]?.trim(), disposition = yaml.match(/^success_disposition:\s*(.+)$/m)?.[1]?.trim();
+  if (declared !== stageId || !contract.stage_contract.success_dispositions_by_stage?.[stageId]?.includes(disposition)) return makeBlocked("STAGE_CONTRACT_INVALID", "G_STAGE_CONTRACT", stageId, sourceBinding);
   return { stage_id: stageId };
 }
 

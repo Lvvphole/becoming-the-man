@@ -54,13 +54,10 @@ describe("governance route positives", () => {
     expect(result.status).toBe("BLOCKED");
     expect(result.reason_code).toBe("ROUTE_ZERO_MATCH");
   });
-  test.each([["04_implement", "CANDIDATE_READY"], ["05_verify", "PASS"]])(
-    "validates BLOCKED records and %s disposition", (stageId, disposition) => {
-      expect(validateBlocked(makeBlocked("ROUTE_ZERO_MATCH", "G_ROUTE_UNIQUE", "UNKNOWN", binding), contract)).toBe(true);
-      expect(validateStageContract(stageId, read(`stages/${stageId}/CONTEXT.md`), contract).stage_id).toBe(stageId);
-      expect(contract.stage_contract.success_dispositions).toContain(disposition);
-    },
-  );
+  test.each(["04_implement", "05_verify"])("validates BLOCKED records and %s contract", (stageId) => {
+    expect(validateBlocked(makeBlocked("ROUTE_ZERO_MATCH", "G_ROUTE_UNIQUE", "UNKNOWN", binding), contract)).toBe(true);
+    expect(validateStageContract(stageId, read(`stages/${stageId}/CONTEXT.md`), contract).stage_id).toBe(stageId);
+  });
   test("allows a transition only when every required fact is true", () => {
     const result = validateTransition(table, "02_plan->03_contract", {
       plan_ready: true, explicit_user_approval: true, plan_binding_current: true,
@@ -79,6 +76,7 @@ describe("governance route negative controls", () => {
     ["missing target", (x) => delete x.routes[0].target_stage],
     ["bad domains", (x) => { x.routes[0].selectors.task_domains = [1]; }],
     ["extra property", (x) => { x.routes[0].extra = true; }],
+    ["target mismatch", (x) => { x.routes[0].target_stage = "05_verify"; }],
   ])("invalid route table %s is blocked", (_name, mutate) => {
     const copy = structuredClone(table); mutate(copy);
     const raw = ["ROUTING_TABLE_BEGIN", "```json", JSON.stringify(copy), "```", "ROUTING_TABLE_END"].join("\n");
@@ -160,6 +158,8 @@ describe("governance route negative controls", () => {
     expect(reason(validateStageContract("04_implement", malformed, contract, binding)))
       .toBe("STAGE_CONTRACT_INVALID");
   });
+  test.each(["REVIEW_CLEAR", "PASS"])("04_implement rejects disposition %s", (d) =>
+    expect(reason(validateStageContract("04_implement", read("stages/04_implement/CONTEXT.md").replace("success_disposition: CANDIDATE_READY", `success_disposition: ${d}`), contract, binding))).toBe("STAGE_CONTRACT_INVALID"));
 });
 
 describe("INC-1 contracted controls", () => {
@@ -186,9 +186,18 @@ describe("INC-1 contracted controls", () => {
     extra.route_id += "-alt"; copy.routes.push(extra);
     expect(reason(evaluateRoute(copy, envelope(), options()))).toBe("ROUTE_MULTI_MATCH");
   });
+  test("source-invalid duplicate selector is pruned before cardinality", () => {
+    const copy = structuredClone(table), extra = structuredClone(copy.routes.find((r) => r.route_id === "route:04_implement:governance")); extra.route_id += "-source-missing"; extra.required_layer3_bundle = ["published_book"]; copy.routes.push(extra);
+    expect(evaluateRoute(copy, envelope(), options()).status).toBe("ROUTE_MATCH");
+  });
   test("missing exact Layer 3 file is blocked", () => {
     const files = activeFiles(); delete files["references/engineering/engineering-rules.md"];
     expect(reason(route(envelope(), { files }))).toBe("MISSING_SOURCE");
+  });
+  test.each([null, undefined, ""])("required source value %j fails closed", (value) => {
+    const files = activeFiles(); files["references/engineering/engineering-rules.md"] = value; expect(reason(route(envelope(), { files }))).toBe("MISSING_SOURCE");
+    const copy = structuredClone(table), target = copy.routes.find((r) => r.route_id === "route:04_implement:governance"); target.required_layer3_bundle = ["published_book"];
+    expect(reason(evaluateRoute(copy, envelope({ source_sections: { published_book: ["chapter"] } }), options({ taskContext: { published_book: value } })))).toBe("MISSING_SOURCE");
   });
   test.each([
     ["full", { engineering_rules: ["Section"], architecture_manifest: ["*"] }],
@@ -200,40 +209,8 @@ describe("INC-1 contracted controls", () => {
   test("required approval facts are strict", () => {
     const copy = structuredClone(table);
     copy.routes.find((r) => r.route_id === "route:04_implement:governance").predicate.required_approval_facts = ["approved"];
-    expect(reason(evaluateRoute(copy, envelope({ approvals: { approved: false } }), options())))
-      .toBe("ROUTE_ZERO_MATCH");
+    expect(reason(evaluateRoute(copy, envelope({ approvals: { approved: false } }), options()))).toBe("ROUTE_ZERO_MATCH");
   });
   test("all seven canonical numeric ceilings equal 500", () =>
     expect(validateGovernanceSnapshot(activeFiles(), contract, binding)).toBe(true));
-});
-
-describe("review-repair red-first defects", () => {
-  test("target stage must equal selector workflow stage", () => {
-    const copy = structuredClone(table);
-    copy.routes.find((r) => r.route_id === "route:04_implement:governance").target_stage = "05_verify";
-    const raw = ["ROUTING_TABLE_BEGIN", "```json", JSON.stringify(copy), "```", "ROUTING_TABLE_END"].join("\n");
-    expect(reason(parseRoutingTable(raw, binding))).toBe("ROUTING_TABLE_INVALID");
-  });
-  test.each([null, undefined, ""])("repository source value %j fails closed", (value) => {
-    const files = activeFiles(); files["references/engineering/engineering-rules.md"] = value;
-    expect(reason(route(envelope(), { files }))).toBe("MISSING_SOURCE");
-  });
-  test.each([null, undefined, ""])("task-context source value %j fails closed", (value) => {
-    const copy = structuredClone(table), target = copy.routes.find((r) => r.route_id === "route:04_implement:governance");
-    target.required_layer3_bundle = ["published_book"];
-    const input = envelope({ source_sections: { published_book: ["chapter"] } });
-    expect(reason(evaluateRoute(copy, input, options({ taskContext: { published_book: value } }))))
-      .toBe("MISSING_SOURCE");
-  });
-  test("source-invalid duplicate selector is pruned before cardinality", () => {
-    const copy = structuredClone(table), extra = structuredClone(copy.routes.find((r) => r.route_id === "route:04_implement:governance"));
-    extra.route_id += "-source-missing"; extra.required_layer3_bundle = ["published_book"]; copy.routes.push(extra);
-    expect(evaluateRoute(copy, envelope(), options()).status).toBe("ROUTE_MATCH");
-  });
-  test.each(["REVIEW_CLEAR", "PASS"])("04_implement rejects disposition %s", (disposition) => {
-    const malformed = read("stages/04_implement/CONTEXT.md")
-      .replace("success_disposition: CANDIDATE_READY", `success_disposition: ${disposition}`);
-    expect(reason(validateStageContract("04_implement", malformed, contract, binding)))
-      .toBe("STAGE_CONTRACT_INVALID");
-  });
 });

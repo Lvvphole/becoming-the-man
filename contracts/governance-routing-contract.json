@@ -58,7 +58,7 @@
     ]
   },
   "stage_contract": {
-    "success_dispositions": ["SCOUT_READY", "PLAN_READY", "CONTRACT_READY", "CANDIDATE_READY", "PASS", "REVIEW_CLEAR", "RELEASE_ELIGIBLE"],
+    "success_dispositions_by_stage": {"01_scout": ["SCOUT_READY"], "02_plan": ["PLAN_READY"], "03_contract": ["CONTRACT_READY"], "04_implement": ["CANDIDATE_READY"], "05_verify": ["PASS"], "06_review": ["REVIEW_CLEAR"], "07_release": ["RELEASE_ELIGIBLE"]},
     "artifact_dispositions": ["IMPLEMENTATION_CANDIDATE_READY", "VERIFICATION_PASS"],
     "required_fields": [
       "stage_id",
