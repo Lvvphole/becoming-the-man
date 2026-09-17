@@ -1,33 +1,40 @@
-# Stage 06 Review Record - INC-1 Cycle 1
+# Stage 06 Review Record - INC-1 Cycle 2
 
 Status: REVIEW_ACTION_REQUIRED
 Review verdict: REVIEW_ACTION_REQUIRED
 Lifecycle disposition: BLOCKED
 Lifecycle stage: 06_review
-Review cycle: 1 of 3
+Review cycle: 2 of 3
 Review route: route:06_review:governance
-Review method: independent static code, contract, test, governance, and CI review
+Active gate: G_STAGE_06_REVIEW_CYCLE_2
+Review method: independent static code, contract, test, governance, mutation, and CI review
+
+This record evaluates conformance only. It does not authorize implementation repair, release, or merge.
 
 ## 1. Review Subject
 
 Repository: Lvvphole/becoming-the-man
 Pull request: 49
 Merge base: fec5de5f242dc1dba4e007658f3323931f83c193
-Technical candidate head: 056a8da9a89f33d17bdb246f7439be148b641932
-Review-entry head: a6d40f41cf02daefee95dacc677eb07f4cf05e09
-Candidate CI run: 35103022466
-Review-entry CI run: 35122562137
-
-This record evaluates conformance only. It does not authorize implementation repair, release, or merge.
+Technical candidate head: 6d76708366a4c639aff0420c7c38c25120456d0d
+Manifest head: 7d25b02e2e88c7571ddce3a59256aa6c0b66fd48
+Review-entry head: 007e3b1c60729cc506b461aa349a5e12c1bfe73b
+Candidate CI run: 35235473249
+Manifest CI run: 35251049108
+Review-entry CI run: 35263942654
 
 ## 2. Prior-Stage Binding Audit
+
+Each prior artifact was read at exact review-entry head `007e3b1c60729cc506b461aa349a5e12c1bfe73b`
+and hashed byte-exact, as required by C7 section 9.3 rule 5.
 
 Approved Plan:
 
 ```text
 path: stages/02_plan/output/implementation-plan.md
 disposition: PLAN_READY
-SHA-256: 9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87ebd511a7
+asserted SHA-256: 9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87ebd511a7
+observed SHA-256: 9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87ebd511a7
 result: CURRENT
 ```
 
@@ -36,8 +43,9 @@ Implementation Contract:
 ```text
 path: stages/03_contract/output/implementation-contract.md
 disposition: CONTRACT_READY
-SHA-256: d2a34b74c83f0c78af3968207f3b96bf83ba9332e0b44f42292781ecea5aa89c
-result: CURRENT
+asserted SHA-256: 103bedc0ff12b717dc58a13bd8b736fea13cf8bc84f1c8d228329b5550d2f10c
+observed SHA-256: 532e3fb95c55c26cd7c4439e9532088fecfa5d22f17d849575cf7b0da6e90ff9
+result: STALE - see Finding F-C2-01
 ```
 
 Candidate Manifest:
@@ -45,7 +53,9 @@ Candidate Manifest:
 ```text
 path: stages/04_implement/output/candidate-manifest.md
 disposition: IMPLEMENTATION_CANDIDATE_READY
-SHA-256: 94d05f7f3a45d599465d623f7116c20ab4404d99b216bb018b89e6a73687912c
+asserted Git blob: fc7d703e8a2c7731f1b79f427dd125bfb5815ac5
+observed Git blob: fc7d703e8a2c7731f1b79f427dd125bfb5815ac5
+observed SHA-256: 9ad2370294609ee938a99e6752b6dcb844e87245542776032afe43032004b5ef
 result: CURRENT
 ```
 
@@ -54,349 +64,268 @@ Verification Record:
 ```text
 path: stages/05_verify/output/verification-record.md
 disposition: VERIFICATION_PASS
-SHA-256: 6af9869f0429d4e6744fdf77adf89cecb7d5a462cb5b26f7495e1315ba811bee
+asserted Git blob: 92d6239cb5d4971f368948d839a12e0a0e217273
+observed Git blob: 92d6239cb5d4971f368948d839a12e0a0e217273
+observed SHA-256: 1f1a19dd58c32e3141ddfebcf754e76fdd6240a05628570d8dc9f14c2bfd1d76
 result: CURRENT
 ```
 
 ## 3. Exact-Head CI Attestation
 
-Candidate implementation CI:
-
 ```text
-run_id = 35103022466
-head = 056a8da9a89f33d17bdb246f7439be148b641932
-status = completed
-conclusion = success
+run_id = 35235473249  head = 6d76708366a4c639aff0420c7c38c25120456d0d  conclusion = success
+run_id = 35251049108  head = 7d25b02e2e88c7571ddce3a59256aa6c0b66fd48  conclusion = success
+run_id = 35263942654  head = 007e3b1c60729cc506b461aa349a5e12c1bfe73b  conclusion = success
 ```
 
-Review-entry CI:
+Every asserted run ID was resolved against the `PR Verification` workflow and each run's
+recorded `head_sha` equals the head it is claimed to attest. Exact-head CI for the
+review-entry head is present, current, and passing.
+
+Independently reproduced at review-entry head:
 
 ```text
-run_id = 35122562137
-head = a6d40f41cf02daefee95dacc677eb07f4cf05e09
-status = completed
-conclusion = success
-```
-
-Review-entry CI evidence:
-
-```text
-Reviewable implementation lines: 353 / 500 across 3 counted files.
-tests/governance-routing.test.mjs: 42 passed / 42
+Reviewable implementation lines: 349 / 500 across 3 counted files.
+tests/governance-routing.test.mjs: 54 passed / 54
 Repository test files: 18 passed / 18
-Repository tests: 151 passed / 151
-PASS: PR Verification tested exact SHA a6d40f41cf02daefee95dacc677eb07f4cf05e09
+Repository tests: 163 passed / 163
+eslint .: clean (exit 0)
+react-router typegen && tsc --noEmit: clean (exit 0)
 ```
 
-The delta from technical candidate head 056a8da9a89f33d17bdb246f7439be148b641932 to review-entry head a6d40f41cf02daefee95dacc677eb07f4cf05e09 changes only stages/05_verify/output/verification-record.md. No implementation file changed after candidate verification.
+## 4. Cycle 1 Remediation Audit
 
-## 4. G_CHANGE_SIZE and Boundary Audit
+Each remediation was confirmed behaviorally, then mutation-probed to confirm the guard is
+load-bearing rather than vacuously satisfied. "Mutation" reports failing tests when the
+remediation is reverted in isolation.
 
-Observed reviewable implementation footprint:
+Redesign Path A - C1 transition fact grammar harmonization:
 
 ```text
-353 <= 380 target
-353 < 420 implementation stop threshold
-353 <= 500 G_CHANGE_SIZE ceiling
+grammar: ^[A-Za-z][A-Za-z0-9_.:-]*$
+G_PRE_CODE_READY accepted: yes
+distinct transition facts in C1 table: 15 across 96 route rows
+facts violating harmonized grammar: 0
+routing table parses without BLOCKED: yes
+mutation (revert to lowercase-only grammar): 39 tests fail
+result: PASS
 ```
 
-Result:
+Finding F1 - compound-incomplete C2 envelopes fail closed:
 
 ```text
-G_CHANGE_SIZE = TRUE
+missing selector + missing non-selector field -> TASK_ENVELOPE_REQUIRED
+missing task_domains + missing approvals    -> TASK_ENVELOPE_REQUIRED
+control: selector-only omission             -> MISSING_SELECTOR
+control: both selectors omitted             -> MISSING_SELECTOR
+mutation (drop compound fail-closed branch): 3 tests fail
+result: PASS
 ```
 
-Frozen implementation workpieces remain:
-
-1. contracts/governance-routing-contract.json
-2. scripts/verify-governance-routing.mjs
-3. tests/governance-routing.test.mjs
-
-The Stage 04 candidate manifest is documentation-only stage output and is not a fourth counted implementation workpiece.
-
-Implementation boundary result: PASS.
-
-## 5. Six-Module Independent Audit
-
-| Module | Review result | Basis |
-|---|---|---|
-| 1 - Defensive Input Gate | ACTION REQUIRED | Primitive/null/array handling is fail closed, but mixed incomplete envelopes are misclassified because selector checks run before completeness checks. See F1. |
-| 2 - Repository Path Confinement | PASS | isRepoRelativePath rejects leading slash, parent traversal, wildcard tokens, backslash, and drive-letter syntax. Existing negative controls exercise the contracted path classes. |
-| 3 - Strict C4 BLOCKED Records | PASS | makeBlocked has no empty source-binding default; trusted binding validation precedes route evaluation; emitted BLOCKED records are checked by validateBlocked. |
-| 4 - Route-Table Integrity | ACTION REQUIRED | Duplicate route IDs are rejected, but the route-table parser validates only a subset of the frozen C1 schema and can admit malformed route rows. See F2. |
-| 5 - Layer 3 Resolution Pipeline | PASS | Exact repository source membership, section-policy rules, source-binding equality, and strict approval facts are checked before ROUTE_MATCH. |
-| 6 - Positive 500-LOC Verification | PASS for current candidate | Current machine contract names all seven canonical sources, JSON parsing handles the architecture manifest, anchored numeric extraction covers the remaining sources, and current positive/drift controls pass. |
-
-The two PASS statements above do not waive Findings F3 and F4, which concern machine-contract harmonization rather than the runtime predicate outcome on the current canonical inputs.
-
-## 6. Actionable Findings
-
-### F1 - Incomplete envelopes can be misclassified as MISSING_SELECTOR
-
-Location:
+Finding F2 - C1 route rows structurally validated including target_stage:
 
 ```text
-scripts/verify-governance-routing.mjs:89-97
-tests/governance-routing.test.mjs:84-88
-tests/governance-routing.test.mjs:166-170
+validRoute enforces exact column set, route_id grammar, selector shape,
+predicate shape, layer3/evidence id grammar, transition shape, and
+target_stage identity (stage(target_stage) && target_stage === selectors.workflow_stage)
+mutation (drop target_stage equality check): 1 test fails
+result: PASS
 ```
 
-Observed implementation:
-
-- evaluateRoute checks whether workflow_stage or task_domains is missing at lines 89-92.
-- only afterward, at lines 93-97, does it check the remaining required C2 fields.
-
-Contract requirement:
-
-- INC-1 Section 13.3 permits MISSING_SELECTOR only when workflow_stage or task_domains is missing from an otherwise structurally valid envelope.
-- an incomplete envelope with other required C2 fields absent must return TASK_ENVELOPE_REQUIRED.
-
-Failure mode:
+Finding F3 - lifecycle stage exit disposition tokens:
 
 ```text
-{}
+success_dispositions_by_stage.04_implement = ["CANDIDATE_READY"]
+success_dispositions_by_stage.05_verify    = ["PASS"]
+artifact_dispositions = ["IMPLEMENTATION_CANDIDATE_READY", "VERIFICATION_PASS"]
+lifecycle and artifact disposition classes are held separate
+stages/04_implement/CONTEXT.md and stages/05_verify/CONTEXT.md both validate
+mutation (accept any disposition): 2 tests fail
+result: PASS
 ```
 
-is incomplete, but it reaches the selector branch first and returns MISSING_SELECTOR instead of TASK_ENVELOPE_REQUIRED.
-
-Current tests cover:
-- one otherwise-valid envelope with workflow_stage deleted;
-- one otherwise-valid envelope with prior_outputs deleted.
-
-They do not cover a compound-incomplete envelope where a selector and non-selector field are both absent.
-
-Required repair:
-
-- validate overall C2 completeness/type prerequisites before applying the selector-specific MISSING_SELECTOR classification, or otherwise explicitly prove that all non-selector C2 fields are valid before returning MISSING_SELECTOR;
-- add a regression control for a compound-incomplete object such as {} or an envelope missing both workflow_stage and prior_outputs.
-
-Finding status: ACTIONABLE.
-
-### F2 - Route-table validation implements only a subset of frozen C1
-
-Location:
+Finding F4 - path schema rejects leading slashes:
 
 ```text
-scripts/verify-governance-routing.mjs:45-54
-scripts/verify-governance-routing.mjs:117-120
-scripts/verify-governance-routing.mjs:173-177
-tests/governance-routing.test.mjs:77-83
+contract repo_path_pattern = ^(?![/])[A-Za-z0-9._/-]+$
+"/etc/passwd" and "/abs" rejected by the contract pattern
+verifier additionally rejects "..", backslash, and drive-letter forms,
+which the pattern alone does not cover and which
+task_envelope.forbid_parent_traversal declares separately
+mutation (allow leading slash): 1 test fails
+result: PASS
 ```
 
-Frozen C1 requires every route row to contain exactly:
+Windows CRLF regex compatibility in `tests/governance-routing.test.mjs`:
 
 ```text
-route_id
-selectors
-predicate
-required_layer3_bundle
-allowed_evidence_ids
-target_stage
-transition
+negative control uses /...implementation contract\r?\n/
+on an LF checkout:   54 passed / 54 with and without \r?
+on a CRLF checkout:  54 passed / 54 with \r?
+on a CRLF checkout:  1 failed  / 54 without \r? (control returns undefined,
+                     i.e. the negative control goes vacuous)
+result: PASS
 ```
 
-with the types and closed shapes defined by C1 Section 3.3.
-
-The current parser checks:
-- route object existence;
-- route_id is a string;
-- selectors and predicate are objects;
-- required_approval_facts is an array;
-- required_layer3_bundle and allowed_evidence_ids are arrays;
-- transition is an object;
-- route_id uniqueness.
-
-It does not mechanically reject, among other C1 violations:
-- missing or invalid target_stage;
-- invalid route_id grammar;
-- missing/invalid selectors.workflow_stage;
-- missing/invalid selectors.task_domains;
-- missing predicate.operator;
-- missing predicate.required_envelope_fields;
-- duplicate/non-string array members;
-- malformed transition.from_stage, to_stage, required_facts, or automatic;
-- unexpected additional route properties.
-
-Concrete failure mode:
-
-A route row can omit target_stage, pass parseRoutingTable, match the envelope, and then produce:
+## 5. Invariants and Footprint
 
 ```text
-status = ROUTE_MATCH
-stage_id = undefined
+Implementation workpieces changed: 3
+  contracts/governance-routing-contract.json   +10  -8
+  scripts/verify-governance-routing.mjs        +107 -72
+  tests/governance-routing.test.mjs            +107 -45
+Reviewable implementation lines: 349
+  <= 350 narrowed target:   satisfied
+  <  420 stop threshold:    satisfied
+  <= 500 absolute ceiling:  satisfied
+Repository change-size gate: PASS (349 / 500 across 3 counted files)
+Root governance mutated (AGENTS.md, CLAUDE.md, CONTEXT.md, references/): none
+Application code mutated (src/, server/, api/, supabase/, config/): none
+Dependency lockfile mutated: none
+Implementation frozen since technical candidate 6d76708: yes
+  (commits 7d25b02 and 007e3b1 are Markdown-only stage-artifact refreshes)
+result: PASS
 ```
 
-at lines 173-177.
+## 6. Findings
 
-The only route-table structural negative control added for INC-1 exercises duplicate route_id. It does not exercise malformed C1 row shape.
-
-Required repair:
-
-- make parseRoutingTable enforce the complete frozen C1 route-row structure and field types before evaluation;
-- add negative controls proving missing target_stage and at least one malformed selector/predicate/transition shape return ROUTING_TABLE_INVALID.
-
-Finding status: ACTIONABLE.
-
-### F3 - Machine stage-disposition declaration is stale against authoritative stage contracts
-
-Location:
+### F-C2-01 - Implementation Contract SHA-256 binding is stale and unverifiable
 
 ```text
-contracts/governance-routing-contract.json:60-76
-contracts/governance-routing-contract.json:61
-stages/04_implement/CONTEXT.md:30
-stages/05_verify/CONTEXT.md:31
-scripts/verify-governance-routing.mjs:195-209
+severity: actionable, blocking
+gate: G_SOURCE_PRESENT
+reason_code: SOURCE_BINDING_STALE
+class: prior-artifact content-identity binding (C7 section 9.3 rules 5 and 7)
 ```
 
-The machine contract declares:
+Observation. The execution envelope field
+`prior_outputs.implementation_contract.sha256`, `stages/04_implement/output/candidate-manifest.md`
+line 19, and `stages/05_verify/output/verification-record.md` line 31 all assert that
+`stages/03_contract/output/implementation-contract.md` has SHA-256
+`103bedc0ff12b717dc58a13bd8b736fea13cf8bc84f1c8d228329b5550d2f10c`.
+
+The observed byte-exact SHA-256 of that file at review-entry head
+`007e3b1c60729cc506b461aa349a5e12c1bfe73b` is
+`532e3fb95c55c26cd7c4439e9532088fecfa5d22f17d849575cf7b0da6e90ff9`.
+
+Scope of verification performed. The asserted digest was not reproducible under any
+convention or at any point in repository history:
 
 ```text
-IMPLEMENTATION_CANDIDATE_READY
-VERIFICATION_PASS
+raw bytes at review-entry head:      532e3fb9...  (mismatch)
+CRLF-normalized bytes:               36953398...  (mismatch)
+trailing-newline-stripped bytes:     506c66ce...  (mismatch)
+git blob-header framed SHA-256:      c42123d8...  (mismatch)
+contract at 50a9c21 (amendment):     532e3fb9...  (mismatch)
+contract at 66782c4 (pre-amendment): d2a34b74...  (mismatch)
+contract at merge base fec5de5:      fd909847...  (mismatch)
+every path in the tree at head:      no match
+every blob in full repository history (305 blobs, all refs): no match
 ```
 
-inside stage_contract.success_dispositions.
+The asserted digest corresponds to no content that has ever existed in this repository.
+It is therefore not a stale-but-historical binding; it is an unverifiable value.
 
-The authoritative Layer 2 stage headers declare:
+Provenance. Cycle 1 correctly bound the contract at `d2a34b74...`, which was exact at
+that time. Commit `50a9c21` ("Amend C1 transition fact grammar") then mutated the contract
+to `532e3fb9...`. The downstream records were refreshed to a new value that does not match
+the amended file, so the Stage 04 and Stage 05 re-bindings propagated an incorrect digest
+rather than the observed one. Stage 05 recorded `VERIFICATION_PASS` while carrying this
+binding, so the mismatch was not caught upstream.
+
+Governing rule. C7 section 9.3 rule 5 requires that each `prior_artifacts` entry be hashed
+byte-exact and required equal to its asserted `sha256`. Rule 7 states that any mismatch
+returns `SOURCE_BINDING_STALE`. Rule 9 notes that the contract deliberately does not embed
+its own hash, so this externally captured value is the sole identity binding for the
+Contract artifact and cannot be cross-checked from inside the artifact.
+
+Required resolution. C7 section 9.3 rule 8 states that no agent may rewrite a stale binding
+to the observed value and continue, and that a new valid envelope or transition record is
+required. This review therefore does not correct the digest. Remediation is owned by the
+stages that emitted the binding, under a fresh envelope, and must re-establish
+`stages/04_implement/output/candidate-manifest.md` and
+`stages/05_verify/output/verification-record.md` against the observed contract digest
+`532e3fb95c55c26cd7c4439e9532088fecfa5d22f17d849575cf7b0da6e90ff9`, or establish the
+Contract artifact whose bytes legitimately hash to the asserted value.
+
+### Non-blocking observations
+
+These are recorded for traceability and are not actionable findings. They do not affect
+this cycle's disposition and must not be repaired inside Stage 06.
 
 ```text
-04_implement success_disposition = CANDIDATE_READY
-05_verify success_disposition = PASS
+O-1  contracts/governance-routing-contract.json declares repo_path_pattern, but
+     scripts/verify-governance-routing.mjs isRepoRelativePath implements the equivalent
+     constraint independently rather than consuming the declared pattern. Behavior for
+     leading slashes is equivalent and tested; the duplication is a drift risk only.
+O-2  tests/governance-routing.test.mjs pins its fixture binding current_head to
+     66782c4019558e7ff2fd80ff05aa5c12eff12cf4, an earlier commit in this PR. This is an
+     internally consistent fixture, not a governance binding, and does not affect routing
+     outcomes, since envelope and options bindings are compared only to each other.
 ```
 
-This conflates artifact dispositions with lifecycle success dispositions.
-
-Additionally, validateStageContract only checks that success_disposition exists; it does not validate its value against the authoritative stage contract or a correct machine mapping.
-
-This violates the Stage 04 schema-harmonization requirement that the machine-readable contract reflect frozen stage dispositions.
-
-Required repair:
-
-- replace the stale artifact-level values with the actual lifecycle success dispositions, or model artifact disposition and lifecycle disposition as separate explicit fields;
-- add a control that validates the Stage 04 and Stage 05 header values against the machine declaration.
-
-Finding status: ACTIONABLE.
-
-### F4 - Machine repo-path declaration does not encode the full frozen path predicate
-
-Location:
+## 7. Checklist Disposition
 
 ```text
-contracts/governance-routing-contract.json:15-20
-scripts/verify-governance-routing.mjs:70-73
+Cycle 1 remediation - Path A fact grammar harmonization     PASS
+Cycle 1 remediation - F1 compound-incomplete fail-closed    PASS
+Cycle 1 remediation - F2 route row structural validation    PASS
+Cycle 1 remediation - F3 lifecycle exit dispositions        PASS
+Cycle 1 remediation - F4 leading-slash rejection            PASS
+Cycle 1 remediation - Windows CRLF regex compatibility      PASS
+Invariant - footprint 349 LOC across 3 workpieces           PASS
+Invariant - confinement, zero governance or app drift       PASS
+Invariant - 54/54 governance and 163/163 repository tests   PASS
+Cryptographic chain - PR base                               PASS
+Cryptographic chain - technical candidate + CI 35235473249  PASS
+Cryptographic chain - manifest head, blob + CI 35251049108  PASS
+Cryptographic chain - verification head, blob + CI 35263942654  PASS
+Cryptographic chain - Contract SHA-256                      FAIL (F-C2-01)
 ```
 
-The runtime verifier correctly rejects a leading slash, but the machine contract declares only:
+Not all criteria pass. The canonical `REVIEW_CLEAR` / `PASS` disposition is conditional on
+all criteria passing and is therefore not available in this cycle.
+
+## 8. Machine-Readable Disposition
+
+```json
+{
+  "status": "BLOCKED",
+  "reason_code": "SOURCE_BINDING_STALE",
+  "gate_id": "G_SOURCE_PRESENT",
+  "stage_id": "06_review",
+  "route_candidates": [
+    "route:06_review:governance"
+  ],
+  "missing_inputs": [],
+  "conflicts": [
+    "stages/03_contract/output/implementation-contract.md asserted SHA-256 103bedc0ff12b717dc58a13bd8b736fea13cf8bc84f1c8d228329b5550d2f10c does not equal observed SHA-256 532e3fb95c55c26cd7c4439e9532088fecfa5d22f17d849575cf7b0da6e90ff9"
+  ],
+  "source_binding": {
+    "pr": 49,
+    "base": "fec5de5f242dc1dba4e007658f3323931f83c193",
+    "current_head": "007e3b1c60729cc506b461aa349a5e12c1bfe73b"
+  },
+  "resolution_required": [
+    "Emit a new envelope that binds the Implementation Contract to its observed byte-exact SHA-256, per C7 section 9.3 rule 8.",
+    "Re-establish stages/04_implement/output/candidate-manifest.md and stages/05_verify/output/verification-record.md against the corrected Contract binding.",
+    "Re-enter Stage 06 as review cycle 3, which is the final permitted cycle without new explicit user authorization."
+  ]
+}
+```
+
+## 9. Cycle Accounting and Authority
 
 ```text
-repo_path_pattern = ^[A-Za-z0-9._/-]+$
-forbid_parent_traversal = true
+Review cycles consumed: 2 of 3
+Cycles remaining without new explicit user authorization: 1
+Cycle 3 constraint: if cycle 3 reports any actionable finding, stop and report BLOCKED;
+                    do not repair that finding or begin a fourth cycle without explicit
+                    user authorization to continue, split, reduce, redesign, or abandon.
 ```
 
-The pattern itself permits a leading slash. Therefore a value such as:
+Stage 06 forbids implementation repair, verification-record mutation, governance mutation,
+and merge. This review mutated only `stages/06_review/output/review-record.md`.
 
-```text
-/etc/passwd
-```
-
-satisfies the declared regex even though the frozen isRepoRelativePath predicate must reject it.
-
-The declaration also relies implicitly on the character class, rather than explicitly declaring the full frozen no-leading-slash path condition.
-
-This leaves the machine-readable path contract weaker than the runtime predicate and violates the schema-harmonization requirement that path constraints be represented consistently.
-
-Required repair:
-
-- make the machine contract explicitly encode the no-leading-slash rule, or provide a single machine-readable repoPath schema/predicate representation from which runtime validation is derived;
-- add a machine-contract regression assertion proving /etc/passwd is invalid under the declaration itself.
-
-Finding status: ACTIONABLE.
-
-## 7. Test Coverage Assessment
-
-Observed exact-head CI is green:
-
-```text
-governance routing tests = 42 / 42 PASS
-repository tests = 151 / 151 PASS
-```
-
-The green suite is valid evidence for the cases it executes, but it does not cover the four review findings above.
-
-Coverage gaps identified in Cycle 1:
-
-1. no compound-incomplete C2 envelope classification control;
-2. no malformed C1 route-row shape control beyond duplicate route_id;
-3. no lifecycle-disposition harmonization assertion;
-4. no machine-contract path-schema assertion for leading-slash rejection.
-
-Therefore exact-head CI PASS does not eliminate the actionable review findings.
-
-## 8. G_REVIEW Evaluation
-
-Engineering rule:
-
-```text
-G_REVIEW :=
-  exact_head_PR_Verification = PASS
-  AND unresolved_actionable_findings = 0
-  AND review_cycle <= 3
-```
-
-Observed:
-
-| Predicate | Observed | Result |
-|---|---|---|
-| exact_head_PR_Verification = PASS | Run 35122562137 passed on a6d40f41cf02daefee95dacc677eb07f4cf05e09 | TRUE |
-| unresolved_actionable_findings = 0 | 4 actionable findings remain | FALSE |
-| review_cycle <= 3 | Cycle 1 of 3 | TRUE |
-
-Therefore:
-
-```text
-G_REVIEW = FALSE
-```
-
-## 9. Required Next State
-
-No repair is authorized inside Stage 06.
-
-A governed repair must:
-
-1. return to the authorized implementation path;
-2. repair only evidence-backed findings above;
-3. preserve the approved Plan and Contract scope unless governance explicitly requires redesign;
-4. rerun focused controls and full verification;
-5. obtain fresh exact-head PR Verification;
-6. enter Cycle 2 review only after the repaired exact state is bound.
-
-If a repair requires a fourth implementation workpiece, a new C4 reason code, root governance mutation, package change, or scope expansion, stop under the existing REDUCE/REDESIGN rules instead of fixing forward.
-
-## 10. Cycle 1 Disposition
-
-Actionable findings:
-
-```text
-F1 = OPEN
-F2 = OPEN
-F3 = OPEN
-F4 = OPEN
-count = 4
-```
-
-Review verdict:
-
-```text
-REVIEW_ACTION_REQUIRED
-```
-
-Lifecycle disposition:
-
-```text
-BLOCKED
-```
-
-REVIEW_CLEAR is not established.
-
-This review does not authorize release or merge. Merge remains strictly unauthorized.
+Verification and review create eligibility, never merge authority. Merge remains a
+separate, user-authorized action. This PR is not merge-ready.
