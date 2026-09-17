@@ -16,7 +16,7 @@ This manifest binds the repaired INC-1 implementation to:
 - base fec5de5f242dc1dba4e007658f3323931f83c193
 - repaired implementation head 6d76708366a4c639aff0420c7c38c25120456d0d
 - approved Plan SHA-256 9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87ebd511a7
-- amended implementation Contract SHA-256 103bedc0ff12b717dc58a13bd8b736fea13cf8bc84f1c8d228329b5550d2f10c
+- amended implementation Contract SHA-256 532e3fb95c55c26cd7c4439e9532088fecfa5d22f17d849575cf7b0da6e90ff9
 - exact-head PR Verification run 35235473249
 
 Run 35235473249 completed with conclusion success on exact head 6d76708366a4c639aff0420c7c38c25120456d0d.
