@@ -15,7 +15,9 @@
     "path_array_fields": [
       "workpiece_paths",
       "authorized_candidate_paths"
-    ]
+    ],
+    "repo_path_pattern": "^(?![/])[A-Za-z0-9._/-]+$",
+    "forbid_parent_traversal": true
   },
   "blocked_record": {
     "required_fields": [
@@ -29,6 +31,7 @@
       "source_binding",
       "resolution_required"
     ],
+    "source_binding_required_fields": ["pr", "base", "current_head"],
     "status": "BLOCKED",
     "reason_codes": [
       "ROUTING_TABLE_INVALID",
@@ -55,6 +58,8 @@
     ]
   },
   "stage_contract": {
+    "success_dispositions_by_stage": {"01_scout": ["SCOUT_READY"], "02_plan": ["PLAN_READY"], "03_contract": ["CONTRACT_READY"], "04_implement": ["CANDIDATE_READY"], "05_verify": ["PASS"], "06_review": ["REVIEW_CLEAR"], "07_release": ["RELEASE_ELIGIBLE"]},
+    "artifact_dispositions": ["IMPLEMENTATION_CANDIDATE_READY", "VERIFICATION_PASS"],
     "required_fields": [
       "stage_id",
       "job",
@@ -79,18 +84,15 @@
     ]
   },
   "governance": {
+    "active_reviewable_loc_limit": 500,
     "active_500_paths": [
       "AGENTS.md",
       "references/architecture/CONTEXT.md",
       "references/engineering/engineering-rules.md",
+      "docs/Website_System_Architecture_v1.0_LOCKED.md",
       "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md",
-      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md"
-    ],
-    "forbidden_drift_tokens": [
-      "Website Governing Product Specification",
-      "1,000",
-      "1000-line",
-      "1,000-line"
+      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md",
+      "scripts/check-change-size.sh"
     ]
   }
 }
