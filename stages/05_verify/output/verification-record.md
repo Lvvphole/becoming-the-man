@@ -16,7 +16,7 @@ Source binding:
 ```text
 PR base: fec5de5f242dc1dba4e007658f3323931f83c193
 Bound technical candidate: 6d76708366a4c639aff0420c7c38c25120456d0d
-Exact manifest head: 7d25b02e2e88c7571ddce3a59256aa6c0b66fd48
+Exact manifest head: 5df1182b3c3d0f55e411f2724e2cc3d332f54fad
 ```
 
 Prior-stage bindings:
@@ -28,14 +28,14 @@ Approved Plan SHA-256: 9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87e
 
 Implementation Contract path: stages/03_contract/output/implementation-contract.md
 Implementation Contract disposition: CONTRACT_READY
-Implementation Contract SHA-256: 103bedc0ff12b717dc58a13bd8b736fea13cf8bc84f1c8d228329b5550d2f10c
+Implementation Contract SHA-256: 532e3fb95c55c26cd7c4439e9532088fecfa5d22f17d849575cf7b0da6e90ff9
 
 Candidate Manifest path: stages/04_implement/output/candidate-manifest.md
 Candidate Manifest disposition: IMPLEMENTATION_CANDIDATE_READY
-Candidate Manifest Git blob: fc7d703e8a2c7731f1b79f427dd125bfb5815ac5
+Candidate Manifest Git blob: 3801fe5924b9386bec66a63912e1141d8a30446f
 ```
 
-The candidate manifest at exact manifest head 7d25b02e2e88c7571ddce3a59256aa6c0b66fd48 binds technical candidate 6d76708366a4c639aff0420c7c38c25120456d0d.
+The candidate manifest at exact manifest head 5df1182b3c3d0f55e411f2724e2cc3d332f54fad binds technical candidate 6d76708366a4c639aff0420c7c38c25120456d0d.
 
 ## 2. Exact-Head CI Evidence
 
@@ -50,8 +50,8 @@ Run conclusion: success
 ### Post-manifest exact-head CI
 
 GitHub Actions workflow: PR Verification
-Run ID: 35251049108
-Run head SHA: 7d25b02e2e88c7571ddce3a59256aa6c0b66fd48
+Run ID: 35265814332
+Run head SHA: 5df1182b3c3d0f55e411f2724e2cc3d332f54fad
 Run status: completed
 Run conclusion: success
 
@@ -69,14 +69,14 @@ Bind evidence to tested SHA: success
 Exact-SHA evidence:
 
 ```text
-PASS: PR Verification tested exact SHA 7d25b02e2e88c7571ddce3a59256aa6c0b66fd48
+PASS: PR Verification tested exact SHA 5df1182b3c3d0f55e411f2724e2cc3d332f54fad
 ```
 
 The post-manifest exact-head run is the Stage 05 current-state CI binding used by this record.
 
 ## 3. Static Invariant and Footprint Verification
 
-Exact-head PR Verification run 35251049108 reported:
+Exact-head PR Verification run 35265814332 reported:
 
 ```text
 Reviewable implementation lines: 349 / 500 across 3 counted files.
@@ -109,7 +109,7 @@ No application source, package file, database schema, migration, root governance
 
 ## 4. Test Suite Verification
 
-Post-manifest exact-head run 35251049108 reported:
+Post-manifest exact-head run 35265814332 reported:
 
 ```text
 tests/governance-routing.test.mjs: 54 passed / 54
@@ -302,6 +302,6 @@ Canonical Stage 05 lifecycle disposition:
 PASS
 ```
 
-This record verifies technical candidate 6d76708366a4c639aff0420c7c38c25120456d0d through candidate-manifest head 7d25b02e2e88c7571ddce3a59256aa6c0b66fd48 using exact-head PR Verification runs 35235473249 and 35251049108.
+This record verifies technical candidate 6d76708366a4c639aff0420c7c38c25120456d0d through candidate-manifest head 5df1182b3c3d0f55e411f2724e2cc3d332f54fad using exact-head PR Verification runs 35235473249 and 35265814332.
 
 Stage 06 review may begin only after this Stage 05 documentation commit itself receives fresh exact-head PR Verification as required by repository governance.
