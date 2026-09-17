@@ -200,8 +200,40 @@ describe("INC-1 contracted controls", () => {
   test("required approval facts are strict", () => {
     const copy = structuredClone(table);
     copy.routes.find((r) => r.route_id === "route:04_implement:governance").predicate.required_approval_facts = ["approved"];
-    expect(reason(evaluateRoute(copy, envelope({ approvals: { approved: false } }), options()))).toBe("ROUTE_ZERO_MATCH");
+    expect(reason(evaluateRoute(copy, envelope({ approvals: { approved: false } }), options())))
+      .toBe("ROUTE_ZERO_MATCH");
   });
   test("all seven canonical numeric ceilings equal 500", () =>
     expect(validateGovernanceSnapshot(activeFiles(), contract, binding)).toBe(true));
+});
+
+describe("review-repair red-first defects", () => {
+  test("target stage must equal selector workflow stage", () => {
+    const copy = structuredClone(table);
+    copy.routes.find((r) => r.route_id === "route:04_implement:governance").target_stage = "05_verify";
+    const raw = ["ROUTING_TABLE_BEGIN", "```json", JSON.stringify(copy), "```", "ROUTING_TABLE_END"].join("\n");
+    expect(reason(parseRoutingTable(raw, binding))).toBe("ROUTING_TABLE_INVALID");
+  });
+  test.each([null, undefined, ""])("repository source value %j fails closed", (value) => {
+    const files = activeFiles(); files["references/engineering/engineering-rules.md"] = value;
+    expect(reason(route(envelope(), { files }))).toBe("MISSING_SOURCE");
+  });
+  test.each([null, undefined, ""])("task-context source value %j fails closed", (value) => {
+    const copy = structuredClone(table), target = copy.routes.find((r) => r.route_id === "route:04_implement:governance");
+    target.required_layer3_bundle = ["published_book"];
+    const input = envelope({ source_sections: { published_book: ["chapter"] } });
+    expect(reason(evaluateRoute(copy, input, options({ taskContext: { published_book: value } }))))
+      .toBe("MISSING_SOURCE");
+  });
+  test("source-invalid duplicate selector is pruned before cardinality", () => {
+    const copy = structuredClone(table), extra = structuredClone(copy.routes.find((r) => r.route_id === "route:04_implement:governance"));
+    extra.route_id += "-source-missing"; extra.required_layer3_bundle = ["published_book"]; copy.routes.push(extra);
+    expect(evaluateRoute(copy, envelope(), options()).status).toBe("ROUTE_MATCH");
+  });
+  test.each(["REVIEW_CLEAR", "PASS"])("04_implement rejects disposition %s", (disposition) => {
+    const malformed = read("stages/04_implement/CONTEXT.md")
+      .replace("success_disposition: CANDIDATE_READY", `success_disposition: ${disposition}`);
+    expect(reason(validateStageContract("04_implement", malformed, contract, binding)))
+      .toBe("STAGE_CONTRACT_INVALID");
+  });
 });
