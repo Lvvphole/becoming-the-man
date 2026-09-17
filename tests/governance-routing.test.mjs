@@ -154,7 +154,7 @@ describe("governance route negative controls", () => {
   });
   test("malformed stage contract is blocked", () => {
     const malformed = read("stages/04_implement/CONTEXT.md")
-      .replace("job: produce the bounded candidate defined by the approved plan and implementation contract\n", "");
+      .replace(/job: produce the bounded candidate defined by the approved plan and implementation contract\r?\n/, "");
     expect(reason(validateStageContract("04_implement", malformed, contract, binding)))
       .toBe("STAGE_CONTRACT_INVALID");
   });
