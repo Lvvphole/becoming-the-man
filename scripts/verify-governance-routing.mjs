@@ -108,6 +108,15 @@ export function evaluateRoute(table, envelope, options = {}) {
     if (envelope[field].some(hasWildcard)) return makeBlocked("WILDCARD_INPUT", "G_ROUTE_UNIQUE", stageId, binding);
     if (!envelope[field].every(isRepoRelativePath)) return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stageId, binding);
   }
+  if (envelope.selected_evidence_ids.length > 0) {
+    const index = options.evidenceIndex;
+    if (!index) return makeBlocked("EVIDENCE_INDEX_MISSING", "G_EVIDENCE_CURRENT", stageId, binding);
+    for (const id of envelope.selected_evidence_ids) {
+      const entry = evidenceEntry(index, id);
+      if (!entry) return makeBlocked("EVIDENCE_ID_UNKNOWN", "G_EVIDENCE_CURRENT", stageId, binding);
+      if (entry.freshness !== "current") return makeBlocked("EVIDENCE_BINDING_STALE", "G_EVIDENCE_CURRENT", stageId, binding);
+    }
+  }
 
   const candidates = table.routes.filter((route) => candidateRoute(route, envelope));
   const checked = candidates.map((route) => [route, sourceIssue(table, route, envelope, options, stageId, binding)]), matches = checked.filter(([, issue]) => !issue).map(([route]) => route);
