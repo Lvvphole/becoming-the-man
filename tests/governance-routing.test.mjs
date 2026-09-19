@@ -190,6 +190,13 @@ describe("INC-1 contracted controls", () => {
     const copy = structuredClone(table), extra = structuredClone(copy.routes.find((r) => r.route_id === "route:04_implement:governance")); extra.route_id += "-source-missing"; extra.required_layer3_bundle = ["published_book"]; copy.routes.push(extra);
     expect(evaluateRoute(copy, envelope(), options()).status).toBe("ROUTE_MATCH");
   });
+  test("evidence eligibility prunes overlapping routes before cardinality", () => {
+    const copy = structuredClone(table), target = copy.routes.find((r) => r.route_id === "route:04_implement:governance"), extra = structuredClone(target);
+    target.allowed_evidence_ids = ["ev-1"]; extra.route_id += "-alt"; extra.allowed_evidence_ids = ["ev-2"]; copy.routes.push(extra);
+    const evidenceIndex = { normative: false, entries: { "ev-1": { freshness: "current" }, "ev-x": { freshness: "current" } } };
+    expect(evaluateRoute(copy, envelope({ selected_evidence_ids: ["ev-1"] }), options({ evidenceIndex })).route_id).toBe(target.route_id);
+    expect(reason(evaluateRoute(copy, envelope({ selected_evidence_ids: ["ev-x"] }), options({ evidenceIndex })))).toBe("ROUTE_ZERO_MATCH");
+  });
   test("missing exact Layer 3 file is blocked", () => {
     const files = activeFiles(); delete files["references/engineering/engineering-rules.md"];
     expect(reason(route(envelope(), { files }))).toBe("MISSING_SOURCE");
