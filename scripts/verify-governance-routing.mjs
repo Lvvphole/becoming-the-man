@@ -83,6 +83,13 @@ function sourceIssue(table, route, envelope, options, stageId, binding) {
     if ((source.location === "repository" && !isRepoRelativePath(source.path)) || !loaded(value)) return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", stageId, binding);
   }
 }
+/** Evidence containment is an invariant part of candidate route pruning. */
+function candidateRoute(route, envelope) {
+  return route.selectors?.workflow_stage === envelope.workflow_stage &&
+    sameSet(route.selectors?.task_domains, envelope.task_domains) &&
+    route.predicate.required_approval_facts.every((fact) => envelope.approvals[fact] === true) &&
+    envelope.selected_evidence_ids.every((id) => route.allowed_evidence_ids.includes(id));
+}
 
 export function evaluateRoute(table, envelope, options = {}) {
   const binding = options.sourceBinding;
@@ -102,7 +109,7 @@ export function evaluateRoute(table, envelope, options = {}) {
     if (!envelope[field].every(isRepoRelativePath)) return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", stageId, binding);
   }
 
-  const candidates = table.routes.filter((route) => route.selectors?.workflow_stage === envelope.workflow_stage && sameSet(route.selectors?.task_domains, envelope.task_domains) && route.predicate.required_approval_facts.every((fact) => envelope.approvals[fact] === true));
+  const candidates = table.routes.filter((route) => candidateRoute(route, envelope));
   const checked = candidates.map((route) => [route, sourceIssue(table, route, envelope, options, stageId, binding)]), matches = checked.filter(([, issue]) => !issue).map(([route]) => route);
   if (!matches.length) return candidates.length === 1 ? checked[0][1] : makeBlocked("ROUTE_ZERO_MATCH", "G_ROUTE_UNIQUE", stageId, binding);
   if (matches.length > 1) {
