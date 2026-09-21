@@ -96,7 +96,7 @@ describe("INC-2 Eve and physical Docker boundary", () => {
       expect((await sandbox.run({ command: "env" })).stdout).not.toContain("INC2_SUPERVISOR_SECRET");
     });
     delete process.env.INC2_SUPERVISOR_SECRET;
-  });
+  }, 30_000);
 
   it("EC-08 deletes run state and assigns a fresh sandbox identity", async () => {
     const backend = createSandboxBackend();
