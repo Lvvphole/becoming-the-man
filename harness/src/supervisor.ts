@@ -7,7 +7,7 @@ import {
 
 export interface SandboxPort {
   readonly id: string;
-  run(input: { command: string }): Promise<{ exitCode: number; stdout: string; stderr: string }>;
+  run(input: { command: string }): PromiseLike<{ exitCode: number; stdout: string; stderr: string }>;
   readTextFile(input: { path: string }): Promise<string>;
   writeTextFile(input: { path: string; content: string }): Promise<unknown>;
 }
