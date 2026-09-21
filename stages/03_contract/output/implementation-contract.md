@@ -1372,16 +1372,19 @@ The complete INC-2 candidate path set is exactly:
 5. `harness/src/eve-adapter.ts`
 6. `harness/agent/agent.ts`
 7. `harness/agent/tools/execute.ts`
-8. `harness/tests/execution.test.ts`
-9. `.github/workflows/pr-verification.yml`
+8. `harness/agent/sandbox/sandbox.ts`
+9. `harness/tests/execution.test.ts`
+10. `.github/workflows/pr-verification.yml`
 
-The Plan-permitted `harness/agent/sandbox/sandbox.ts` path is intentionally removed from the implementation allowlist because INC-2 can use Eve's public `docker()` backend directly through the bounded adapter. Adding an authored second sandbox configuration would duplicate that control surface.
+The Plan condition for `harness/agent/sandbox/sandbox.ts` is now satisfied. Pinned Eve 0.63.0 binds a specific runtime sandbox backend through the public authored sandbox module discovered at `agent/sandbox/sandbox.ts`; without that module, the real Eve session may use Eve's default backend instead of the INC-2 locked backend.
 
-No tenth candidate path is authorized.
+The authored sandbox module is configuration glue only. It must import the bounded adapter and export the adapter-created sandbox definition; it must not import Eve directly, add policy, or create a second backend.
+
+No eleventh candidate path is authorized.
 
 Forbidden INC-2 mutations include root `AGENTS.md`, root `CONTEXT.md`, `CLAUDE.md`, any stage `CONTEXT.md`, engineering rules, the architecture manifest, root package manifests, `harness/tsconfig.json`, INC-1 routing code/tests/fixture, product/application/database/provider files, product or architecture specifications, and Stage 05/06/07 records.
 
-A required mutation outside this nine-path allowlist is `BLOCKED / CONTRACT_SCOPE_EXPANSION`.
+A required mutation outside this ten-path allowlist is `BLOCKED / CONTRACT_SCOPE_EXPANSION`.
 
 ### 13.3 Frozen framework, dependency, and runtime identities
 
@@ -1423,6 +1426,7 @@ The adapter may expose only the public Eve primitives required by INC-2:
 
 - `defineAgent`;
 - `defineTool`;
+- `defineSandbox`;
 - `docker`;
 - `Client` from `eve/client`;
 - the minimum public session and sandbox types needed by the supervisor boundary.
@@ -1440,6 +1444,8 @@ model = "openai/gpt-5.6-luna-fast"
 The model value is compile-time configuration only for INC-2 verification. CI must not make a model/provider call and must not require model credentials.
 
 INC-2 authors no connections, subagents, skills, schedules, hooks, custom channels, or memory.
+
+The authored `harness/agent/sandbox/sandbox.ts` module must export the public Eve sandbox definition produced by the bounded adapter. That definition must select the same locked Docker backend described in Section 13.10. The authored module contains no independent image, network, environment, policy, or lifecycle values.
 
 The complete model-visible static tool surface must be exactly:
 
@@ -1649,7 +1655,9 @@ An exact authorized subprocess may alter its disposable container. That containe
 
 The external supervisor owns logical run admission. Before the model turn, it creates a fresh Eve session through the public `Client.sessions.create()` surface, binds the signed envelope to that exact `session_id`, and never reuses that authorization in another session.
 
-Eve owns the physical session sandbox handle. The adapter freezes the sandbox backend to:
+The supervisor lifecycle is scoped. The same public `ClientSession` handle that yielded the authorized `session_id` must remain owned by the supervisor until the run ends, and terminal cleanup must execute `session.reset()` in a cleanup-protected `finally` path. Cleanup must occur when the supervised operation succeeds or throws. The caller must not receive a durable session handle that can outlive that scope.
+
+Eve owns the physical session sandbox handle. The bounded adapter freezes the sandbox backend to:
 
 ```text
 image =
@@ -1660,13 +1668,15 @@ pullPolicy = "always"
 env = {}
 ```
 
+The production Eve runtime must discover `harness/agent/sandbox/sandbox.ts`, whose only job is to export the adapter-created public `defineSandbox` definition for that locked backend. The real model-visible `execute` tool and `ctx.getSandbox()` must therefore operate on the same locked backend that physical verification exercises.
+
 The authored tool reaches the sandbox only through the public `ctx.getSandbox()` accessor for the same Eve session whose ID is authenticated in the capability envelope.
 
 No host repository path is mounted into the container. Initial candidate files may enter only through explicitly authorized supervisor-mediated write capabilities. Host `.git` metadata is never copied.
 
-A supervisor run ends by retiring its Eve session; a later independent run must create a different Eve session and obtain a distinct sandbox identity. INC-2 must not rely on a process-global binding map whose cleanup can leak authority or containers.
+A supervisor run ends by terminally resetting its Eve session; a later independent run must create a different Eve session and obtain a distinct sandbox identity. INC-2 must not rely on a process-global binding map whose cleanup can leak authority or containers.
 
-Physical verification may create locked backend handles directly to prove delete/fresh-container behavior, but that test helper is not the production authority transport.
+Physical verification may create locked backend handles directly to prove backend deletion and effective network state, but that helper supplements rather than substitutes for proof that the compiled Eve runtime is bound to the authored locked sandbox definition.
 
 ### 13.11 Network, secret, and Git isolation
 
@@ -1700,7 +1710,7 @@ The Stage 04 candidate may implement these controls but may not redefine their r
 | EC-02 | inspect compiled Eve surface with defaults disabled and no connections/subagents | exact model-visible tools = `["execute"]`; alternate default/built-in capability unreachable |
 | EC-03 | direct traversal plus symlink from authorized workspace path to an outside target | `DENY / CAPABILITY_NOT_GRANTED`; outside target unchanged |
 | EC-04 | unapproved argv, exact argv with a symlinked/wrong canonical cwd, and run while `subprocess = "deny"` | each `DENY / CAPABILITY_NOT_GRANTED`; requested process not executed |
-| EC-05 | direct physical egress probe from the sandbox under locked backend | outbound request cannot complete under `deny-all` |
+| EC-05 | inspect the effective Docker network attachments of the locked physical sandbox from the host side | no egress-capable Docker network is attached; the assertion must not depend on `curl`, DNS, TLS, or an external site |
 | EC-06 | sign a policy that otherwise exactly allows `["git","status"]` at the authorized cwd | `DENY / CAPABILITY_NOT_GRANTED` specifically because `git = "deny"`; no ref/remote mutation |
 | EC-07 | host contains supervisor-private-key/secret sentinel; sandbox enumerates environment/workspace | private key, sentinel, and supervisor-only files unreachable |
 | EC-08 | run A writes fixed sentinel, its physical sandbox is deleted, run B starts from the same frozen inputs under a new Eve session | run B has different session/sandbox identity and sentinel is absent |
@@ -1716,15 +1726,17 @@ The P2 binding-cleanup defect class from review `4063718972` is removed structur
 The candidate must also prove:
 
 1. `eve info --json` exposes exactly one model-visible tool named `execute`;
-2. an external-supervisor authorization signed for Eve session A verifies for A and not session B;
-3. a known capability ID resolves to its exact grant only after signature/session verification;
-4. an exact authorized non-Git run grant executes successfully;
-5. an authorized non-symlink canonical cwd succeeds;
-6. direct read inside `read_roots` succeeds;
-7. direct write inside `write_roots` succeeds;
-8. candidate output leaves the sandbox only as the structured tool result;
-9. two independent runs receive distinct Eve session/sandbox identities;
-10. all existing INC-1 routing tests remain unchanged and green.
+2. the compiled Eve application binds its root sandbox source to authored `agent/sandbox/sandbox.ts`, and that module delegates backend creation to the bounded adapter;
+3. an external-supervisor authorization signed for Eve session A verifies for A and not session B;
+4. a known capability ID resolves to its exact grant only after signature/session verification;
+5. an exact authorized non-Git run grant executes successfully;
+6. an authorized non-symlink canonical cwd succeeds;
+7. direct read inside `read_roots` succeeds;
+8. direct write inside `write_roots` succeeds;
+9. candidate output leaves the sandbox only as the structured tool result;
+10. a supervisor-scoped Eve session is terminally reset on both success and thrown-operation cleanup paths;
+11. two independent runs receive distinct Eve session/sandbox identities;
+12. all existing INC-1 routing tests remain unchanged and green.
 
 A positive control cannot weaken a negative control.
 
@@ -1774,11 +1786,13 @@ Pure deterministic verification covers:
 Physical integration verification covers:
 
 - exact Eve compiled tool surface;
-- locked Docker backend/image;
+- compiled binding to authored `agent/sandbox/sandbox.ts`;
+- locked Docker backend/image on the real Eve sandbox path;
 - symlinked-cwd denial before process execution;
 - file symlink escape denial;
-- physical network denial;
+- effective Docker network isolation inspected from the host side without external reachability dependencies;
 - supervisor-private-key/secret isolation;
+- cleanup-protected Eve session reset;
 - cross-run state isolation;
 - fresh physical sandbox identity.
 
@@ -1795,7 +1809,7 @@ The harness package additionally defines an exact agent-file TypeScript check be
 typecheck:agent ->
   tsc --noEmit --target ES2023 --module ESNext --moduleResolution Bundler
       --strict --types node
-      agent/agent.ts agent/tools/execute.ts
+      agent/agent.ts agent/tools/execute.ts agent/sandbox/sandbox.ts
 ```
 
 The Node 24 harness CI job remains:
@@ -1803,7 +1817,7 @@ The Node 24 harness CI job remains:
 ```text
 npm ci
 npm ci --prefix harness
-npx eslint   harness/src/routing.ts   harness/src/capability.ts   harness/src/supervisor.ts   harness/src/eve-adapter.ts   harness/agent/agent.ts   harness/agent/tools/execute.ts   harness/tests/routing.test.ts   harness/tests/execution.test.ts
+npx eslint   harness/src/routing.ts   harness/src/capability.ts   harness/src/supervisor.ts   harness/src/eve-adapter.ts   harness/agent/agent.ts   harness/agent/tools/execute.ts   harness/agent/sandbox/sandbox.ts   harness/tests/routing.test.ts   harness/tests/execution.test.ts
 npm --prefix harness run typecheck
 npm --prefix harness run typecheck:agent
 npm --prefix harness run test
@@ -1842,6 +1856,12 @@ The five Codex cycle-1 findings have these frozen dispositions:
 - `4063718972`: valid P2; remove the process-global binding lifecycle that creates the leak condition;
 - `4063718980`: valid P2; make EC-06 otherwise-authorized so only the Git predicate can deny it.
 
+Codex cycle-2 findings at reviewed head `81d5d03a01380e8cef04cba7cd2a4322f785c9a8` have these frozen dispositions:
+
+- `4064921953`: valid P1 mechanism defect; re-admit the Plan-authorized authored sandbox path and bind Eve's real root sandbox definition to the adapter's locked Docker backend;
+- `4064921962`: valid P2 lifecycle defect; retain the public prewarmed `ClientSession` handle and terminally `reset()` it in cleanup-protected supervisor scope;
+- `4064921972`: valid P2 oracle defect; replace external-request failure with direct host-side proof of the locked Docker sandbox's effective network isolation.
+
 No unrelated cleanup is authorized.
 
 ### 13.17 Reviewable-size boundary
@@ -1868,7 +1888,7 @@ The already-recorded repository-owner size exception addresses the known nested-
 
 Before INC-2 may advance beyond implementation:
 
-1. final implementation paths are a subset of the exact nine-path allowlist;
+1. final implementation paths are a subset of the exact ten-path allowlist;
 2. root governance, product files, root package manifests, architecture sources, and INC-1 router files are unchanged;
 3. exact dependency/runtime identities in Section 13.3 are present;
 4. Eve imports occur only through `harness/src/eve-adapter.ts`;
@@ -1886,14 +1906,16 @@ Before INC-2 may advance beyond implementation:
 16. authored agent-file typecheck passes;
 17. harness tests pass;
 18. existing INC-1 routing tests remain unchanged and pass;
-19. locked Docker image and physical deny-all network are used;
-20. no supervisor private key, privileged secret, or host `.git` metadata reaches the sandbox;
-21. independent runs have distinct Eve session/sandbox identities and no writable-state carryover;
-22. existing Node 22 product verification behavior remains unchanged and passes;
-23. Node 24 `Harness Verification` must succeed for `PR Verification` to succeed;
-24. exact-head CI binds to the final candidate;
-25. implementation remains below the 420 internal stop and 500 repository ceiling;
-26. no INC-3, INC-4, or INC-5 implementation appears.
+19. the compiled real Eve runtime is bound through authored `agent/sandbox/sandbox.ts` to the locked Docker image and physical `deny-all` network backend;
+20. EC-05 proves effective Docker network isolation directly and cannot pass because `curl`, DNS, TLS, or an external site is unavailable;
+21. every supervisor-scoped prewarmed Eve session is terminally reset in cleanup-protected control flow before the scope ends;
+22. no supervisor private key, privileged secret, or host `.git` metadata reaches the sandbox;
+23. independent runs have distinct Eve session/sandbox identities and no writable-state carryover;
+24. existing Node 22 product verification behavior remains unchanged and passes;
+25. Node 24 `Harness Verification` must succeed for `PR Verification` to succeed;
+26. exact-head CI binds to the final candidate;
+27. implementation remains below the 420 internal stop and 500 repository ceiling;
+28. no INC-3, INC-4, or INC-5 implementation appears.
 
 Any false predicate stops progression.
 
@@ -1904,7 +1926,7 @@ Stop immediately when any of these becomes true:
 1. root `AGENTS.md`, `CONTEXT.md`, or a stage `CONTEXT.md` must change;
 2. product/application code or dependencies must change;
 3. the INC-1 router must change to grant INC-2 authority;
-4. a tenth candidate path is required;
+4. an eleventh candidate path is required;
 5. a dependency outside Section 13.3 is required;
 6. an Eve internal API is required;
 7. the signed authority envelope cannot bind to public `ctx.session.id`;
@@ -1946,9 +1968,11 @@ This contract does not authorize:
 
 ## 14. Stage 03 disposition
 
-The active C1-C7 governance baseline remains unchanged. Codex cycle 1 exposed a real authority-transfer defect in the prior INC-2 mechanism. The revised contract removes the disconnected process-local binding map and freezes one stateless supervisor-to-Eve authority path: a supervisor-signed, exact-session-bound capability envelope verified by the sole authored Eve tool before any sandbox effect.
+The active C1-C7 governance baseline remains unchanged. Codex cycle 1 exposed a real authority-transfer defect in the prior INC-2 mechanism, and Codex cycle 2 proved that the locked Docker backend was still not attached to Eve's real agent sandbox lifecycle.
 
-The repair also freezes the cwd-canonicalization and Git-specific negative-control corrections and structurally removes the binding-cleanup leak mechanism without adding a service, database, memory layer, internal Eve API, new dependency, or tenth candidate path.
+This revised contract keeps the stateless signed session-bound authority envelope, re-admits the Plan-authorized authored sandbox configuration path required by pinned Eve 0.63.0, binds that path to the same locked Docker backend used by physical verification, scopes every prewarmed Eve session through terminal `ClientSession.reset()`, and replaces the ambiguous external-request EC-05 oracle with direct effective-network isolation evidence.
+
+The repair remains within the approved Plan and frozen dependency set. It adds no service, database, memory layer, internal Eve API, new dependency, or eleventh candidate path.
 
 `CONTRACT_READY` means ready for fresh Stage 04 admission only. It is not implementation PASS, verification PASS, review approval, release eligibility, or merge authority.
 
