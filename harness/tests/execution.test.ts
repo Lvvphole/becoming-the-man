@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { generateKeyPairSync, randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -102,7 +103,10 @@ describe("INC-2 Eve and physical Docker boundary", () => {
     const raw = execFileSync(process.execPath, [cli, "info", "--json"], {
       cwd: root, encoding: "utf8", env: { ...process.env, EVE_TELEMETRY_DISABLED: "1" },
     });
-    expect(JSON.parse(raw).tools).toEqual(["execute"]);
+    const info = JSON.parse(raw);
+    expect(info.tools).toEqual(["execute"]);
+    const manifest = JSON.parse(readFileSync(info.artifacts.compiledManifest, "utf8"));
+    expect(manifest.sandbox.logicalPath).toBe("sandbox/sandbox.ts");
   });
   it("EC-03/05/07 and positive controls hold physically", async () => {
     process.env.INC2_SUPERVISOR_PRIVATE_KEY = privateKey;
@@ -120,7 +124,10 @@ describe("INC-2 Eve and physical Docker boundary", () => {
       expect((await executeAuthorized(escape, sandbox,
         { capability_id: "escape", authorization: "unused", content: "changed" })).kind).toBe("deny");
       expect((await sandbox.run({ command: "cat /tmp/outside.txt" })).stdout).toBe("outside");
-      expect((await sandbox.run({ command: "curl -fsS --max-time 3 https://example.com" })).exitCode).not.toBe(0);
+      const networks = execFileSync("docker",
+        ["container", "inspect", "--format", "{{json .NetworkSettings.Networks}}", sandbox.id],
+        { encoding: "utf8" });
+      expect(Object.keys(JSON.parse(networks))).toEqual([]);
       const env = (await sandbox.run({ command: "env" })).stdout;
       expect(env).not.toContain("INC2_SUPERVISOR_PRIVATE_KEY");
       expect(env).not.toContain("INC2_SUPERVISOR_PUBLIC_KEY");
