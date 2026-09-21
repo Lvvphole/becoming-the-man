@@ -1,6 +1,5 @@
 import { defineAgent } from "eve";
 import { Client } from "eve/client";
-import { defineSandbox } from "eve/sandbox";
 import { docker } from "eve/sandbox/docker";
 import { defineTool, type ToolContext } from "eve/tools";
 import { z } from "zod";
@@ -22,7 +21,7 @@ export const createSandboxBackend = () => docker({
   env: {},
 });
 
-export const createSandboxDefinition = () => defineSandbox({ backend: createSandboxBackend });
+export const createSandboxDefinition = () => ({ backend: createSandboxBackend });
 
 export async function prewarmEveSession(host: string): Promise<string> {
   const client = new Client({ host, redirect: "error" });
