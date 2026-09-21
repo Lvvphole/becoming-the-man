@@ -113,8 +113,7 @@ describe("INC-2 Eve and physical Docker boundary", () => {
   it("EC-03/05/07 and positive controls hold physically", async () => {
     const sentinel = join(root, ".inc2-supervisor-secret");
     writeFileSync(sentinel, privateKey);
-    process.env.INC2_SUPERVISOR_PRIVATE_KEY = privateKey;
-    process.env.INC2_SUPERVISOR_PUBLIC_KEY = publicKey;
+    process.env.INC2_SUPERVISOR_PRIVATE_KEY = privateKey; process.env.INC2_SUPERVISOR_PUBLIC_KEY = publicKey;
     try {
       await withPhysical(async (sandbox) => {
         const verified = auth("physical");
