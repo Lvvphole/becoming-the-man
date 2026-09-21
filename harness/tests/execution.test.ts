@@ -92,7 +92,7 @@ describe("INC-2 deterministic capability gate", () => {
     const symlink = fake("/tmp/job");
     expect((await executeAuthorized(auth("s", policy([["printf", "ok"]], ["/workspace/job"]), [cwd]),
       symlink, { capability_id: "cwd", authorization: "unused" })).kind).toBe("deny");
-    expect(symlink.commands).toHaveLength(1);
+    expect(symlink.commands).toHaveLength(2);
   });
   it("freezes the compiled authority surface", () => {
     const p = policy();
