@@ -44,7 +44,7 @@ export function compilePolicy(input: {
   const roots = [...input.allowed_cwds, ...input.read_roots, ...input.write_roots];
   if (!input.task_identity || !unique(input.allowed_cwds) || !unique(input.read_roots) ||
       !unique(input.write_roots) || input.allowed_argv.some((argv) => argv.length === 0) ||
-      roots.some((path) => !path.startsWith("/workspace") || path.includes(".."))) {
+      roots.some((path) => !(path === "/workspace" || path.startsWith("/workspace/")) || path.includes(".."))) {
     throw new Error("CAPABILITY_POLICY_INVALID");
   }
   return Object.freeze({
