@@ -68,7 +68,7 @@ describe("INC-2 deterministic capability gate", () => {
     const originalFetch = globalThis.fetch; let creates = 0, resets = 0;
     globalThis.fetch = async (input) => {
       if ((input instanceof Request ? input.url : String(input)).endsWith("/reset")) {
-        resets += 1; return new Response(JSON.stringify({ previousSessionId: `session-${creates}`, status: "reset" }));
+        resets += 1; return new Response(JSON.stringify({ ok: true, previousSessionId: `session-${creates}`, status: "reset" }));
       }
       creates += 1; return new Response(JSON.stringify({ sessionId: `session-${creates}` }));
     };
