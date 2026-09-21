@@ -54,7 +54,9 @@ export async function executeAuthorized(
     await sandbox.writeTextFile({ path: target, content: input.content ?? "" });
     return { kind: "write", bytes_written: Buffer.byteLength(input.content ?? "") };
   }
-  if (await canonical(sandbox, grant.cwd) !== grant.cwd) return DENIED;
+  const executable = await sandbox.run({ command: `p=$(command -v ${quote(grant.argv[0] ?? "")}) || exit 127; case "$p" in */*) realpath -- "$p";; *) printf '%s\\n' "$p";; esac` });
+  if (await canonical(sandbox, grant.cwd) !== grant.cwd || executable.exitCode !== 0 ||
+      executable.stdout.trim() === "git" || executable.stdout.trim().endsWith("/git")) return DENIED;
   const result = await sandbox.run({
     command: `cd -- ${quote(grant.cwd)} && exec ${grant.argv.map(quote).join(" ")}`,
   });
