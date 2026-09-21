@@ -13,16 +13,13 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const keys = generateKeyPairSync("ed25519");
 const privateKey = keys.privateKey.export({ type: "pkcs8", format: "pem" }).toString();
 const publicKey = keys.publicKey.export({ type: "spki", format: "pem" }).toString();
-const policy = (
-  argv: readonly (readonly string[])[] = [["printf", "ok"]], cwds: readonly string[] = ["/workspace"],
-  subprocess: "deny" | "exact" = "exact",
-) => compilePolicy({ task_identity: "inc2-test", allowed_argv: argv, allowed_cwds: cwds,
-  read_roots: ["/workspace"], write_roots: ["/workspace"], subprocess });
-const grants: Grant[] = [
-  { id: "read", kind: "read", path: "data.txt" },
+const policy = (argv: readonly (readonly string[])[] = [["printf", "ok"]],
+  cwds: readonly string[] = ["/workspace"], subprocess: "deny" | "exact" = "exact") =>
+  compilePolicy({ task_identity: "inc2-test", allowed_argv: argv, allowed_cwds: cwds,
+    read_roots: ["/workspace"], write_roots: ["/workspace"], subprocess });
+const grants: Grant[] = [{ id: "read", kind: "read", path: "data.txt" },
   { id: "write", kind: "write", path: "data.txt" },
-  { id: "run", kind: "run", argv: ["printf", "ok"], cwd: "/workspace" },
-];
+  { id: "run", kind: "run", argv: ["printf", "ok"], cwd: "/workspace" }];
 const auth = (session: string, p = policy(), g: readonly Grant[] = grants) =>
   verifyAuthorization(issueAuthorization(privateKey, session, p, g), publicKey, session)!;
 function fake(realpath = "/workspace", executable = "/usr/bin/printf"): SandboxPort & { commands: string[] } {
@@ -32,8 +29,7 @@ function fake(realpath = "/workspace", executable = "/usr/bin/printf"): SandboxP
     async run({ command }) {
       this.commands.push(command);
       if (command.includes("command -v")) return { exitCode: 0, stdout: executable + "\n", stderr: "" };
-      return command.startsWith("realpath")
-        ? { exitCode: 0, stdout: realpath + "\n", stderr: "" }
+      return command.startsWith("realpath") ? { exitCode: 0, stdout: realpath + "\n", stderr: "" }
         : { exitCode: 0, stdout: command.includes("printf") ? "ok" : "", stderr: "" };
     },
     async readTextFile() { return content; },
@@ -73,14 +69,12 @@ describe("INC-2 deterministic capability gate", () => {
       expect(resets).toBe(2);
     } finally { globalThis.fetch = originalFetch; }
   });
-  it("rejects sibling workspace policy paths", () => {
-    expect(() => policy(undefined, ["/workspace-secrets"])).toThrow("CAPABILITY_POLICY_INVALID");
-  });
+  it("rejects sibling workspace policy paths", () =>
+    expect(() => policy(undefined, ["/workspace-secrets"])).toThrow("CAPABILITY_POLICY_INVALID"));
   it("denies Git reached through an allowed executable alias", async () => {
     const alias: Grant = { id: "alias", kind: "run", argv: ["/workspace/bin/vcs", "status"], cwd: "/workspace" };
-    const result = await executeAuthorized(auth("s", policy([alias.argv]), [alias]), fake("/workspace", "/usr/bin/git"),
-      { capability_id: "alias", authorization: "unused" });
-    expect(result.kind).toBe("deny");
+    expect((await executeAuthorized(auth("s", policy([alias.argv]), [alias]), fake("/workspace", "/usr/bin/git"),
+      { capability_id: "alias", authorization: "unused" })).kind).toBe("deny");
   });
   it("EC-04 denies subprocess/argv/symlinked cwd and EC-06 reaches Git denial", async () => {
     const box = fake();
@@ -114,8 +108,7 @@ describe("INC-2 Eve and physical Docker boundary", () => {
     });
     const info = JSON.parse(raw);
     expect(info.tools).toEqual(["execute"]);
-    expect(JSON.parse(readFileSync(info.artifacts.compiledManifest, "utf8")).sandbox.logicalPath)
-      .toBe("sandbox/sandbox.ts");
+    expect(JSON.parse(readFileSync(info.artifacts.compiledManifest, "utf8")).sandbox.logicalPath).toBe("sandbox/sandbox.ts");
   });
   it("EC-03/05/07 and positive controls hold physically", async () => {
     const sentinel = join(root, ".inc2-supervisor-secret");
@@ -146,16 +139,14 @@ describe("INC-2 Eve and physical Docker boundary", () => {
         expect(env).not.toContain("INC2_SUPERVISOR_PUBLIC_KEY");
       });
     } finally {
-      rmSync(sentinel, { force: true });
-      delete process.env.INC2_SUPERVISOR_PRIVATE_KEY;
+      rmSync(sentinel, { force: true }); delete process.env.INC2_SUPERVISOR_PRIVATE_KEY;
       delete process.env.INC2_SUPERVISOR_PUBLIC_KEY;
     }
   }, 30_000);
   it("EC-08 deletes state between independent sandboxes", async () => {
     let first = "";
-    await withPhysical(async (sandbox) => {
-      first = sandbox.id; await sandbox.writeTextFile({ path: "/workspace/sentinel", content: "A" });
-    });
+    await withPhysical(async (sandbox) => { first = sandbox.id;
+      await sandbox.writeTextFile({ path: "/workspace/sentinel", content: "A" }); });
     await withPhysical(async (sandbox) => {
       expect(sandbox.id).not.toBe(first);
       expect((await sandbox.run({ command: "test ! -e /workspace/sentinel" })).exitCode).toBe(0);
