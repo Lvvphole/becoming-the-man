@@ -15,11 +15,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
-    name: PR Verification
+  harness-verification:
+    name: Harness Verification
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            harness/package-lock.json
+      - name: Install frozen dependencies
+        run: |
+          npm ci
+          npm ci --prefix harness
+      - name: Lint harness
+        run: npx eslint harness/src/routing.ts harness/tests/routing.test.ts
+      - name: Typecheck harness
+        run: npm --prefix harness run typecheck
+      - name: Test harness
+        run: npm --prefix harness run test
+
+  verify:
+    name: PR Verification
+    needs: harness-verification
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require harness verification
+        run: test "${{ needs.harness-verification.result }}" = "success"
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
