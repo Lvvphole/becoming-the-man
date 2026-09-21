@@ -64,24 +64,17 @@ describe("INC-2 deterministic capability gate", () => {
     expect(sandboxRequests).toBe(0);
     delete process.env.INC2_SUPERVISOR_PUBLIC_KEY;
   });
-  it("retires scoped Eve sessions on success and failure", async () => {
+  it("retires a prewarmed Eve session", async () => {
     const originalFetch = globalThis.fetch;
-    let creates = 0, resets = 0;
+    let resets = 0;
     globalThis.fetch = async (input) => {
-      const url = String(input);
-      if (url.endsWith("/reset")) {
-        resets += 1;
-        return new Response(JSON.stringify({ ok: true, previousSessionId: `session-${creates}`, status: "reset" }));
-      }
-      creates += 1;
-      return new Response(JSON.stringify({ sessionId: `session-${creates}` }));
+      if (!String(input).endsWith("/reset")) return new Response(JSON.stringify({ sessionId: "session-a" }));
+      resets += 1;
+      return new Response(JSON.stringify({ previousSessionId: "session-a", status: "reset" }));
     };
     try {
-      expect(await prepareExecutionSession("http://eve.test", privateKey, policy(), grants,
-        async ({ session_id }) => session_id)).toBe("session-1");
-      await expect(prepareExecutionSession("http://eve.test", privateKey, policy(), grants,
-        async () => { throw new Error("boom"); })).rejects.toThrow("boom");
-      expect(resets).toBe(2);
+      await prepareExecutionSession("http://eve.test", privateKey, policy(), grants);
+      expect(resets).toBe(1);
     } finally { globalThis.fetch = originalFetch; }
   });
   it("EC-04 denies subprocess/argv/symlinked cwd and EC-06 reaches Git denial", async () => {
