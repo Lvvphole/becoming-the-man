@@ -1424,7 +1424,8 @@ The adapter may expose only the public Eve primitives required by INC-2:
 - `defineAgent`;
 - `defineTool`;
 - `docker`;
-- the minimum public sandbox types needed by the supervisor.
+- `Client` from `eve/client`;
+- the minimum public session and sandbox types needed by the supervisor boundary.
 
 Imports from Eve internal source paths are forbidden.
 
@@ -1448,11 +1449,11 @@ The complete model-visible static tool surface must be exactly:
 
 The mechanical closure oracle is `eve info --json` against the harness package. Its reported `tools` array must equal exactly `["execute"]`. A second static tool, dynamic tool, connection-derived tool, agent-delegation tool, or optional default tool is EC-02 failure.
 
-### 13.5 CapabilityPolicy contract
+### 13.5 CapabilityPolicy and session-bound authority envelope
 
-The supervisor compiles one immutable policy before a model-visible execution request may cause a sandbox effect.
+The external supervisor compiles one immutable policy and closed grant catalog before the Eve turn begins.
 
-Normative shape:
+Normative policy shape:
 
 ```text
 CapabilityPolicy := {
@@ -1469,34 +1470,60 @@ CapabilityPolicy := {
 }
 ```
 
-Authority-bearing policy values come only from the already-admitted compact task plus supervisor-owned execution constraints. They never come from model output, the free-form task goal, candidate files, candidate tests, or sandbox state.
+The supervisor then uses Eve's public client surface to create a fresh Eve session before the first model turn and obtains that exact durable `session_id`.
+
+The authority transport is one signed, session-bound envelope:
+
+```text
+CapabilityEnvelope := {
+  version: 1,
+  session_id: exact Eve session id,
+  policy: CapabilityPolicy,
+  grants: unique closed CapabilityGrant array
+}
+
+CapabilityAuthorization :=
+  base64url(exact UTF-8 JSON envelope bytes)
+  + "."
+  + base64url(Ed25519 signature over the first segment's UTF-8 bytes)
+```
+
+The private Ed25519 signing key exists only in the external supervisor process. It is never committed, passed to Eve, exposed to the model, or copied into the candidate sandbox.
+
+The trusted Eve runtime receives only the corresponding public verifier key through supervisor-owned runtime configuration. The candidate sandbox receives neither private nor public supervisor key material.
+
+This signature is a runtime capability-authenticity mechanism only. It is not INC-3 provenance, release attestation, artifact signing, or final PASS authority.
+
+Authority-bearing policy and grant values come only from the already-admitted compact task plus supervisor-owned execution constraints. They never come from model output, the free-form task goal, candidate files, candidate tests, or sandbox state.
+
+No process-global authorization map, database, memory layer, external policy service, or mutable cross-process session registry is permitted.
 
 For INC-2:
 
 ```text
-EffectiveCapabilities subset_of CapabilityPolicy
-SandboxReachability subset_of CapabilityPolicy
+EffectiveCapabilities subset_of signed CapabilityEnvelope
+SandboxReachability subset_of signed CapabilityEnvelope
 ```
 
-The policy object is immutable after run admission. No tool call may add a path, argv vector, cwd, tool, secret, network permission, Git permission, or subprocess permission.
+The envelope is immutable after signing. No tool call may add a path, argv vector, cwd, tool, secret, network permission, Git permission, or subprocess permission.
 
 ### 13.6 Model-visible execute-tool contract
 
 `harness/agent/tools/execute.ts` is the sole model-visible authored tool.
 
-The tool must be a thin bridge to the supervisor. It must not expose an Eve sandbox handle, policy object, path, argv vector, cwd, secret name, network rule, Git rule, or subprocess rule for the model to redefine.
-
-The model-visible request is capability-selection data only:
+The model-visible request is:
 
 ```text
-ExecuteInput :=
-  {
-    capability_id: non-empty string,
-    content?: string
-  }
+ExecuteInput := {
+  capability_id: non-empty string,
+  authorization: non-empty session-bound CapabilityAuthorization,
+  content?: string
+}
 ```
 
-The supervisor compiles a closed capability catalog before model use:
+The supervisor may make the signed authorization available to the model as opaque bearer capability data for that exact Eve session. Possession permits only selection among grants already authenticated inside that envelope; the model cannot mint or broaden authority.
+
+The supervisor compiles a closed catalog before model use:
 
 ```text
 CapabilityGrant :=
@@ -1507,31 +1534,44 @@ CapabilityGrant :=
 
 A write grant may accept model-authored `content`; content is data, not authority. Read and run grants reject `content`.
 
-A model-provided unknown `capability_id`, malformed input, or grant/payload mismatch returns:
+The authored tool must:
+
+1. read the active Eve identity from `ctx.session.id`;
+2. verify the Ed25519 signature using only the configured supervisor public key;
+3. require `envelope.version == 1`;
+4. require `envelope.session_id == ctx.session.id`;
+5. validate the envelope's closed policy/grant shape;
+6. resolve only `input.capability_id` from the verified envelope;
+7. obtain the active Eve-owned sandbox with `ctx.getSandbox()`;
+8. invoke the hard request gate before any privileged sandbox effect.
+
+An invalid signature, wrong session, malformed envelope, unknown capability ID, malformed input, or grant/payload mismatch returns:
 
 ```text
 DENY / CAPABILITY_NOT_GRANTED
 ```
 
-The tool must invoke the supervisor gate before the corresponding read, write, or run effect. The model cannot create a new grant.
+No unverified envelope field may influence a filesystem or process effect.
 
-`CAPABILITY_NOT_GRANTED` is an INC-2-local execution diagnostic. It is not added to C4 `reason_code`. When a required INC-2 verifier predicate is false at the repository-governance boundary, Stage 04 emits C4 `TRANSITION_PRECONDITION_FALSE` and records the exact EC identifier and local diagnostic in `conflicts`.
+`CAPABILITY_NOT_GRANTED` remains an INC-2-local execution diagnostic. It is not added to C4 `reason_code`. When a required INC-2 verifier predicate is false at the repository-governance boundary, Stage 04 emits C4 `TRANSITION_PRECONDITION_FALSE` and records the exact EC identifier and local diagnostic in `conflicts`.
 
 ### 13.7 Hard request gate
 
-For a resolved grant `g` and request `r`:
+For a signature-verified envelope `e`, resolved grant `g`, and request `r`:
 
 ```text
-G_REQUEST_ALLOWED(r, g) :=
-  tool_allowed(r)
-  AND grant_exists(r.capability_id)
+G_REQUEST_ALLOWED(r, e, g) :=
+  envelope_verified(e)
+  AND session_bound(e, current_eve_session)
+  AND tool_allowed(e.policy, r)
+  AND grant_exists(e.grants, r.capability_id)
   AND grant_payload_matches(r, g)
-  AND cwd_allowed(g)
-  AND filesystem_effects_allowed(g)
-  AND subprocess_effects_allowed(g)
-  AND network_effects_allowed(g)
-  AND secret_effects_allowed(g)
-  AND git_effects_allowed(g)
+  AND cwd_allowed(e.policy, g)
+  AND filesystem_effects_allowed(e.policy, g)
+  AND subprocess_effects_allowed(e.policy, g)
+  AND network_effects_allowed(e.policy)
+  AND secret_effects_allowed(e.policy)
+  AND git_effects_allowed(e.policy, g)
 ```
 
 Required semantics:
@@ -1544,7 +1584,7 @@ Required semantics:
 - `sandbox.spawn` is never exposed by INC-2;
 - `network = "deny"` cannot be weakened by a grant;
 - `secret_names = []` means no secret-bearing capability exists;
-- `git = "deny"` overrides any attempted Git executable grant;
+- `git = "deny"` overrides an otherwise exact allowed Git argv grant;
 - any false predicate returns `DENY / CAPABILITY_NOT_GRANTED` before the requested effect.
 
 No permissive fallback exists.
@@ -1559,7 +1599,7 @@ Before the requested file effect:
 
 1. reject an empty path, absolute path, NUL, wildcard syntax, backslash, or any `..` segment;
 2. anchor the path at `/workspace`;
-3. resolve the canonical target inside the sandbox using a supervisor-owned fixed `realpath` probe;
+3. resolve the canonical target inside the sandbox using a fixed non-model-visible `realpath` probe;
 4. for reads, require existing-target canonicalization;
 5. for writes, canonicalize the target including a non-existing leaf while resolving all existing symlink components;
 6. require the canonical target to equal an authorized canonical root or be its descendant by path segment;
@@ -1575,9 +1615,23 @@ A symlink resolving outside an authorized root is `DENY / CAPABILITY_NOT_GRANTED
 
 A run grant contains one exact argv token vector and one exact canonical cwd.
 
-Authorization requires byte-for-byte token equality with the frozen vector. The model never supplies or edits argv or cwd directly; it selects an already-frozen grant ID.
+Authorization requires byte-for-byte argv equality with the signed envelope policy and grant.
 
-After authorization, the adapter may serialize the frozen argv vector for Eve's public `sandbox.run({ command })` API using one fixed POSIX single-quote encoder.
+Immediately before an authorized run effect, the tool must resolve the grant's cwd inside the active sandbox with a fixed non-model-visible:
+
+```text
+realpath -- <quoted exact cwd>
+```
+
+The run is permitted only when:
+
+```text
+realpath(exact_cwd) == exact_cwd
+```
+
+Any missing cwd, symlinked cwd, or canonical mismatch is `DENY / CAPABILITY_NOT_GRANTED`.
+
+Only after that equality check may the adapter serialize the frozen argv vector for Eve's public `sandbox.run({ command })` API using one fixed POSIX single-quote encoder.
 
 The generated command has this form:
 
@@ -1585,17 +1639,17 @@ The generated command has this form:
 cd -- <quoted canonical cwd> && exec <quoted argv[0]> <quoted argv[1]> ...
 ```
 
-The serializer is mechanical and receives only already-authorized frozen tokens.
+The model cannot supply or edit argv or cwd directly and cannot supply shell syntax.
 
-The model cannot supply shell syntax. No model-visible capability may invoke arbitrary `sh -c`, `bash -c`, `eval`, command substitution, or an unrestricted shell.
+If the first executable token resolves to `git`, the request is denied even when that exact Git argv and cwd are otherwise present in the signed allowed sets. EC-06 must exercise this ordering so removal of the Git-specific predicate makes the test fail.
 
-If the first executable token resolves to `git`, the request is denied regardless of `allowed_argv`.
+An exact authorized subprocess may alter its disposable container. That container is the physical effect boundary. INC-2 does not claim syscall-level per-path mediation inside an already-authorized subprocess.
 
-An exact authorized subprocess may alter its disposable container. That container is the physical effect boundary. INC-2 does not claim syscall-level per-path mediation inside an already-authorized subprocess. Any future requirement for narrower subprocess filesystem confinement requires a later explicit redesign; it must not be inferred in INC-2.
+### 13.10 Eve session and disposable Docker lifecycle
 
-### 13.10 Disposable Docker sandbox lifecycle
+The external supervisor owns logical run admission. Before the model turn, it creates a fresh Eve session through the public `Client.sessions.create()` surface, binds the signed envelope to that exact `session_id`, and never reuses that authorization in another session.
 
-The Eve adapter creates the physical execution environment only through the public `docker()` backend using exactly:
+Eve owns the physical session sandbox handle. The adapter freezes the sandbox backend to:
 
 ```text
 image =
@@ -1604,22 +1658,15 @@ image =
 networkPolicy = "deny-all"
 pullPolicy = "always"
 env = {}
-templateKey = null
 ```
 
-A supervisor run receives a fresh session key. Independent task runs must not reuse a live sandbox handle.
+The authored tool reaches the sandbox only through the public `ctx.getSandbox()` accessor for the same Eve session whose ID is authenticated in the capability envelope.
 
-No host repository path is mounted into the container. Initial candidate files are copied by the supervisor only through authorized file operations. Host `.git` metadata is never copied.
+No host repository path is mounted into the container. Initial candidate files may enter only through explicitly authorized supervisor-mediated write capabilities. Host `.git` metadata is never copied.
 
-The supervisor owns the backend handle. Terminal success, terminal denial after sandbox creation, and unexpected failure all execute the same cleanup path:
+A supervisor run ends by retiring its Eve session; a later independent run must create a different Eve session and obtain a distinct sandbox identity. INC-2 must not rely on a process-global binding map whose cleanup can leak authority or containers.
 
-```text
-finally -> backend_handle.delete()
-```
-
-A failed delete is a failed INC-2 run, not PASS.
-
-The sandbox identity used by two sequential independent runs must differ.
+Physical verification may create locked backend handles directly to prove delete/fresh-container behavior, but that test helper is not the production authority transport.
 
 ### 13.11 Network, secret, and Git isolation
 
@@ -1631,17 +1678,17 @@ docker networkPolicy = "deny-all"
 
 A prompt instruction or model refusal is not evidence.
 
-The external supervisor may hold framework credentials outside the sandbox, but the candidate sandbox receives none. In particular it receives no GitHub, Git, Vercel, Supabase, provider, deployment, supervisor, or verifier secret.
+The external supervisor holds the Ed25519 private key outside Eve. The Eve runtime receives only the corresponding public verifier key. The candidate sandbox receives neither key and no GitHub, Git, Vercel, Supabase, provider, deployment, supervisor, or verifier secret.
 
 A supervisor-only sentinel environment variable present in the host process must be absent from the candidate container.
 
 Git authority is denied by all three controls:
 
-1. `git = "deny"` in `CapabilityPolicy`;
-2. no model-visible Git grant;
+1. `git = "deny"` in the signed `CapabilityPolicy`;
+2. the Git-specific predicate rejects an otherwise exact allowed Git argv grant;
 3. no host `.git` metadata or Git credential is copied into the sandbox.
 
-Network, secret, or Git denial cannot be weakened by model input.
+Network, secret, Git, or signature verification cannot be weakened by model input.
 
 ### 13.12 Frozen INC-2 negative-control oracle
 
@@ -1649,40 +1696,41 @@ The Stage 04 candidate may implement these controls but may not redefine their r
 
 | ID | Exact defect | Required outcome |
 |---|---|---|
-| EC-01 | select an unknown tool/grant outside the compiled catalog | `DENY / CAPABILITY_NOT_GRANTED`; requested implementation not invoked |
+| EC-01 | tampered authorization, wrong Eve session binding, or unknown grant | `DENY / CAPABILITY_NOT_GRANTED`; requested implementation not invoked |
 | EC-02 | inspect compiled Eve surface with defaults disabled and no connections/subagents | exact model-visible tools = `["execute"]`; alternate default/built-in capability unreachable |
 | EC-03 | direct traversal plus symlink from authorized workspace path to an outside target | `DENY / CAPABILITY_NOT_GRANTED`; outside target unchanged |
-| EC-04 | unapproved argv, approved argv with wrong cwd, and run while `subprocess = "deny"` | each `DENY / CAPABILITY_NOT_GRANTED`; requested process not executed |
+| EC-04 | unapproved argv, exact argv with a symlinked/wrong canonical cwd, and run while `subprocess = "deny"` | each `DENY / CAPABILITY_NOT_GRANTED`; requested process not executed |
 | EC-05 | direct physical egress probe from the sandbox under locked backend | outbound request cannot complete under `deny-all` |
-| EC-06 | attempt a Git command/ref-changing grant | `DENY / CAPABILITY_NOT_GRANTED`; no ref/remote mutation |
-| EC-07 | host contains supervisor-secret sentinel; sandbox enumerates environment/workspace | sentinel and supervisor-only files unreachable |
-| EC-08 | run A writes fixed sentinel, is deleted, run B starts from same frozen inputs | run B has different sandbox identity and sentinel is absent |
+| EC-06 | sign a policy that otherwise exactly allows `["git","status"]` at the authorized cwd | `DENY / CAPABILITY_NOT_GRANTED` specifically because `git = "deny"`; no ref/remote mutation |
+| EC-07 | host contains supervisor-private-key/secret sentinel; sandbox enumerates environment/workspace | private key, sentinel, and supervisor-only files unreachable |
+| EC-08 | run A writes fixed sentinel, its physical sandbox is deleted, run B starts from the same frozen inputs under a new Eve session | run B has different session/sandbox identity and sentinel is absent |
 
 EC-03, EC-05, EC-07, and EC-08 require a real Docker daemon and the frozen OCI image. A mocked sandbox cannot satisfy those controls.
 
-Each negative control must fail for its intended boundary, not because an earlier unrelated fixture is malformed.
+Each negative control must fail for its intended predicate, not because an earlier unrelated fixture is malformed.
 
-This Stage 03 artifact remains outside the Stage 04 candidate allowlist and is the authoritative bootstrap oracle for EC-01 through EC-08.
+The P2 binding-cleanup defect class from review `4063718972` is removed structurally: INC-2 production code must contain no process-global session-binding map and no bind-after-container-create lifecycle.
 
 ### 13.13 Frozen positive controls
 
 The candidate must also prove:
 
 1. `eve info --json` exposes exactly one model-visible tool named `execute`;
-2. a known capability ID resolves to its exact frozen grant;
-3. an exact authorized run grant executes successfully;
-4. an authorized canonical cwd succeeds;
-5. direct read inside `read_roots` succeeds;
-6. direct write inside `write_roots` succeeds;
-7. candidate output leaves the sandbox only as the supervisor's structured result;
-8. two independent supervisor runs receive distinct sandbox identities;
-9. all existing INC-1 routing tests remain unchanged and green.
+2. an external-supervisor authorization signed for Eve session A verifies for A and not session B;
+3. a known capability ID resolves to its exact grant only after signature/session verification;
+4. an exact authorized non-Git run grant executes successfully;
+5. an authorized non-symlink canonical cwd succeeds;
+6. direct read inside `read_roots` succeeds;
+7. direct write inside `write_roots` succeeds;
+8. candidate output leaves the sandbox only as the structured tool result;
+9. two independent runs receive distinct Eve session/sandbox identities;
+10. all existing INC-1 routing tests remain unchanged and green.
 
 A positive control cannot weaken a negative control.
 
 ### 13.14 Supervisor and adapter result boundary
 
-The supervisor returns only structured data:
+The supervisor-facing result boundary remains:
 
 ```text
 ReadResult  := { kind: "read", content: string }
@@ -1699,9 +1747,9 @@ DeniedResult := {
 }
 ```
 
-No result contains the sandbox handle, Docker daemon handle, host filesystem path, policy object, host environment, credential, or mutable authority object.
+No result contains the sandbox handle, Docker daemon handle, private signing key, host filesystem path, policy mutation handle, host environment, credential, or mutable authority object.
 
-The Eve adapter is replaceability glue only. It does not decide policy.
+The Eve adapter is replaceability glue only. It does not decide policy or mint capability authority.
 
 ### 13.15 Verification and CI contract
 
@@ -1710,25 +1758,29 @@ INC-2 verification has two classes.
 Pure deterministic verification covers:
 
 - policy construction and immutability;
+- Ed25519 sign/verify round trip;
+- signature tamper denial;
+- wrong-session denial;
 - closed capability catalog;
 - unknown grant denial;
 - exact argv matching;
+- Git-specific denial after an otherwise exact Git allow;
 - cwd matching;
 - lexical path rejection;
 - canonical containment decision;
 - subprocess denial;
-- Git denial;
 - malformed execute input.
 
 Physical integration verification covers:
 
 - exact Eve compiled tool surface;
 - locked Docker backend/image;
-- symlink escape denial;
+- symlinked-cwd denial before process execution;
+- file symlink escape denial;
 - physical network denial;
-- supervisor-secret isolation;
+- supervisor-private-key/secret isolation;
 - cross-run state isolation;
-- cleanup on success and failure.
+- fresh physical sandbox identity.
 
 The harness package scripts retain:
 
@@ -1746,7 +1798,7 @@ typecheck:agent ->
       agent/agent.ts agent/tools/execute.ts
 ```
 
-The Node 24 harness CI job must run, in this order:
+The Node 24 harness CI job remains:
 
 ```text
 npm ci
@@ -1757,49 +1809,60 @@ npm --prefix harness run typecheck:agent
 npm --prefix harness run test
 ```
 
-`harness/tests/execution.test.ts` must invoke the locally installed Eve CLI with `info --json` and assert exact tool closure. It must run physical Docker controls without model/provider credentials. Physical controls must not be skipped when Docker is unavailable; unavailability is a failed INC-2 verification prerequisite.
+`harness/tests/execution.test.ts` must invoke the locally installed Eve CLI with `info --json` and assert exact tool closure. It must run physical Docker controls without model/provider credentials. Physical controls must not be skipped when Docker is unavailable.
 
 The existing `PR Verification` job remains fail-closed on `Harness Verification`. Its Node 22.16.0 product setup, name, and pre-existing product verification behavior remain unchanged.
 
 No model call, provider call, deployment, or external application mutation is part of INC-2 CI.
 
-### 13.16 One-candidate construction discipline
+### 13.16 One-candidate repair discipline
 
-Stage 04 is limited to:
+The review repair is limited to:
 
 ```text
-BIND
-  -> INSPECT
-  -> ONE BOUNDED CANDIDATE
+RE-BIND
+  -> FREEZE REVISED CONTRACT
+  -> RE-ADMIT STAGE 04
+  -> ONE BOUNDED REPAIR
   -> VERIFY
   -> STOP
 ```
 
-Before its first protected mutation, Stage 04 must re-read current root authorities, Stage 04 `CONTEXT.md`, engineering rules, architecture manifest, the exact approved Plan, this exact contract, and current PR/base/head.
+Before the next protected mutation, Stage 04 must re-read current root authorities, Stage 04 `CONTEXT.md`, engineering rules, architecture manifest, the exact approved Plan, this revised contract, and current PR/base/head.
 
 All `G_PC_*` predicates must be true.
 
 After every mutation, Stage 04 re-evaluates changed-path confinement, exact current head, active stop condition, and reviewable-line count.
 
-A failing check does not authorize speculative fix-forward. A second repair requires materially new bounded diagnostic evidence.
+The five Codex cycle-1 findings have these frozen dispositions:
+
+- `4063718938`: unsupported by commit history; evidence reply only, no code mutation;
+- `4063718948`: valid P1; replace the disconnected process-local binding map with the signed session-bound authority path;
+- `4063718959`: valid P1; canonicalize and equality-check run cwd immediately before process execution;
+- `4063718972`: valid P2; remove the process-global binding lifecycle that creates the leak condition;
+- `4063718980`: valid P2; make EC-06 otherwise-authorized so only the Git predicate can deny it.
+
+No unrelated cleanup is authorized.
 
 ### 13.17 Reviewable-size boundary
 
 ```text
-TARGET <= 360 reviewable implementation lines
+TARGET <= 400 reviewable implementation lines
 INTERNAL_STOP = 420
 ABSOLUTE_CURRENT_REPOSITORY_CEILING = 500
 ```
 
 Dependency lockfiles remain excluded under `AGENTS.md`.
 
-If the initial candidate reaches or projects to 420 reviewable lines before all frozen obligations are implemented:
+The review repair should reduce or replace existing machinery rather than stack new parallel authority machinery on top of it.
+
+If the final implementation reaches or projects to 420 reviewable lines:
 
 ```text
 STOP -> REDUCE OR REDESIGN
 ```
 
-No size exception is authorized by this contract.
+The already-recorded repository-owner size exception addresses the known nested-lockfile counting defect only; it does not waive this 420-line internal stop.
 
 ### 13.18 INC-2 verification obligations
 
@@ -1810,22 +1873,27 @@ Before INC-2 may advance beyond implementation:
 3. exact dependency/runtime identities in Section 13.3 are present;
 4. Eve imports occur only through `harness/src/eve-adapter.ts`;
 5. model-visible tool closure is exactly `["execute"]`;
-6. all EC-01 through EC-08 produce their exact Section 13.12 outcomes;
-7. all Section 13.13 positive controls pass;
-8. no negative control is skipped, mocked in place of required physical evidence, or satisfied by an unrelated earlier failure;
-9. harness lint passes;
-10. harness source typecheck passes;
-11. authored agent-file typecheck passes;
-12. harness tests pass;
-13. existing INC-1 routing tests remain unchanged and pass;
-14. locked Docker image and physical deny-all network are used;
-15. no privileged secret or host `.git` metadata reaches the sandbox;
-16. independent runs have distinct sandbox identities and no writable-state carryover;
-17. existing Node 22 product verification behavior remains unchanged and passes;
-18. Node 24 `Harness Verification` must succeed for `PR Verification` to succeed;
-19. exact-head CI binds to the final candidate;
-20. implementation remains below the 420 initial-candidate stop and 500 repository ceiling;
-21. no INC-3, INC-4, or INC-5 implementation appears.
+6. no process-global capability/session binding map exists;
+7. supervisor authority is cryptographically bound to the exact Eve session before the model turn;
+8. the Eve tool rejects signature tampering and cross-session replay before sandbox effects;
+9. all EC-01 through EC-08 produce their exact Section 13.12 outcomes;
+10. all Section 13.13 positive controls pass;
+11. no negative control is skipped, mocked in place of required physical evidence, or satisfied by an unrelated earlier failure;
+12. the run-cwd symlink regression proves canonical equality immediately before execution;
+13. EC-06 is otherwise exactly authorized and fails only on the Git-specific predicate;
+14. harness lint passes;
+15. harness source typecheck passes;
+16. authored agent-file typecheck passes;
+17. harness tests pass;
+18. existing INC-1 routing tests remain unchanged and pass;
+19. locked Docker image and physical deny-all network are used;
+20. no supervisor private key, privileged secret, or host `.git` metadata reaches the sandbox;
+21. independent runs have distinct Eve session/sandbox identities and no writable-state carryover;
+22. existing Node 22 product verification behavior remains unchanged and passes;
+23. Node 24 `Harness Verification` must succeed for `PR Verification` to succeed;
+24. exact-head CI binds to the final candidate;
+25. implementation remains below the 420 internal stop and 500 repository ceiling;
+26. no INC-3, INC-4, or INC-5 implementation appears.
 
 Any false predicate stops progression.
 
@@ -1839,17 +1907,20 @@ Stop immediately when any of these becomes true:
 4. a tenth candidate path is required;
 5. a dependency outside Section 13.3 is required;
 6. an Eve internal API is required;
-7. Eve optional/default capability suppression cannot keep the exact tool surface `["execute"]`;
-8. network denial is only a prompt/model behavior rather than physical `deny-all`;
-9. the sandbox would receive host `.git` metadata or privileged secrets;
-10. canonical mediation cannot detect a symlink escape;
-11. a policy engine, service, database, memory layer, Jev layer, verifier layer, or additional agent/orchestration layer becomes necessary;
-12. physical sandbox tests require model/provider credentials;
-13. the implementation reaches or projects to 420 reviewable lines before the initial candidate is complete;
-14. the same failure persists without materially new bounded diagnostic evidence;
-15. Plan, contract, base, head, Eve package, AI SDK package, Zod package, or OCI image identity becomes stale;
-16. exact-head CI fails without one bounded evidence-backed correction;
-17. review cycle 3 reports an actionable finding.
+7. the signed authority envelope cannot bind to public `ctx.session.id`;
+8. the external supervisor cannot pre-create a fresh Eve session through the public client surface;
+9. the runtime would require a process-global mutable authority registry, external service, database, or memory layer;
+10. Eve optional/default capability suppression cannot keep the exact tool surface `["execute"]`;
+11. network denial is only a prompt/model behavior rather than physical `deny-all`;
+12. the sandbox would receive the supervisor private key, host `.git` metadata, or privileged secrets;
+13. canonical cwd mediation cannot detect a symlink escape immediately before execution;
+14. a policy engine, service, database, memory layer, Jev layer, verifier layer, or additional agent/orchestration layer becomes necessary;
+15. physical sandbox tests require model/provider credentials;
+16. implementation reaches or projects to 420 reviewable lines;
+17. the same failure persists without materially new bounded diagnostic evidence;
+18. Plan, contract, base, head, Eve package, AI SDK package, Zod package, or OCI image identity becomes stale;
+19. exact-head CI fails without one bounded evidence-backed correction;
+20. review cycle 3 reports an actionable finding.
 
 Required disposition is `BLOCKED`, `REDUCE`, or `REDESIGN` according to the triggering condition. No silent scope expansion or fix-forward is permitted.
 
@@ -1857,11 +1928,10 @@ Required disposition is `BLOCKED`, `REDUCE`, or `REDESIGN` according to the trig
 
 This contract does not authorize:
 
-- Stage 04 mutation before fresh Stage 04 admission and `G_PRE_CODE_READY = true`;
 - INC-3, INC-4, or INC-5 implementation;
 - Jev;
 - final mechanical PASS authority;
-- authenticated provenance;
+- release/artifact provenance or attestation;
 - root-router cutover;
 - old-governance removal;
 - product feature work;
@@ -1872,14 +1942,14 @@ This contract does not authorize:
 - deployment;
 - release;
 - merge;
-- a change-size exception.
+- any new path or dependency beyond the frozen INC-2 surface.
 
 ## 14. Stage 03 disposition
 
-The active C1-C7 governance baseline remains present exactly once and unchanged. The completed migration-specific INC-1 implementation contract is replaced by one approved-Plan-bound INC-2 execution-boundary contract.
+The active C1-C7 governance baseline remains unchanged. Codex cycle 1 exposed a real authority-transfer defect in the prior INC-2 mechanism. The revised contract removes the disconnected process-local binding map and freezes one stateless supervisor-to-Eve authority path: a supervisor-signed, exact-session-bound capability envelope verified by the sole authored Eve tool before any sandbox effect.
 
-The frozen INC-2 contract uses only public Eve surfaces, one model-visible authored tool, one external supervisor policy boundary, and one disposable Docker backend. It adds no additional architectural layer beyond the approved Plan.
+The repair also freezes the cwd-canonicalization and Git-specific negative-control corrections and structurally removes the binding-cleanup leak mechanism without adding a service, database, memory layer, internal Eve API, new dependency, or tenth candidate path.
 
-`CONTRACT_READY` means ready for Stage 04 admission evaluation only. It is not implementation PASS, verification PASS, review approval, release eligibility, merge authority, or Stage 04 mutation authority.
+`CONTRACT_READY` means ready for fresh Stage 04 admission only. It is not implementation PASS, verification PASS, review approval, release eligibility, or merge authority.
 
 CONTRACT_READY
