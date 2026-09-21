@@ -3,33 +3,42 @@
 Status: CONTRACT_READY
 Lifecycle stage: 03_contract
 Target implementation stage: 04_implement
+Migration scope: Zero-Trust Repository Harness v1.2 / INC-1 only
 
 ## 1. Frozen authoring binding
 
-This contract is subordinate to root `AGENTS.md`, root `CONTEXT.md`, the Stage 03 contract, and the routed Layer 3 references.
+This contract is subordinate to root `AGENTS.md`, root `CONTEXT.md`, `stages/03_contract/CONTEXT.md`, and the routed Layer 3 references.
 
-Approved Plan:
-- path: `stages/02_plan/output/implementation-plan.md`
+Approved migration Plan:
+- path: `stages/02_plan/output/repo-zero-trust-harness-v1.2-plan.md`
 - disposition: `PLAN_READY`
-- sha256: `0b0039d77ff4a5f967339742f24d48741d877489f258b9a73ad14459d69fb5f4`
-- approval: `APPROVED_AND_LOCKED_FOR_IMPLEMENTATION`
+- SHA-256: `3b8e4438ebf76c75785c460239e3f0ef427a267e6f5fc1e4f7aa96185d8ce80e`
+- Git blob: `2e5c4c1cdfe3d0bf76732e109b7a3a5271b3dc06`
+- approval: explicit user approval after the artifact was committed
+- approved Plan commit: `147d6ba5c07cacac27c26f52197e5f8baac22f51`
+- planning base: `807ebb1cfa121afa3e536f00791b7f1da383193f`
 
-Stage 03 authoring input binding:
+Owner-authorized bootstrap exception:
+- use `task_domain=governance` for this migration;
+- permit the migration Plan at `stages/02_plan/output/repo-zero-trust-harness-v1.2-plan.md`;
+- preserve every other current governance and stop condition.
+
+Stage 03 authoring state:
 - repository: `Lvvphole/becoming-the-man`
-- PR: `48`
-- base commit: `bfe440cef162182ca35af7744ef623b61f8eb8cd`
-- authoring head: `179b55b9fdf9ce1a71a799b8aeeb2d6aae9fd33d`
-- task domain: `governance`
-- selected evidence IDs: empty
+- authoring branch: `harness-v1-2-bootstrap-plan`
+- pre-correction head: `f414ff18fbf703dd35ff53e5e0167a22eb3eddcb`
 - permitted mutation: `stages/03_contract/output/implementation-contract.md` only
+- selected evidence IDs: empty
 
 Routed Layer 3 inputs:
 - `references/engineering/engineering-rules.md`, full document
 - `references/architecture/CONTEXT.md`, full document
 
-The literal selector `"*"` means "full document" only for a source whose route declares full-section access. It is not a path wildcard and must never be interpreted as file discovery.
+The literal selector `"*"` means full-document access only for a source whose route declares full-section access. It is not a path wildcard and must never be interpreted as file discovery.
 
-This contract defines C1 through C7. It does not authorize implementation by itself. Stage 04 must rebind to the post-contract repository head, read the Stage 04 contract and all routed sources, and satisfy `G_PRE_CODE_READY` before any code, test, schema, migration, build, workflow, or verifier mutation.
+Sections 2 through 12 below preserve the active C1-C7 governance baseline from `main` unchanged. Historical INC-1 implementation material from `main` is intentionally not restored because it would create a competing implementation contract.
+
+This contract defines the active C1 through C7 baseline plus exactly one migration-specific INC-1 contract. It does not authorize implementation by itself. Stage 04 must rebind to the post-contract repository head, read the Stage 04 contract and all routed sources, and satisfy `G_PRE_CODE_READY` before any protected mutation.
 
 ## 2. Global invariants
 
@@ -1326,441 +1335,431 @@ The Stage 03 `contract-completeness` verifier must establish all of the followin
 
 A failed condition returns C4 BLOCKED with `reason_code = "CONTRACT_INCOMPLETE"`, `"CONTRACT_SCOPE_EXPANSION"`, or the more specific applicable reason code.
 
-## 13. INC-1 Mechanical Routing Contracts and Verifier
+## 13. Zero-Trust Repository Harness v1.2 - INC-1 Shadow Routing Contract
 
-### 13.1 Approved Plan binding and scope
+### 13.1 Objective and non-authority
 
-This section freezes the exact implementation obligations from the approved INC-1 Plan.
+INC-1 builds only the replacement routing kernel and compact task contract in shadow form. Root `CONTEXT.md` remains the active repository router throughout INC-1.
 
-Approved Plan:
-- path: `stages/02_plan/output/implementation-plan.md`
-- disposition: `PLAN_READY`
-- SHA-256: `9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87ebd511a7`
-- approved at repository head: `58a0e10c5bddf8eabec65a9c90ac4e740c35f8d3`
+INC-1 does not implement Eve, AI SDK orchestration, Jev, sandbox enforcement, the external supervisor, authenticated provenance, or the final external verifier. Those remain later roadmap increments and are not executable under this contract.
 
-This INC-1 contract narrows implementation to the mechanical governance verifier. Redesign Path A amends only the C1 transition fact-token grammar defined in Section 3.3.1. C2 through C7, root routing semantics, architecture authority, product behavior, and merge authority remain unchanged.
+### 13.2 Exact Stage 04 mutation allowlist
 
-The human operator also narrows the INC-1 reviewable implementation target from <= 380 to <= 350 for the redesigned implementation. The 420 internal stop threshold, 500 absolute ceiling, and 80-line reserve from the stop threshold to the absolute ceiling remain unchanged.
+The complete INC-1 candidate path set is exactly:
 
-### 13.2 Stage 04 implementation workpiece authorization
+1. `harness/package.json`
+2. `harness/package-lock.json`
+3. `harness/tsconfig.json`
+4. `harness/src/routing.ts`
+5. `harness/tests/routing.test.ts`
+6. `harness/fixtures/CONTEXT.target.md`
+7. `.github/workflows/pr-verification.yml`
 
-For INC-1, the complete Stage 04 implementation workpiece set is exactly:
+No eighth candidate path is authorized.
 
-1. `contracts/governance-routing-contract.json`
-2. `scripts/verify-governance-routing.mjs`
-3. `tests/governance-routing.test.mjs`
+The workflow file may change only to add a Node 24 harness-verification job and to make the existing required `PR Verification` job explicitly fail when that harness job is not successful. The existing Node 22.16.0 product verification steps, job name, and behavioral coverage must remain unchanged.
 
-A valid Stage 04 envelope for this Plan must set `authorized_candidate_paths` to exactly this set and must not add a fourth implementation path.
+Forbidden INC-1 mutations include root `AGENTS.md`, root `CONTEXT.md`, `CLAUDE.md`, engineering rules, the architecture manifest, any stage `CONTEXT.md`, root package manifests, product/application/database/provider files, architecture/product specifications, and Stage 05/06/07 records.
 
-The following mutation classes are explicitly forbidden for INC-1:
+A required mutation outside the seven-path allowlist is `BLOCKED / CONTRACT_SCOPE_EXPANSION`.
 
-- root `AGENTS.md`;
-- root `CONTEXT.md`;
-- any `stages/*/CONTEXT.md`;
-- package manifests or dependency lockfiles;
-- application sources;
-- database schemas or migrations;
-- architecture source documents;
-- CI workflow files;
-- provider configuration;
-- product behavior.
+### 13.3 Canonical shadow routing-table representation
 
-If any forbidden mutation becomes necessary, return `CONTRACT_SCOPE_EXPANSION` or the more specific applicable C4 failure and stop.
+The canonical target router for INC-1 exists only in `harness/fixtures/CONTEXT.target.md`. It is not active authority.
 
-This section freezes an implementation allowlist. It does not itself authorize Stage 04 mutation. Stage 04 still requires a valid current envelope and `G_PRE_CODE_READY = true`.
+The target Markdown contains exactly one fenced JSON object between explicit begin/end markers. Identity-bearing registries are arrays so duplicate IDs remain mechanically observable after `JSON.parse`.
 
-### 13.3 Module 1 - Defensive input gate
+Normative shape:
 
-The verifier must satisfy all of these predicates before dereferencing untrusted envelope fields:
-
-```text
-G_ENVELOPE_OBJECT :=
-  envelope != null
-  AND typeof(envelope) = object
-  AND Array.isArray(envelope) = false
-
-G_C2_FIELDS_PRESENT :=
-  every required C2 field exists
-  AND every required field is non-null
-
-G_C2_FIELD_TYPES :=
-  task_domains is array
-  AND source_sections is non-null non-array object
-  AND workpiece_paths is array
-  AND selected_evidence_ids is array
-  AND prior_outputs is non-null non-array object
-  AND authorized_candidate_paths is array
-  AND approvals is non-null non-array object
-  AND source_binding is non-null non-array object
-```
-
-Required failure mapping:
-
-- null, undefined, primitive, array, or structurally invalid envelope -> `TASK_ENVELOPE_REQUIRED`;
-- missing `workflow_stage` or `task_domains` in an otherwise structurally valid envelope -> `MISSING_SELECTOR`;
-- missing non-selector C2 field -> `TASK_ENVELOPE_REQUIRED`.
-
-No malformed envelope fixture may terminate as an uncaught JavaScript exception.
-
-`parseRoutingTable` must likewise reject non-string routing-table input as structured `BLOCKED`, never by uncaught runtime exception.
-
-### 13.4 Module 2 - Repository path confinement
-
-The verifier must expose one pure repository-path predicate equivalent to:
-
-```text
-isRepoRelativePath(p) :=
-  typeof(p) = string
-  AND length(p) > 0
-  AND p matches ^[A-Za-z0-9._/-]+$
-  AND p does not start with "/"
-  AND no path segment equals ".."
-  AND p contains none of "*", "?", "[", "]"
-  AND p contains no backslash
-  AND p is not a drive-letter path
-```
-
-The predicate must be applied to every member of:
-
-- `workpiece_paths`;
-- `authorized_candidate_paths`.
-
-Failure mapping is frozen as:
-
-- wildcard path -> `WILDCARD_INPUT`;
-- non-wildcard repoPath grammar violation, absolute path, drive-letter path, backslash path, or parent traversal -> `TASK_ENVELOPE_REQUIRED`.
-
-No new path-specific C4 reason code is authorized by this Plan.
-
-### 13.5 Module 3 - Strict C4 BLOCKED schema enforcement
-
-C4 output construction must use trusted caller execution lineage before evaluating untrusted envelope lineage.
-
-Required order:
-
-```text
-trusted execution lineage
--> validate pr/base/current_head
--> evaluate untrusted input
--> construct C4 BLOCKED or ROUTE_MATCH
-```
-
-The verifier interface may extend the existing options object with:
-
-```text
-options.sourceBinding = {
-  pr,
-  base,
-  current_head
+```json
+{
+  "version": 1,
+  "path_routes": [
+    {
+      "id": "route-id",
+      "exact": [],
+      "prefixes": [],
+      "sources": [],
+      "checks": []
+    }
+  ],
+  "requirements": [
+    {
+      "id": "requirement-id",
+      "source": "source-id",
+      "selector": "exact-selector",
+      "checks": []
+    }
+  ],
+  "sources": [
+    {
+      "id": "source-id",
+      "path": "repo-relative/path"
+    }
+  ],
+  "checks": [
+    {
+      "id": "check-id",
+      "argv": ["exact", "argv", "tokens"]
+    }
+  ],
+  "protected_paths": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "CONTEXT.md"
+  ]
 }
 ```
 
-Normative requirements:
-
-1. `makeBlocked` must require validated execution lineage.
-2. `makeBlocked` must not default `source_binding` to `{}`.
-3. The verifier must not manufacture a PR number, base SHA, head SHA, zero SHA, or other placeholder.
-4. Envelope lineage cannot repair, replace, or overwrite stale trusted execution lineage.
-5. `validateBlocked` must validate the C4 structure relied on by this verifier, including:
-   - exact top-level field set;
-   - `status = "BLOCKED"`;
-   - registered `reason_code`;
-   - valid `gate_id`;
-   - registered `stage_id`;
-   - array types and required uniqueness;
-   - non-empty `resolution_required`;
-   - exact `source_binding` keys `pr`, `base`, `current_head`;
-   - integer `pr >= 1`;
-   - 40-character lowercase hexadecimal `base` and `current_head`;
-   - no unexpected BLOCKED or source-binding properties.
-
-A malformed or unavailable trusted source binding cannot produce `ROUTE_MATCH`.
-
-### 13.6 Module 4 - Route-table integrity
-
-The canonical route identity surface is `table.routes[*].route_id`.
-
-The verifier must enforce:
+Required predicates:
 
 ```text
-G_ROUTE_IDS_UNIQUE :=
-  count(table.routes[*].route_id)
-  =
-  count(unique(table.routes[*].route_id))
+version = 1
+
+count(path_route_ids) = count(unique(path_route_ids))
+count(requirement_ids) = count(unique(requirement_ids))
+count(source_ids) = count(unique(source_ids))
+count(check_ids) = count(unique(check_ids))
+
+every referenced source ID exists
+every referenced check ID exists
+every route/source path is repository-relative
+no path contains glob or wildcard syntax
+every check is exact argv tokens, never a shell string
 ```
 
-Required semantics:
+Duplicate requirement IDs are therefore detectable without YAML, a custom parser, or another policy framework.
 
-- duplicate `route_id` -> `ROUTING_TABLE_INVALID`;
-- multiple distinct valid route rows matching one envelope -> `ROUTE_MULTI_MATCH`.
+### 13.4 Shadow decision boundary
 
-The deprecated raw `stage_registry` duplicate-key check must not remain the route-ID collision oracle.
-
-Before route dereference, the parser must verify that:
-
-- the parsed table is a non-null object;
-- `routes` is a non-empty array;
-- `source_registry` is a non-null object;
-- every route used by evaluation has the required C1 fields and expected container types.
-
-Malformed route-table structure returns `ROUTING_TABLE_INVALID`.
-
-### 13.7 Module 5 - Layer 3 resolution pipeline
-
-No route may return `ROUTE_MATCH` until every source in its `required_layer3_bundle` has completed this pipeline:
-
-1. Source ID exists in `source_registry`.
-2. Source metadata has valid shape.
-3. `kind = "layer3"`.
-4. `location` is `"repository"` or `"task_context"`.
-5. Repository source paths satisfy `isRepoRelativePath`.
-6. Repository sources exist in the exact supplied source surface.
-7. Task-context sources resolve only from explicitly supplied routed task material.
-8. `source_sections[sourceId]` is present and policy-conformant.
-9. Trusted and envelope source bindings are structurally valid.
-10. Envelope `source_binding` equals trusted execution lineage.
-11. Every `required_approval_facts` item is strictly `true`.
-12. Only then may the route predicate succeed.
-
-The deterministic repository source interface is an exact injected map, not repository discovery:
+INC-1 shadow evaluations are not C4 governance records.
 
 ```text
-options.files = {
-  "exact/repository/path": "exact file contents"
-}
+ShadowDecision :=
+  ALLOW
+  OR
+  DENY(diagnostic)
 ```
 
-The verifier may test exact key membership. It must not list directories, glob paths, scan `docs/`, infer alternate filenames, or select a replacement source.
+The diagnostic namespace is local to the non-authoritative INC-1 shadow kernel and does not extend C4 `reason_code`.
 
-Section-policy invariants:
+If a required INC-1 oracle or verifier predicate is false, Stage 04 emits a C4-conformant BLOCKED record with:
 
 ```text
-section_policy = "full"
-  -> source_sections[sourceId] must equal exactly ["*"]
-
-section_policy = "explicit_selector_required"
-  -> selector is a non-empty unique string array
-  AND selector does not contain "*"
+reason_code = TRANSITION_PRECONDITION_FALSE
 ```
 
-The verifier is not authorized to invent a semantic Markdown-heading grammar for scoped selectors.
+The exact failed shadow control and diagnostic, for example `NC-03 / UNKNOWN_REQUIREMENT`, are recorded in `conflicts`.
 
-Failure mapping:
+INC-1 introduces no C4 reason code. Shadow diagnostics must not be serialized into C4 `reason_code`.
 
-- absent source registry entry or missing exact repository source -> `MISSING_SOURCE`;
-- absent or invalid source selector -> `MISSING_SELECTOR`;
-- malformed or unequal source binding -> `SOURCE_BINDING_STALE`.
+### 13.5 Deterministic path ownership
 
-### 13.8 Module 6 - Positive 500-LOC invariant
-
-Token blacklisting is not an acceptance oracle for the active reviewability ceiling.
-
-The verifier must positively prove:
+For candidate path `p`:
 
 ```text
-active_reviewable_loc_limit === 500
+EXACT_MATCHES(p) :=
+  path_routes whose exact list contains p
+
+PREFIX_MATCHES(p) :=
+  path_routes whose prefix is a directory prefix of p
 ```
 
-across exactly these seven sources:
+Resolution order is fixed:
 
-1. `AGENTS.md`
-2. `references/engineering/engineering-rules.md`
-3. `references/architecture/CONTEXT.md`
-4. `docs/Website_System_Architecture_v1.0_LOCKED.md`
-5. `docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md`
-6. `docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md`
-7. `scripts/check-change-size.sh`
+```text
+one exact match
+  -> owner
 
-The machine contract may declare the expected numeric limit and the exact seven-source allowlist in `contracts/governance-routing-contract.json`.
+more than one exact match
+  -> DENY / AMBIGUOUS_PATH_ROUTE
 
-Extraction rules are deterministic:
+otherwise select the longest matching prefix
 
-- parse machine-readable JSON structure where a JSON block exists;
-- use anchored numeric regular expressions for normative Markdown or shell assignments;
-- reject missing expected anchors as `CHANGE_SIZE_DRIFT`;
-- compare extracted numeric values as numbers, not strings or token presence.
+one longest-prefix match
+  -> owner
 
-Required anchors:
+multiple equal longest-prefix matches
+  -> DENY / AMBIGUOUS_PATH_ROUTE
 
-- architecture manifest JSON: `active_reviewable_loc_limit`;
-- shell gate: `MAX_LINES=N`;
-- engineering rules: `reviewable_lines <= N`;
-- v1.1 A18-01: `no more than N reviewable implementation lines`;
-- v1.2 reviewability-preservation statement: numeric limit N;
-- AGENTS.md active Micro-PR and reviewability ceiling declarations;
-- v1.0 authority/source-basis reviewability-ceiling statement.
+zero matches
+  -> DENY / UNROUTED_PATH
+```
 
-Every active extracted value must equal exactly `500`.
+A model may not choose between collisions or substitute semantic similarity.
 
-Numeric controls:
+### 13.6 Deterministic requirement and source resolution
 
-- 499 -> `CHANGE_SIZE_DRIFT`;
-- 500 -> PASS for this predicate;
-- 501 -> `CHANGE_SIZE_DRIFT`;
-- 600 -> `CHANGE_SIZE_DRIFT`;
-- 1000 -> `CHANGE_SIZE_DRIFT`.
+For each requirement reference `q`:
 
-### 13.9 Thirty-test exit invariant
+```text
+zero requirement IDs equal q
+  -> DENY / UNKNOWN_REQUIREMENT
 
-The INC-1 focused Vitest surface must execute all 30 planned controls with zero skipped, todo, or disabled tests.
+more than one requirement ID equals q
+  -> DENY / AMBIGUOUS_REQUIREMENT
 
-The required controls are:
+exactly one requirement maps to absent source ID
+  -> DENY / REQUIREMENT_SOURCE_UNAVAILABLE
 
-| ID | Fixture | Required oracle |
+mapped source path absent from the trusted supplied source surface
+  -> DENY / REQUIREMENT_SOURCE_UNAVAILABLE
+
+exactly one valid requirement
+  -> exact source + exact selector
+```
+
+No semantic heading search, repository scan, fallback source, or inferred selector is permitted.
+
+### 13.7 Minimum-check composition
+
+For an admitted task:
+
+```text
+resolved_path_routes =
+  union(owner(path) for path in task.allowed_paths)
+
+resolved_requirements =
+  union(resolve(requirement) for requirement in task.requirement_refs)
+
+required_sources =
+  union(path_route.sources, requirement.source)
+
+minimum_checks =
+  union(path_route.checks, requirement.checks)
+
+G_CHECKS_NOT_WEAKENED :=
+  minimum_checks subset_of task.required_checks
+```
+
+If false:
+
+```text
+DENY / MINIMUM_CHECKS_WEAKENED
+```
+
+The task may add checks but may not remove repository-derived minimum checks.
+
+### 13.8 Compact immutable task contract
+
+INC-1 validates exactly these execution semantics:
+
+```yaml
+task_id: optional non-empty string
+base_sha: required 40-character lowercase hexadecimal Git object ID
+goal: required non-empty string
+requirement_refs: required unique string array
+allowed_paths: required unique non-empty repository-relative path array
+allowed_tools: required unique non-empty string array
+required_checks: required unique non-empty string array
+stop_condition: required non-empty string
+```
+
+Malformed input, unknown authority-bearing fields, duplicate list members, invalid paths, or invalid base identity:
+
+```text
+DENY / TASK_CONTRACT_INVALID
+```
+
+Observed repository base different from `base_sha`:
+
+```text
+DENY / STALE_OR_WRONG_BASE
+```
+
+The free-form goal is descriptive only and cannot expand paths, tools, checks, sources, or authority.
+
+### 13.9 Frozen independent negative-control oracle
+
+The Stage 04 candidate may reproduce these cases but may not redefine their required dispositions.
+
+| ID | Input defect | Required shadow decision |
 |---|---|---|
-| T01 | null envelope | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T02 | undefined envelope | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T03 | primitive envelope | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T04 | array envelope | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T05 | missing workflow_stage | BLOCKED / MISSING_SELECTOR |
-| T06 | missing non-selector C2 field | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T07 | workpiece_paths wrong type | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T08 | /etc/passwd | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T09 | ../secret | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T10 | src/../secret | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T11 | C:/secret | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T12 | src/** | BLOCKED / WILDCARD_INPUT |
-| T13 | source_binding {} | invalid C4 / no successful route |
-| T14 | malformed trusted binding | no successful route |
-| T15 | stale envelope binding | BLOCKED / SOURCE_BINDING_STALE |
-| T16 | duplicate route_id | BLOCKED / ROUTING_TABLE_INVALID |
-| T17 | distinct route collision | BLOCKED / ROUTE_MULTI_MATCH |
-| T18 | required Layer 3 registry entry absent | BLOCKED / MISSING_SOURCE |
-| T19 | required repository source absent from exact source surface | BLOCKED / MISSING_SOURCE |
-| T20 | full source selector not ["*"] | BLOCKED / MISSING_SELECTOR |
-| T21 | explicit selector contains "*" | BLOCKED / MISSING_SELECTOR |
-| T22 | required approval false | route must not match |
-| T23 | seven canonical ceiling values all 500 | PASS for ceiling predicate |
-| T24 | ceiling fixture 499 | BLOCKED / CHANGE_SIZE_DRIFT |
-| T25 | ceiling fixture 501 | BLOCKED / CHANGE_SIZE_DRIFT |
-| T26 | ceiling fixture 600 | BLOCKED / CHANGE_SIZE_DRIFT |
-| T27 | ceiling fixture 1000 | BLOCKED / CHANGE_SIZE_DRIFT |
-| T28 | existing valid governance route | ROUTE_MATCH preserved |
-| T29 | undeclared cross-domain envelope | BLOCKED / ROUTE_ZERO_MATCH preserved |
-| T30 | existing evidence, transition, review-cycle, and stage-contract regressions | preserved PASS |
+| NC-01 | authorized path has zero owners | `DENY / UNROUTED_PATH` |
+| NC-02 | authorized path has two equal-specificity owners | `DENY / AMBIGUOUS_PATH_ROUTE` |
+| NC-03 | unknown requirement ID | `DENY / UNKNOWN_REQUIREMENT` |
+| NC-04 | duplicate requirement IDs in the parsed array | `DENY / AMBIGUOUS_REQUIREMENT` |
+| NC-05 | requirement source ID/path unavailable | `DENY / REQUIREMENT_SOURCE_UNAVAILABLE` |
+| NC-06 | task omits one derived minimum check | `DENY / MINIMUM_CHECKS_WEAKENED` |
+| NC-07 | observed base differs from task `base_sha` | `DENY / STALE_OR_WRONG_BASE` |
+| NC-08 | malformed compact task contract | `DENY / TASK_CONTRACT_INVALID` |
 
-Every negative control must fail because of its intended predicate, not because a preceding unrelated fixture is invalid.
+Every negative control must fail because of its intended predicate, not an earlier unrelated defect. A thrown exception or permissive fallback is not an accepted BLOCKED result.
 
-The focused governance-routing test file must report all 30 controls executed and passed before INC-1 can satisfy its test exit invariant.
+This Stage 03 artifact is outside the Stage 04 allowlist and is the authoritative bootstrap oracle for these eight expected outcomes.
 
-### 13.10 Reviewable footprint gates
+### 13.10 Harness package boundary
 
-For the INC-1 implementation diff against merge base `fec5de5f242dc1dba4e007658f3323931f83c193`:
+INC-1 creates a standalone `harness/` package with:
+
+- Node 24 runtime target;
+- TypeScript strict mode;
+- a committed `harness/package-lock.json`;
+- only dependencies required for deterministic routing, typecheck, and tests;
+- no Eve dependency;
+- no AI SDK dependency;
+- no Jev dependency;
+- no model/network/database/policy-engine dependency;
+- no runtime import from the website application;
+- no production website import from `harness/`.
+
+A dependency outside this boundary is `BLOCKED / CONTRACT_SCOPE_EXPANSION`.
+
+### 13.11 Node 24 harness verification
+
+The new harness job runs in this deterministic order:
 
 ```text
-TARGET_REVIEWABLE_LINES <= 350
-INTERNAL_STOP_THRESHOLD = 420
-G_CHANGE_SIZE absolute ceiling = 500
-RESERVED_REPAIR_MARGIN at stop threshold >= 80
+npm ci
+npm ci --prefix harness
+npx eslint harness/src/routing.ts harness/tests/routing.test.ts
+npm --prefix harness run typecheck
+npm --prefix harness run test
 ```
 
-Normative behavior:
+The root install supplies the existing repository ESLint toolchain only. The harness package supplies its pinned TypeScript/test dependencies.
 
-1. <= 350 is the implementation target.
-2. 351 through 419 does not automatically fail G_CHANGE_SIZE, but must be explicitly reported as target overrun before candidate completion.
-3. At 420 or more reviewable implementation lines before the initial candidate is complete, stop implementation and return `REDUCE OR REDESIGN`.
-4. Stage 04 must not consume the 80-line reserved repair margin merely to finish the initial implementation.
-5. Greater than 500 fails `G_CHANGE_SIZE` unless the pre-existing owner exception is separately and exactly authorized under `AGENTS.md`.
-6. This Markdown contract is documentation and is excluded from the reviewable implementation count under `AGENTS.md`.
-
-### 13.11 Stage 04 increment contract
-
-INC-1 implementation order is frozen as:
+The harness package scripts must include:
 
 ```text
-INC-1A
-  defensive input
-  -> repository path confinement
-  -> trusted lineage
-  -> C4 validation
-
-INC-1B
-  route-table integrity
-  -> Layer 3 resolution
-  -> section policy
-  -> source-binding equality
-  -> strict approval facts
-
-INC-1C
-  positive seven-source numeric 500 invariant
-  -> focused regression suite
-  -> full verification
+typecheck -> tsc --noEmit
+test      -> vitest run
 ```
 
-After each implementation mutation, Stage 04 must re-evaluate:
+No dev server, code generation, network call, product build, or product test is part of the Node 24 harness job.
 
-- changed-path confinement;
-- current PR head;
-- active stop condition;
-- current reviewable-line count.
+### 13.12 Fail-closed workflow integration
 
-No speculative fix-forward is allowed.
+The existing required job remains named exactly `PR Verification`.
 
-### 13.12 INC-1 verification contract
+The workflow dependency must be fail closed:
 
-Before Stage 04 may emit a candidate manifest:
+```yaml
+harness-verification:
+  # Node 24 harness checks
 
-1. All changed implementation paths are members of the three-file allowlist in 13.2.
-2. The focused governance-routing Vitest file executes all 30 controls with zero skipped tests.
-3. Existing governance-routing regressions remain green.
-4. Lint passes for the changed JavaScript/test surface.
-5. `npm run verify` completes successfully.
-6. `npm run verify:change-size -- fec5de5f242dc1dba4e007658f3323931f83c193` passes.
-7. The observed implementation footprint is below 420 lines for the initial candidate.
-8. The final PR implementation footprint is <= 500.
-9. No forbidden root-governance, package, application, architecture, workflow, or database mutation exists.
-10. Exact-head PR Verification must pass before review admission.
+verify:
+  name: PR Verification
+  needs: harness-verification
+  if: ${{ always() }}
+  steps:
+    - name: Require harness verification
+      run: test "${{ needs.harness-verification.result }}" = "success"
+    # every pre-existing Node 22.16.0 product verification step follows unchanged
+```
 
-Any false predicate fails closed and blocks progression.
+Required predicates:
 
-### 13.13 INC-1 stop conditions
+```text
+H1 harness-verification runs on Node 24
+H2 PR Verification depends on harness-verification
+H3 PR Verification executes even after dependency failure
+H4 its first gate fails unless harness-verification.result = success
+H5 existing PR Verification job name remains unchanged
+H6 existing Node 22.16.0 product setup remains unchanged
+H7 every pre-existing product verification step remains semantically unchanged
+H8 no failure is converted to continue-on-error
+H9 no path filter suppresses the required harness job
+```
 
-Stop immediately and do not broaden scope when any of these becomes true:
+Any false predicate is `BLOCKED / CONTRACT_SCOPE_EXPANSION`.
 
-1. root `CONTEXT.md` must change;
-2. `AGENTS.md` must change;
-3. any stage CONTEXT file must change;
-4. architecture source text must change merely to make the verifier pass;
-5. a package or dependency addition appears necessary;
-6. a new C4 reason code appears necessary;
-7. a fourth implementation workpiece appears necessary;
-8. a semantic scoped-section grammar must be invented;
-9. trusted execution lineage cannot be supplied independently of untrusted envelope data;
-10. initial implementation reaches or projects to 420 reviewable lines before completion;
+The workflow integration introduces no C4 reason code; its failures use the active C4 boundary defined in Section 13.4.
+
+### 13.13 One-candidate construction discipline
+
+Stage 04 is limited to:
+
+```text
+BIND
+  -> INSPECT
+  -> ONE BOUNDED CANDIDATE
+  -> VERIFY
+  -> STOP
+```
+
+Before its first protected mutation, Stage 04 must re-read the current root authorities, Stage 04 contract, engineering rules, architecture manifest, exact approved Plan, and this exact contract; then all `G_PC_*` predicates must be true.
+
+After every mutation, re-evaluate changed-path confinement, current head, active stop condition, and current reviewable-line count.
+
+A failed check does not authorize speculative fix-forward.
+
+### 13.14 Reviewable-size boundary
+
+```text
+TARGET <= 350 reviewable implementation lines
+INTERNAL_STOP = 420
+ABSOLUTE_CURRENT_REPOSITORY_CEILING = 500
+```
+
+351 through 419 is a target overrun that must be reported. At 420 or more before the initial candidate is complete:
+
+```text
+STOP -> REDUCE OR REDESIGN
+```
+
+Greater than 500 fails the active repository gate absent a separately authorized owner exception.
+
+### 13.15 INC-1 verification obligations
+
+Before INC-1 may advance beyond implementation:
+
+1. final implementation paths are a subset of the exact seven-path allowlist;
+2. active root governance, product files, root package manifests, and architecture sources are unchanged;
+3. all eight Section 13.9 negative controls produce their exact required shadow decisions;
+4. positive controls prove exact ownership, longest-prefix ownership, exact requirement/source resolution, minimum-check union, and valid compact-task admission;
+5. harness typecheck passes;
+6. harness tests pass with no skipped/todo/disabled INC-1 controls;
+7. harness ESLint check passes;
+8. the existing Node 22 product verification behavior remains unchanged and passes;
+9. Node 24 harness verification must be successful for `PR Verification` to succeed;
+10. exact-head CI binds to the final candidate;
+11. implementation remains below the 420 initial-candidate stop threshold and within the 500 final ceiling;
+12. candidate-controlled tests do not redefine Section 13.9 expectations;
+13. no semantic routing or second active router appears;
+14. no INC-2 implementation appears.
+
+Any false predicate stops progression.
+
+### 13.16 Stop conditions
+
+Stop immediately when any of these becomes true:
+
+1. active root governance must change during INC-1;
+2. product code or product dependencies must change;
+3. an eighth candidate path is required;
+4. semantic inference is required for routing;
+5. the frozen Section 13.9 oracle would need to change after implementation begins;
+6. a new architectural layer or service becomes necessary;
+7. Eve, AI SDK, Jev, sandbox, supervisor, or final-verifier implementation becomes necessary;
+8. the workflow change weakens or bypasses an existing product check;
+9. Node 24 harness verification cannot be added without product behavior change;
+10. implementation reaches or projects to 420 reviewable lines before the initial candidate is complete;
 11. the same failure persists without materially new bounded diagnostic evidence;
-12. a new significant defect class exposes a mechanism requiring scope expansion;
-13. Plan, contract, base, or head binding becomes stale;
-14. exact-head CI fails without a bounded evidence-backed correction;
+12. Plan, contract, base, or head binding becomes stale;
+13. a routed authority changes materially;
+14. exact-head CI fails without one bounded evidence-backed correction;
 15. review cycle 3 reports an actionable finding.
 
-The required response is `BLOCKED`, `REDUCE`, or `REDESIGN` as dictated by the active gate. No silent scope expansion is permitted.
+The required disposition is `BLOCKED`, `REDUCE`, or `REDESIGN` according to the active condition. No silent scope expansion is permitted.
 
-### 13.14 INC-1 contract-completeness additions
+### 13.17 Explicit non-authority
 
-In addition to the baseline oracle in Section 12, the Stage 03 contract is complete for INC-1 only when all of these are true:
+This contract does not authorize:
 
-- the exact three-file Stage 04 allowlist is present;
-- all six module contracts are present;
-- non-wildcard invalid path mapping is frozen to `TASK_ENVELOPE_REQUIRED`;
-- no new C4 reason code is introduced;
-- the trusted-lineage-before-envelope ordering is explicit;
-- the `{}` source-binding fallback is prohibited;
-- route-ID uniqueness is bound to `table.routes[*].route_id`;
-- legacy `stage_registry` collision checking is not an acceptance oracle;
-- Layer 3 source existence, section policy, source binding, and strict approval facts are preconditions to `ROUTE_MATCH`;
-- all seven numeric 500 sources are listed exactly;
-- all 30 test controls are listed with required oracles;
-- zero skipped focused tests is required;
-- the <= 350 target, 420 stop threshold, >= 80 repair margin, and 500 absolute ceiling are frozen;
-- all Stage 04 stop conditions are explicit;
-- no root-governance or application mutation is authorized.
-
-A failed INC-1 completeness predicate returns `CONTRACT_INCOMPLETE`, `CONTRACT_SCOPE_EXPANSION`, or the more specific applicable existing C4 reason code.
+- INC-2, INC-3, INC-4, or INC-5 implementation;
+- active root router cutover;
+- removal of the existing lifecycle/domain machinery;
+- product feature work;
+- merge;
+- release;
+- deployment;
+- a change-size exception.
 
 ## 14. Stage 03 disposition
 
-The Stage 03 authoring disposition is `CONTRACT_READY` only when both the baseline contract-completeness oracle and the INC-1 additions in Section 13.14 succeed, and the resulting artifact is externally bound to the post-write repository state.
+The baseline C1-C7 contract remains present exactly once, the historical implementation-specific INC-1 is removed, and the approved migration-specific INC-1 contract is frozen without creating a second active router.
 
-`CONTRACT_READY` is not implementation PASS, verification PASS, review approval, release eligibility, or merge authority.
+`CONTRACT_READY` means ready for Stage 04 admission evaluation only. It is not implementation PASS, verification PASS, review approval, release eligibility, or merge authority.
 
 CONTRACT_READY
