@@ -138,8 +138,7 @@ describe("INC-2 Eve and physical Docker boundary", () => {
         expect(env).not.toContain("INC2_SUPERVISOR_PUBLIC_KEY");
       });
     } finally {
-      rmSync(sentinel, { force: true }); delete process.env.INC2_SUPERVISOR_PRIVATE_KEY;
-      delete process.env.INC2_SUPERVISOR_PUBLIC_KEY;
+      rmSync(sentinel, { force: true }); delete process.env.INC2_SUPERVISOR_PRIVATE_KEY; delete process.env.INC2_SUPERVISOR_PUBLIC_KEY;
     }
   }, 30_000);
   it("EC-08 deletes state between independent sandboxes", async () => {
