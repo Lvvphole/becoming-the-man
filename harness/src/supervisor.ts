@@ -9,7 +9,7 @@ export interface SandboxPort {
   readonly id: string;
   run(input: { command: string }): PromiseLike<{ exitCode: number; stdout: string; stderr: string }>;
   readTextFile(input: { path: string }): PromiseLike<string | null>;
-  writeTextFile(input: { path: string; content: string }): Promise<unknown>;
+  writeTextFile(input: { path: string; content: string }): PromiseLike<void>;
 }
 
 export interface BackendPort {
