@@ -54,7 +54,7 @@ const repoPath = (value: string): boolean =>
   /^[A-Za-z0-9._/-]+$/.test(value) &&
   !value.startsWith("/") &&
   !value.split("/").includes("..") &&
-  !/[?*\[\]\\]/.test(value);
+  !/[?*[\]\\]/.test(value);
 
 function idsUnique(items: Array<{ id: string }>): boolean {
   return new Set(items.map(({ id }) => id)).size === items.length;
