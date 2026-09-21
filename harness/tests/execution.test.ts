@@ -73,10 +73,8 @@ describe("INC-2 deterministic capability gate", () => {
       creates += 1; return new Response(JSON.stringify({ sessionId: `session-${creates}` }));
     };
     try {
-      expect(await prepareExecutionSession("http://eve.test", privateKey, policy(), grants,
-        async ({ session_id }) => session_id)).toBe("session-1");
-      await expect(prepareExecutionSession("http://eve.test", privateKey, policy(), grants,
-        async () => { throw new Error("boom"); })).rejects.toThrow("boom");
+      expect(await prepareExecutionSession("http://eve.test", privateKey, policy(), grants, async ({ session_id }) => session_id)).toBe("session-1");
+      await expect(prepareExecutionSession("http://eve.test", privateKey, policy(), grants, async () => { throw new Error("boom"); })).rejects.toThrow("boom");
       expect(resets).toBe(2);
     } finally { globalThis.fetch = originalFetch; }
   });
