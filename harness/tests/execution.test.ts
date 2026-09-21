@@ -67,7 +67,7 @@ describe("INC-2 deterministic capability gate", () => {
   it("retires scoped Eve sessions on success and failure", async () => {
     const originalFetch = globalThis.fetch; let creates = 0, resets = 0;
     globalThis.fetch = async (input) => {
-      if (String(input).endsWith("/reset")) {
+      if ((input instanceof Request ? input.url : String(input)).endsWith("/reset")) {
         resets += 1; return new Response(JSON.stringify({ previousSessionId: `session-${creates}`, status: "reset" }));
       }
       creates += 1; return new Response(JSON.stringify({ sessionId: `session-${creates}` }));
