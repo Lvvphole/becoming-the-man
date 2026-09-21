@@ -95,8 +95,8 @@ function parseGrants(value: unknown): readonly Grant[] | null {
 export function verifyAuthorization(
   token: string, publicKey: string, sessionId: string,
 ): VerifiedAuthorization | null {
-  const [payload, signature, extra] = token.split(".");
-  if (!payload || !signature || extra || !publicKey || !sessionId) return null;
+  const [payload, signature, ...extra] = token.split(".");
+  if (!payload || !signature || extra.length || !publicKey || !sessionId) return null;
   try {
     if (!verifySignature(null, Buffer.from(payload), publicKey,
       Buffer.from(signature, "base64url"))) return null;
