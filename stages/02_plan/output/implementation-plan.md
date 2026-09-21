@@ -401,15 +401,17 @@ Maximum candidate paths:
 4. harness/src/supervisor.ts
 5. harness/src/eve-adapter.ts
 6. harness/agent/agent.ts
-7. harness/agent/sandbox/sandbox.ts
-8. harness/tests/execution.test.ts
-9. .github/workflows/pr-verification.yml
+7. harness/agent/tools/execute.ts
+8. harness/agent/sandbox/sandbox.ts
+9. harness/tests/execution.test.ts
+10. .github/workflows/pr-verification.yml
 
 Rules:
 
 - harness/agent/agent.ts is permitted only when the pinned Eve runtime requires an agent configuration file for this proof;
+- harness/agent/tools/execute.ts is the sole model-visible authored execution tool permitted by INC-2; every privileged request it receives must pass through the supervisor hard capability gate before any sandbox effect, and it cannot add, broaden, infer, or otherwise create authority beyond the compiled CapabilityPolicy;
 - harness/agent/sandbox/sandbox.ts is permitted only when the pinned Eve runtime requires the framework sandbox configuration file;
-- if either optional Eve-owned file is unnecessary, Stage 03 must remove it from the implementation allowlist;
+- if either optional Eve-owned configuration file is unnecessary, Stage 03 must remove it from the implementation allowlist;
 - no root package manifest may change;
 - no application/product file may change;
 - no root governance source may change.
