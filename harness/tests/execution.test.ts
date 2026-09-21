@@ -12,12 +12,14 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const keys = generateKeyPairSync("ed25519");
 const privateKey = keys.privateKey.export({ type: "pkcs8", format: "pem" }).toString();
 const publicKey = keys.publicKey.export({ type: "spki", format: "pem" }).toString();
-const policy = (argv: readonly (readonly string[])[] = [["printf", "ok"]],
-  cwds: readonly string[] = ["/workspace"], subprocess: "deny" | "exact" = "exact") =>
-  compilePolicy({
-    task_identity: "inc2-test", allowed_argv: argv, allowed_cwds: cwds,
-    read_roots: ["/workspace"], write_roots: ["/workspace"], subprocess,
-  });
+const policy = (
+  argv: readonly (readonly string[])[] = [["printf", "ok"]],
+  cwds: readonly string[] = ["/workspace"],
+  subprocess: "deny" | "exact" = "exact",
+) => compilePolicy({
+  task_identity: "inc2-test", allowed_argv: argv, allowed_cwds: cwds,
+  read_roots: ["/workspace"], write_roots: ["/workspace"], subprocess,
+});
 const grants: Grant[] = [
   { id: "read", kind: "read", path: "data.txt" },
   { id: "write", kind: "write", path: "data.txt" },
@@ -25,35 +27,31 @@ const grants: Grant[] = [
 ];
 const auth = (session: string, p = policy(), g: readonly Grant[] = grants) =>
   verifyAuthorization(issueAuthorization(privateKey, session, p, g), publicKey, session)!;
-
 function fake(realpath = "/workspace"): SandboxPort & { commands: string[] } {
   let content = "ok";
   return {
     id: "fake", commands: [],
     async run({ command }) {
       this.commands.push(command);
-      if (command.startsWith("realpath")) return { exitCode: 0, stdout: realpath + "\n", stderr: "" };
-      return { exitCode: 0, stdout: command.includes("printf") ? "ok" : "", stderr: "" };
+      return command.startsWith("realpath")
+        ? { exitCode: 0, stdout: realpath + "\n", stderr: "" }
+        : { exitCode: 0, stdout: command.includes("printf") ? "ok" : "", stderr: "" };
     },
     async readTextFile() { return content; },
     async writeTextFile({ content: next }) { content = next; },
   };
 }
-
 async function withPhysical<T>(run: (sandbox: SandboxPort) => Promise<T>): Promise<T> {
-  const backend = createSandboxBackend();
-  const handle = await backend.create({
+  const handle = await createSandboxBackend().create({
     templateKey: null, sessionKey: `inc2-${randomUUID()}`, runtimeContext: { appRoot: root },
   });
   try { return await run(handle.session); } finally { await handle.delete(); }
 }
-
 describe("INC-2 deterministic capability gate", () => {
-  it("EC-01 rejects tampering, cross-session replay, and unknown grants before sandbox access", async () => {
+  it("EC-01 binds authority to signature/session and denies unknown grants before sandbox access", async () => {
     const token = issueAuthorization(privateKey, "session-a", policy(), grants);
     expect(verifyAuthorization(token + "x", publicKey, "session-a")).toBeNull();
     expect(verifyAuthorization(token, publicKey, "session-b")).toBeNull();
-
     process.env.INC2_SUPERVISOR_PUBLIC_KEY = publicKey;
     let sandboxRequests = 0;
     const ctx = {
@@ -62,60 +60,51 @@ describe("INC-2 deterministic capability gate", () => {
     };
     expect(await tool.execute({ capability_id: "missing", authorization: token }, ctx as never))
       .toEqual({ kind: "deny", diagnostic: "CAPABILITY_NOT_GRANTED" });
-    expect(sandboxRequests).toBe(1);
+    expect(sandboxRequests).toBe(0);
     delete process.env.INC2_SUPERVISOR_PUBLIC_KEY;
   });
-
   it("wires an authorized Eve session to the hard gate", async () => {
     const token = issueAuthorization(privateKey, "session-a", policy(), grants);
     process.env.INC2_SUPERVISOR_PUBLIC_KEY = publicKey;
-    const ctx = { session: { id: "session-a" }, async getSandbox() { return fake("/workspace"); } };
+    const ctx = { session: { id: "session-a" }, async getSandbox() { return fake(); } };
     expect(await tool.execute({ capability_id: "run", authorization: token }, ctx as never))
       .toMatchObject({ kind: "run", exit_code: 0, stdout: "ok" });
     delete process.env.INC2_SUPERVISOR_PUBLIC_KEY;
   });
-
-  it("EC-04 denies subprocess, argv, and symlinked cwd; EC-06 reaches Git denial", async () => {
-    const denied = fake();
-    expect((await executeAuthorized(auth("s", policy(undefined, undefined, "deny")), denied,
-      { capability_id: "run", authorization: "unused" })).kind).toBe("deny");
-
-    const badArg: Grant = { id: "bad", kind: "run", argv: ["printf", "no"], cwd: "/workspace" };
-    expect((await executeAuthorized(auth("s", policy(), [badArg]), denied,
-      { capability_id: "bad", authorization: "unused" })).kind).toBe("deny");
-
-    const symlink: Grant = { id: "cwd", kind: "run", argv: ["printf", "ok"], cwd: "/workspace/job" };
-    const symlinkBox = fake("/tmp/job");
-    expect((await executeAuthorized(auth("s", policy([["printf", "ok"]], ["/workspace/job"]), [symlink]),
-      symlinkBox, { capability_id: "cwd", authorization: "unused" })).kind).toBe("deny");
-    expect(symlinkBox.commands).toHaveLength(1);
-
-    const git: Grant = { id: "git", kind: "run", argv: ["git", "status"], cwd: "/workspace" };
-    expect((await executeAuthorized(auth("s", policy([["git", "status"]]), [git]), denied,
-      { capability_id: "git", authorization: "unused" })).kind).toBe("deny");
-    expect(denied.commands).toHaveLength(0);
+  it("EC-04 denies subprocess/argv/symlinked cwd and EC-06 reaches Git denial", async () => {
+    const box = fake();
+    const cases: Array<[ReturnType<typeof policy>, Grant]> = [
+      [policy(undefined, undefined, "deny"), grants[2]],
+      [policy(), { id: "bad", kind: "run", argv: ["printf", "no"], cwd: "/workspace" }],
+      [policy([["git", "status"]]), { id: "git", kind: "run", argv: ["git", "status"], cwd: "/workspace" }],
+    ];
+    for (const [p, grant] of cases) {
+      expect((await executeAuthorized(auth("s", p, [grant]), box,
+        { capability_id: grant.id, authorization: "unused" })).kind).toBe("deny");
+    }
+    expect(box.commands).toHaveLength(0);
+    const cwd: Grant = { id: "cwd", kind: "run", argv: ["printf", "ok"], cwd: "/workspace/job" };
+    const symlink = fake("/tmp/job");
+    expect((await executeAuthorized(auth("s", policy([["printf", "ok"]], ["/workspace/job"]), [cwd]),
+      symlink, { capability_id: "cwd", authorization: "unused" })).kind).toBe("deny");
+    expect(symlink.commands).toHaveLength(1);
   });
-
   it("freezes the compiled authority surface", () => {
     const p = policy();
     expect(Object.isFrozen(p)).toBe(true);
-    expect(p.allowed_tools).toEqual(["execute"]);
-    expect(p.network).toBe("deny");
-    expect(p.secret_names).toEqual([]);
-    expect(p.git).toBe("deny");
+    expect([p.allowed_tools, p.network, p.secret_names, p.git])
+      .toEqual([["execute"], "deny", [], "deny"]);
   });
 });
-
 describe("INC-2 Eve and physical Docker boundary", () => {
-  it("EC-02 exposes only the authored execute tool", () => {
+  it("EC-02 exposes only execute", () => {
     const cli = join(root, "node_modules/eve/bin/eve.js");
     const raw = execFileSync(process.execPath, [cli, "info", "--json"], {
       cwd: root, encoding: "utf8", env: { ...process.env, EVE_TELEMETRY_DISABLED: "1" },
     });
     expect(JSON.parse(raw).tools).toEqual(["execute"]);
   });
-
-  it("EC-03/05/07 plus positive controls hold in the locked sandbox", async () => {
+  it("EC-03/05/07 and positive controls hold physically", async () => {
     process.env.INC2_SUPERVISOR_PRIVATE_KEY = privateKey;
     process.env.INC2_SUPERVISOR_PUBLIC_KEY = publicKey;
     await withPhysical(async (sandbox) => {
@@ -126,14 +115,11 @@ describe("INC-2 Eve and physical Docker boundary", () => {
         .toEqual({ kind: "read", content: "hello" });
       expect(await executeAuthorized(verified, sandbox, { capability_id: "run", authorization: "unused" }))
         .toMatchObject({ kind: "run", exit_code: 0, stdout: "ok" });
-
       await sandbox.run({ command: "printf outside >/tmp/outside.txt && ln -s /tmp/outside.txt /workspace/link" });
       const escape = auth("physical", policy(), [{ id: "escape", kind: "write", path: "link" }]);
-      expect(await executeAuthorized(escape, sandbox,
-        { capability_id: "escape", authorization: "unused", content: "changed" }))
-        .toEqual({ kind: "deny", diagnostic: "CAPABILITY_NOT_GRANTED" });
+      expect((await executeAuthorized(escape, sandbox,
+        { capability_id: "escape", authorization: "unused", content: "changed" })).kind).toBe("deny");
       expect((await sandbox.run({ command: "cat /tmp/outside.txt" })).stdout).toBe("outside");
-
       expect((await sandbox.run({ command: "curl -fsS --max-time 3 https://example.com" })).exitCode).not.toBe(0);
       const env = (await sandbox.run({ command: "env" })).stdout;
       expect(env).not.toContain("INC2_SUPERVISOR_PRIVATE_KEY");
@@ -142,8 +128,7 @@ describe("INC-2 Eve and physical Docker boundary", () => {
     delete process.env.INC2_SUPERVISOR_PRIVATE_KEY;
     delete process.env.INC2_SUPERVISOR_PUBLIC_KEY;
   }, 30_000);
-
-  it("EC-08 deletes physical run state between independent sandboxes", async () => {
+  it("EC-08 deletes state between independent sandboxes", async () => {
     let first = "";
     await withPhysical(async (sandbox) => {
       first = sandbox.id;

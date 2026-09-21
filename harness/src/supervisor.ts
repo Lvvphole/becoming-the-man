@@ -1,9 +1,8 @@
 import { Buffer } from "node:buffer";
 import { sign } from "node:crypto";
-import {
-  DENIED, allowedGrant, inside, quote,
-  type CapabilityPolicy, type ExecuteInput, type ExecuteResult, type Grant, type VerifiedAuthorization,
-} from "./capability.js";
+import { DENIED, inside, quote, selectGrant,
+  type CapabilityPolicy, type ExecuteInput, type ExecuteResult,
+  type Grant, type VerifiedAuthorization } from "./capability.js";
 import { prewarmEveSession } from "./eve-adapter.js";
 
 export interface SandboxPort {
@@ -14,12 +13,9 @@ export interface SandboxPort {
 }
 
 export function issueAuthorization(
-  privateKey: string,
-  sessionId: string,
-  policy: CapabilityPolicy,
-  grants: readonly Grant[],
+  privateKey: string, sessionId: string, policy: CapabilityPolicy, grants: readonly Grant[],
 ): string {
-  if (!sessionId || new Set(grants.map((g) => g.id)).size !== grants.length) {
+  if (!sessionId || new Set(grants.map(({ id }) => id)).size !== grants.length) {
     throw new Error("CAPABILITY_CATALOG_INVALID");
   }
   const payload = Buffer.from(JSON.stringify({
@@ -29,10 +25,7 @@ export function issueAuthorization(
 }
 
 export async function prepareExecutionSession(
-  host: string,
-  privateKey: string,
-  policy: CapabilityPolicy,
-  grants: readonly Grant[],
+  host: string, privateKey: string, policy: CapabilityPolicy, grants: readonly Grant[],
 ): Promise<{ session_id: string; authorization: string }> {
   const session_id = await prewarmEveSession(host);
   return { session_id, authorization: issueAuthorization(privateKey, session_id, policy, grants) };
@@ -44,16 +37,12 @@ async function canonical(sandbox: SandboxPort, path: string, missing = false): P
 }
 
 export async function executeAuthorized(
-  auth: VerifiedAuthorization,
-  sandbox: SandboxPort,
-  input: ExecuteInput,
+  auth: VerifiedAuthorization, sandbox: SandboxPort, input: ExecuteInput,
 ): Promise<ExecuteResult> {
-  const grant = auth.grants.find((g) => g.id === input.capability_id);
-  if (!allowedGrant(auth.policy, grant, input)) return DENIED;
-
+  const grant = selectGrant(auth, input);
+  if (!grant) return DENIED;
   if (grant.kind === "read" || grant.kind === "write") {
-    const absolute = `/workspace/${grant.path}`;
-    const target = await canonical(sandbox, absolute, grant.kind === "write");
+    const target = await canonical(sandbox, `/workspace/${grant.path}`, grant.kind === "write");
     const roots = grant.kind === "read" ? auth.policy.read_roots : auth.policy.write_roots;
     if (!target || !inside(target, roots)) return DENIED;
     if (grant.kind === "read") {
@@ -63,9 +52,7 @@ export async function executeAuthorized(
     await sandbox.writeTextFile({ path: target, content: input.content ?? "" });
     return { kind: "write", bytes_written: Buffer.byteLength(input.content ?? "") };
   }
-
-  const cwd = await canonical(sandbox, grant.cwd);
-  if (cwd !== grant.cwd) return DENIED;
+  if (await canonical(sandbox, grant.cwd) !== grant.cwd) return DENIED;
   const result = await sandbox.run({
     command: `cd -- ${quote(grant.cwd)} && exec ${grant.argv.map(quote).join(" ")}`,
   });
