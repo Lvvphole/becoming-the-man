@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import tool from "../agent/tools/execute.js";
 import { compilePolicy, verifyAuthorization, type Grant } from "../src/capability.js";
 import { createSandboxBackend } from "../src/eve-adapter.js";
-import { executeAuthorized, issueAuthorization, type SandboxPort } from "../src/supervisor.js";
+import { executeAuthorized, issueAuthorization, prepareExecutionSession, type SandboxPort } from "../src/supervisor.js";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const keys = generateKeyPairSync("ed25519");
@@ -64,13 +64,25 @@ describe("INC-2 deterministic capability gate", () => {
     expect(sandboxRequests).toBe(0);
     delete process.env.INC2_SUPERVISOR_PUBLIC_KEY;
   });
-  it("wires an authorized Eve session to the hard gate", async () => {
-    const token = issueAuthorization(privateKey, "session-a", policy(), grants);
-    process.env.INC2_SUPERVISOR_PUBLIC_KEY = publicKey;
-    const ctx = { session: { id: "session-a" }, async getSandbox() { return fake(); } };
-    expect(await tool.execute({ capability_id: "run", authorization: token }, ctx as never))
-      .toMatchObject({ kind: "run", exit_code: 0, stdout: "ok" });
-    delete process.env.INC2_SUPERVISOR_PUBLIC_KEY;
+  it("retires scoped Eve sessions on success and failure", async () => {
+    const originalFetch = globalThis.fetch;
+    let creates = 0, resets = 0;
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      if (url.endsWith("/reset")) {
+        resets += 1;
+        return new Response(JSON.stringify({ ok: true, previousSessionId: `session-${creates}`, status: "reset" }));
+      }
+      creates += 1;
+      return new Response(JSON.stringify({ sessionId: `session-${creates}` }));
+    };
+    try {
+      expect(await prepareExecutionSession("http://eve.test", privateKey, policy(), grants,
+        async ({ session_id }) => session_id)).toBe("session-1");
+      await expect(prepareExecutionSession("http://eve.test", privateKey, policy(), grants,
+        async () => { throw new Error("boom"); })).rejects.toThrow("boom");
+      expect(resets).toBe(2);
+    } finally { globalThis.fetch = originalFetch; }
   });
   it("EC-04 denies subprocess/argv/symlinked cwd and EC-06 reaches Git denial", async () => {
     const box = fake();
