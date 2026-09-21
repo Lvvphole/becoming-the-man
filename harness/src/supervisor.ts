@@ -24,11 +24,13 @@ export function issueAuthorization(
   return `${payload}.${sign(null, Buffer.from(payload), privateKey).toString("base64url")}`;
 }
 
-export async function prepareExecutionSession(
+export async function prepareExecutionSession<T>(
   host: string, privateKey: string, policy: CapabilityPolicy, grants: readonly Grant[],
-): Promise<{ session_id: string; authorization: string }> {
-  const session_id = await prewarmEveSession(host);
-  return { session_id, authorization: issueAuthorization(privateKey, session_id, policy, grants) };
+  run: (prepared: { session_id: string; authorization: string }) => Promise<T>,
+): Promise<T> {
+  const session = await prewarmEveSession(host), session_id = session.state.sessionId;
+  try { return await run({ session_id, authorization: issueAuthorization(privateKey, session_id, policy, grants) }); }
+  finally { await session.reset(); }
 }
 
 async function canonical(sandbox: SandboxPort, path: string, missing = false): Promise<string | null> {
