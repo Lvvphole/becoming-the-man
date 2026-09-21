@@ -8,7 +8,7 @@ import {
 export interface SandboxPort {
   readonly id: string;
   run(input: { command: string }): PromiseLike<{ exitCode: number; stdout: string; stderr: string }>;
-  readTextFile(input: { path: string }): Promise<string>;
+  readTextFile(input: { path: string }): PromiseLike<string | null>;
   writeTextFile(input: { path: string; content: string }): Promise<unknown>;
 }
 
@@ -49,7 +49,10 @@ export async function executeForSession(
     const target = await canonical(sandbox, grant.path, grant.kind === "write");
     const roots = grant.kind === "read" ? bound.policy.read_roots : bound.policy.write_roots;
     if (!target || !inside(target, roots)) return DENIED;
-    if (grant.kind === "read") return { kind: "read", content: await sandbox.readTextFile({ path: target }) };
+    if (grant.kind === "read") {
+      const content = await sandbox.readTextFile({ path: target });
+      return content === null ? DENIED : { kind: "read", content };
+    }
     await sandbox.writeTextFile({ path: target, content: input.content ?? "" });
     return { kind: "write", bytes_written: Buffer.byteLength(input.content ?? "") };
   }
