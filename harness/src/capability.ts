@@ -7,7 +7,8 @@ export type ExecuteResult =
   | { kind: "run"; exit_code: number; stdout: string; stderr: string }
   | { kind: "deny"; diagnostic: "CAPABILITY_NOT_GRANTED" };
 export type Grant =
-  | { id: string; kind: "read" | "write"; path: string }
+  | { id: string; kind: "read"; path: string }
+  | { id: string; kind: "write"; path: string }
   | { id: string; kind: "run"; argv: readonly string[]; cwd: string };
 export type CapabilityPolicy = Readonly<{
   task_identity: string;
