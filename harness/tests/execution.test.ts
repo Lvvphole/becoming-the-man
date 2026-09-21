@@ -124,11 +124,9 @@ describe("INC-2 Eve and physical Docker boundary", () => {
         expect(await executeAuthorized(verified, sandbox, { capability_id: "run", authorization: "unused" }))
           .toMatchObject({ kind: "run", exit_code: 0, stdout: "ok" });
         await sandbox.run({ command: "printf outside >/tmp/outside.txt && ln -s /tmp/outside.txt /workspace/link" });
-        const traversal = auth("physical", policy(), [{ id: "traversal", kind: "write", path: "../tmp/outside.txt" }]);
+        const traversal = auth("physical", policy(), [{ id: "traversal", kind: "write", path: "../tmp/outside.txt" }]), escape = auth("physical", policy(), [{ id: "escape", kind: "write", path: "link" }]);
         expect((await executeAuthorized(traversal, sandbox, { capability_id: "traversal", authorization: "unused", content: "changed" })).kind).toBe("deny");
-        const escape = auth("physical", policy(), [{ id: "escape", kind: "write", path: "link" }]);
-        expect((await executeAuthorized(escape, sandbox,
-          { capability_id: "escape", authorization: "unused", content: "changed" })).kind).toBe("deny");
+        expect((await executeAuthorized(escape, sandbox, { capability_id: "escape", authorization: "unused", content: "changed" })).kind).toBe("deny");
         expect((await sandbox.run({ command: "cat /tmp/outside.txt" })).stdout).toBe("outside");
         const networks = execFileSync("docker",
           ["container", "inspect", "--format", "{{json .NetworkSettings.Networks}}", sandbox.id],
