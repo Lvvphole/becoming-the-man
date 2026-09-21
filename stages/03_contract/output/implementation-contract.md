@@ -1426,7 +1426,6 @@ The adapter may expose only the public Eve primitives required by INC-2:
 
 - `defineAgent`;
 - `defineTool`;
-- `defineSandbox`;
 - `docker`;
 - `Client` from `eve/client`;
 - the minimum public session and sandbox types needed by the supervisor boundary.
@@ -1445,7 +1444,7 @@ The model value is compile-time configuration only for INC-2 verification. CI mu
 
 INC-2 authors no connections, subagents, skills, schedules, hooks, custom channels, or memory.
 
-The authored `harness/agent/sandbox/sandbox.ts` module must export the public Eve sandbox definition produced by the bounded adapter. That definition must select the same locked Docker backend described in Section 13.10. The authored module contains no independent image, network, environment, policy, or lifecycle values.
+The authored `harness/agent/sandbox/sandbox.ts` module must export the sandbox definition object produced by the bounded adapter. Pinned Eve 0.63.0 accepts that structural public definition directly; INC-2 must not import the aggregate `eve/sandbox` entry point solely to call the identity-style `defineSandbox` helper. The definition must select the same locked Docker backend described in Section 13.10. The authored module contains no independent image, network, environment, policy, or lifecycle values.
 
 The complete model-visible static tool surface must be exactly:
 
@@ -1668,7 +1667,7 @@ pullPolicy = "always"
 env = {}
 ```
 
-The production Eve runtime must discover `harness/agent/sandbox/sandbox.ts`, whose only job is to export the adapter-created public `defineSandbox` definition for that locked backend. The real model-visible `execute` tool and `ctx.getSandbox()` must therefore operate on the same locked backend that physical verification exercises.
+The production Eve runtime must discover `harness/agent/sandbox/sandbox.ts`, whose only job is to export the adapter-created structural sandbox definition `{ backend: createSandboxBackend }` for that locked backend. The real model-visible `execute` tool and `ctx.getSandbox()` must therefore operate on the same locked backend that physical verification exercises.
 
 The authored tool reaches the sandbox only through the public `ctx.getSandbox()` accessor for the same Eve session whose ID is authenticated in the capability envelope.
 
@@ -1970,7 +1969,7 @@ This contract does not authorize:
 
 The active C1-C7 governance baseline remains unchanged. Codex cycle 1 exposed a real authority-transfer defect in the prior INC-2 mechanism, and Codex cycle 2 proved that the locked Docker backend was still not attached to Eve's real agent sandbox lifecycle.
 
-This revised contract keeps the stateless signed session-bound authority envelope, re-admits the Plan-authorized authored sandbox configuration path required by pinned Eve 0.63.0, binds that path to the same locked Docker backend used by physical verification, scopes every prewarmed Eve session through terminal `ClientSession.reset()`, and replaces the ambiguous external-request EC-05 oracle with direct effective-network isolation evidence.
+This revised contract keeps the stateless signed session-bound authority envelope, re-admits the Plan-authorized authored sandbox configuration path required by pinned Eve 0.63.0, binds that path structurally to the same locked Docker backend used by physical verification without an unnecessary `defineSandbox` import, scopes every prewarmed Eve session through terminal `ClientSession.reset()`, and replaces the ambiguous external-request EC-05 oracle with direct effective-network isolation evidence.
 
 The repair remains within the approved Plan and frozen dependency set. It adds no service, database, memory layer, internal Eve API, new dependency, or eleventh candidate path.
 
