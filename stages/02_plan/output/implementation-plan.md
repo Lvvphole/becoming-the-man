@@ -1,741 +1,781 @@
 PLAN_READY
 
-# INC-1 Implementation Plan - Mechanical Routing Contracts and Verifier
+# Zero-Trust Repository Harness v1.2 — INC-2 Implementation Plan
 
 Lifecycle stage: 02_plan
 Task domain: governance
 Route: route:02_plan:governance
 Planning mode: BROWNFIELD
-PR: 49
-Base SHA: fec5de5f242dc1dba4e007658f3323931f83c193
-Planning source head: 51ab1b45e4f98c564023e4a897246614ad8b637b
+Branch: harness-v1-2-inc2-plan
+Bootstrap base: 93a2edc3f8729f30f6772ce8a8df7a955c5c2fff
+Predecessor: merged INC-1 from PR #52
+Bootstrap exception: one Plan mutation permitted before PR creation; no other governance or implementation exception applies
 
 ## 1. Goal
 
-Harden the existing governance-routing verifier so Contracts C1, C2, C4, C6, and C7 are enforced mechanically and fail closed for malformed inputs, unsafe paths, invalid BLOCKED records, route-table collisions, unresolved Layer 3 inputs, stale source bindings, and reviewability-ceiling drift.
+Build the smallest execution boundary that can take the already-validated INC-1 compact task contract and prove that an untrusted coding agent can exercise only explicitly granted capabilities inside a disposable sandbox.
 
-The implementation must preserve the existing root routing model. It must not create a second router, infer routes, synthesize composite routes, weaken fail-closed behavior, or change application/product behavior.
+INC-2 adds:
 
-## 2. Frozen Outcome Contract
+1. an external supervisor process;
+2. a narrow Eve replaceability adapter;
+3. AI SDK tool primitives only where needed to expose authored tools;
+4. a typed hard capability policy;
+5. per-request complete mediation before privileged execution;
+6. disposable Docker-backed sandbox execution;
+7. default-deny network, secret, Git, and cross-run state behavior.
 
-INC-1 must close exactly these six Scout-confirmed verifier gaps:
+INC-2 does not add semantic risk scoring, Jev, the final external verifier, authenticated provenance, memory, databases, provider integrations, multi-agent routing, product behavior, or release automation.
 
-1. Defensive envelope parsing.
-2. Repository-relative path confinement.
-3. Strict C4 BLOCKED-record conformance with trusted source lineage.
-4. Route-table structure and route_id uniqueness.
-5. Layer 3 source resolution, section-policy validation, and source-binding currentness.
-6. Positive numeric proof that the active reviewability ceiling is exactly 500 across the seven canonical governance surfaces.
+## 2. Authority and predecessor binding
 
-Required implementation footprint:
+INC-2 is subordinate to:
 
-- scripts/verify-governance-routing.mjs
-- tests/governance-routing.test.mjs
-- contracts/governance-routing-contract.json
+1. AGENTS.md;
+2. root CONTEXT.md;
+3. the uniquely selected stage CONTEXT.md;
+4. references/engineering/engineering-rules.md;
+5. references/architecture/CONTEXT.md;
+6. the approved Zero-Trust Repository Harness v1.2 roadmap;
+7. the merged INC-1 routing kernel.
 
-No other implementation file is planned.
+INC-1 remains the only new shadow routing mechanism. Root CONTEXT.md remains active repository routing authority.
 
-## 3. Non-Goals
+INC-2 may consume an INC-1 ALLOW result and compact task contract. It may not reinterpret routing, invent selectors, expand allowed paths, weaken required checks, or create authority from the free-form goal.
 
-INC-1 does not authorize:
+## 3. Verified current-state gap
 
-- edits to AGENTS.md;
-- edits to root CONTEXT.md;
-- edits to any stages/*/CONTEXT.md;
-- edits to architecture specifications or amendments;
-- application or product behavior changes;
-- database, schema, migration, provider, or API changes;
-- package or dependency additions;
-- dynamic multi-domain route synthesis;
-- a second route table or source router;
-- semantic interpretation of section names beyond the existing section-policy contract;
-- merge, release, or review authority.
+At bootstrap base 93a2edc3f8729f30f6772ce8a8df7a955c5c2fff:
 
-If any non-goal becomes necessary, implementation stops and returns for redesign or new authorization.
+- harness/src/routing.ts implements the deterministic INC-1 shadow router and compact task validation;
+- harness/tests/routing.test.ts freezes the eight INC-1 routing negative controls;
+- harness/fixtures/CONTEXT.target.md is non-authoritative routing fixture data;
+- the harness package contains no Eve dependency;
+- the harness package contains no direct AI SDK dependency;
+- no external supervisor exists;
+- no hard per-request capability gate exists;
+- no disposable coding-agent sandbox contract exists;
+- no network, secret, Git, subprocess, or cross-run-state enforcement exists.
 
-## 4. Source and Artifact Binding
+The gap is therefore execution authority, not routing authority.
 
-Caller-supplied prior-artifact bindings:
+## 4. Complexity admission
 
-- Scout report:
-  - path: stages/01_scout/output/scout-report.md
-  - disposition: SCOUT_READY
-  - SHA-256: 4bd64a1004f4efc105a62c173c230fbee8efe240f17c05f3ff5cf27468a5ba84
-  - observed Git blob: 7a0751f99266f00418f840fc2ad74e43b33e42d0
-- INC-0 release record:
-  - path: stages/07_release/output/release-record.md
-  - disposition: RELEASE_ELIGIBLE
-  - SHA-256: b559c15f1858c172d86c0f8e20ea587731e4ef2c42786945d4a51051ad6beece
-  - observed Git blob: 307532307854f3c9ada1cafab39d17d82fd78450
+INC-2 adds no mechanism beyond the already-approved v1.2 roadmap. Each retained control satisfies the repository's harness-complexity admission rule.
 
-Planning repository state:
-
-- PR #49 base: fec5de5f242dc1dba4e007658f3323931f83c193
-- PR #49 planning head: 51ab1b45e4f98c564023e4a897246614ad8b637b
-- current PR diff before this Plan: stages/01_scout/output/scout-report.md only
-- implementation-plan.md did not exist before this Stage 02 write
-
-The remote GitHub execution surface has no local staged, unstaged, or untracked working-tree state. The builder must therefore rebind to the exact PR head and exact committed diff before the first Stage 04 mutation. No stale binding may be rewritten and reused.
-
-## 5. Authority and Hard Invariants
-
-The implementation must preserve these invariants:
-
-1. AGENTS.md remains the repository execution constitution.
-2. Root CONTEXT.md remains the only task/stage router.
-3. Every routing failure is terminal and fail closed.
-4. No verifier result may invent a route, source, selector, approval, or source binding.
-5. C4 BLOCKED output must be structurally valid before it is treated as governance output.
-6. Evidence remains non-authoritative.
-7. Repository paths must be exact and repository-relative.
-8. Source binding must be current before a successful route result.
-9. The active reviewable implementation ceiling remains exactly 500.
-10. The implementation PR must remain <= 500 reviewable lines unless the existing owner exception is explicitly authorized.
-11. Exact-head PR Verification and independent review remain required after implementation.
-12. Merge remains separately user-authorized.
-
-## 6. Obligation and Gap Matrix
-
-| ID | Obligation | Behavior | Verification | Planned closure |
-|---|---|---|---|---|
-| O1 | Malformed envelope never throws | GAP | GAP | Module 1 plus negative controls |
-| O2 | Repository paths are safe and relative | PARTIAL | PARTIAL | Module 2 plus traversal fixtures |
-| O3 | Every BLOCKED record is C4-valid | PARTIAL | PARTIAL | Module 3 plus binding/schema fixtures |
-| O4 | Route IDs are globally unique | GAP | GAP | Module 4 plus collision fixtures |
-| O5 | Layer 3 sources and policies resolve before ROUTE_MATCH | PARTIAL | GAP | Module 5 plus source/policy fixtures |
-| O6 | Active 500 ceiling is positively proven | PARTIAL | PARTIAL | Module 6 plus numeric drift fixtures |
-| O7 | Existing valid single-domain routing remains intact | SATISFIED | COVERED | Preserve existing positive tests |
-| O8 | Undeclared composite routes remain fail closed | SATISFIED | COVERED | Preserve ROUTE_ZERO_MATCH test |
-| O9 | Evidence non-authority remains enforced | SATISFIED | COVERED | Preserve current evidence negative tests |
-| O10 | Review-cycle and transition controls remain intact | SATISFIED | COVERED | Preserve existing regression tests |
-
-## 7. Deterministic Defect-Code Mapping
-
-No new C4 reason code is introduced by INC-1.
-
-Use this mapping:
-
-| Failure class | Existing C4 reason code |
+| Gate | INC-2 evidence |
 |---|---|
-| envelope is null, undefined, primitive, array, or structurally invalid | TASK_ENVELOPE_REQUIRED |
-| required route selector is absent from an otherwise structurally valid envelope | MISSING_SELECTOR |
-| wildcard repository path | WILDCARD_INPUT |
-| non-wildcard repository path violates repoPath grammar, is absolute, contains a drive prefix, backslash, or parent traversal segment | TASK_ENVELOPE_REQUIRED |
-| duplicate route_id or malformed route-table structure | ROUTING_TABLE_INVALID |
-| required Layer 3 registry entry or repository source is absent | MISSING_SOURCE |
-| source binding is malformed, absent when required, or does not equal observed execution lineage | SOURCE_BINDING_STALE |
-| required source section policy is absent or invalid for the selected source | MISSING_SELECTOR |
-| selected input is not in the allowed input surface | UNLISTED_INPUT |
-| active numeric ceiling differs from 500 | CHANGE_SIZE_DRIFT |
+| C1 concrete gap demonstrated | INC-1 admits tasks but cannot physically constrain runtime tool, filesystem, subprocess, network, secret, Git, or cross-run effects. |
+| C2 simpler existing control insufficient | Routing and prompt instructions can deny semantic authority but cannot physically mediate or remove runtime capabilities from an untrusted sandbox. |
+| C3 peer-reviewed support | Saltzer & Schroeder, "The Protection of Information in Computer Systems," Proceedings of the IEEE 63(9), 1975, DOI 10.1109/PROC.1975.9939, supports fail-safe defaults, complete mediation, least privilege, and economy of mechanism. Jarkas et al., "A Container Security Survey: Exploits, Attacks, and Defenses," ACM Computing Surveys 57(7), 2025, DOI 10.1145/3715001, supports explicit layered controls for container isolation, access, network, and host-risk boundaries while documenting that container isolation alone is not sufficient. |
+| C4 deterministic benefit testable | EC-01 through EC-08 and the positive controls mechanically test the hard gate and physical isolation properties. |
+| C5 no duplicated control | INC-1 owns deterministic admission/routing; INC-2 owns execution capability enforcement. Neither duplicates the other. |
 
-Rationale for invalid non-wildcard paths: repository-path grammar is part of C2 envelope validity. A non-wildcard path that violates that schema makes the task envelope invalid, so TASK_ENVELOPE_REQUIRED is the narrowest registered C4 code without redefining WILDCARD_INPUT.
-
-## 8. Module 1 - Defensive Input Gate
-
-### Objective
-
-Guarantee that untrusted routing input cannot trigger an uncaught runtime exception.
-
-### Planned behavior
-
-Add one validation sequence before any property access or array operation:
-
-1. Validate routing-table text is a string before calling match().
-2. Validate envelope is:
-   - non-null;
-   - typeof "object";
-   - not an array.
-3. Validate all nine C2 fields exist.
-4. Validate required field container types before using them:
-   - task_domains: array
-   - source_sections: object, non-null, non-array
-   - workpiece_paths: array
-   - selected_evidence_ids: array
-   - prior_outputs: object, non-null, non-array
-   - authorized_candidate_paths: array
-   - approvals: object, non-null, non-array
-   - source_binding: object, non-null, non-array
-5. Validate selector-specific presence after structural validation.
-6. Only then evaluate route predicates.
-
-### Failure behavior
-
-- malformed or incomplete envelope -> TASK_ENVELOPE_REQUIRED
-- missing workflow_stage or task_domains in otherwise valid envelope -> MISSING_SELECTOR
-- no thrown TypeError is an accepted terminal state
-
-### Verification
-
-Negative fixtures:
-
-- null
-- undefined
-- true
-- 42
-- "string"
-- []
-- {}
-- null array fields
-- string array fields
-- object array fields
-- missing each required C2 key
-
-Oracle: every fixture returns a C4-valid BLOCKED object and no fixture throws.
-
-## 9. Module 2 - Repository Path Confinement
-
-### Objective
-
-Make C2 repoPath semantics executable before any workpiece path is trusted.
-
-### Planned predicate
-
-Introduce a pure isRepoRelativePath(path) predicate equivalent to:
+Complexity disposition:
 
 ```text
-typeof path == "string"
-AND path.length > 0
-AND path matches ^[A-Za-z0-9._/-]+$
-AND path does not start with "/"
-AND no path segment equals ".."
-AND path contains none of "*", "?", "[", "]"
-AND path contains no "\"
-AND path does not match a Windows drive prefix
+ADD:
+  external supervisor
+  hard capability gate
+  disposable sandbox
+  narrow Eve/AI SDK adapter
+
+DO_NOT_ADD:
+  policy engine
+  service mesh
+  database
+  memory layer
+  Jev
+  final verifier
+  multi-agent orchestration
+  any other architectural layer
 ```
 
-Apply it to every element of:
+Peer-reviewed evidence is justification for the control classes only. It does not make Eve, Docker, or any specific package authoritative. Exact framework behavior remains subject to the deterministic compatibility and negative-control gates below.
 
-- workpiece_paths
-- authorized_candidate_paths
+## 5. Approved architectural boundary
 
-Wildcard failures retain WILDCARD_INPUT. Other repoPath grammar failures use TASK_ENVELOPE_REQUIRED.
-
-### Negative controls
-
-Must fail closed:
-
-- /etc/passwd
-- ../secret
-- src/../secret
-- src/a/../../secret
-- C:/secret
-- C:\\secret
-- src/**
-- src/file?.ts
-- empty string
-- non-string path member
-
-Positive controls must include normal repository-relative files and dotted filenames.
-
-## 10. Module 3 - Strict C4 BLOCKED Schema Enforcement
-
-### Objective
-
-Make C4 structural validity a prerequisite for terminal governance output.
-
-### Trusted-lineage order
-
-The evaluator must distinguish trusted execution context from the untrusted task envelope.
-
-Required order:
+The fixed execution order for INC-2 is:
 
 ```text
-trusted execution lineage
--> validate { pr, base, current_head }
--> parse/validate untrusted envelope
--> evaluate gates
--> construct C4 BLOCKED or ROUTE_MATCH
+validated INC-1 task
+        |
+        v
+EXTERNAL SUPERVISOR
+        |
+        +--> compile immutable capability policy
+        |
+        v
+HARD REQUEST GATE
+        |
+        +--> DENY before execution when any requested effect exceeds policy
+        |
+        v
+EVE ADAPTER
+        |
+        v
+DISPOSABLE DOCKER SANDBOX
+        |
+        v
+AUTHORED TOOL EXECUTION ONLY
 ```
 
-### Interface plan
+The supervisor is trusted for enforcement in INC-2.
 
-Preserve the current evaluateRoute(table, envelope, options = {}) shape.
+The coding agent, model output, generated command arguments, candidate repository, and sandbox are untrusted.
 
-Extend options with one explicit trusted lineage field:
+The sandbox cannot grant authority back to the supervisor.
+
+## 6. Minimum trusted kernel
+
+INC-2 adds only three logical responsibilities:
+
+### 5.1 Supervisor
+
+The supervisor:
+
+- accepts the validated compact task plus supervisor-owned execution constraints;
+- compiles one immutable CapabilityPolicy;
+- constructs the authored tool set;
+- mediates every privileged request;
+- creates one disposable sandbox for the run;
+- destroys or abandons that sandbox at terminal completion;
+- returns observations but does not declare final repository PASS.
+
+### 5.2 Capability gate
+
+For request r:
 
 ```text
-options.sourceBinding = {
-  pr,
-  base,
-  current_head
-}
+G_REQUEST_ALLOWED(r) :=
+  tool_allowed(r)
+  AND argv_allowed(r)
+  AND cwd_allowed(r)
+  AND filesystem_effects_allowed(r)
+  AND subprocess_effects_allowed(r)
+  AND network_effects_allowed(r)
+  AND secret_effects_allowed(r)
+  AND git_effects_allowed(r)
 ```
 
-This avoids a breaking new positional parameter.
-
-makeBlocked() must require a validated binding argument. Remove the sourceBinding = {} fallback.
-
-The implementation must never manufacture:
-
-- PR numbers;
-- base SHAs;
-- head SHAs;
-- placeholder zeros;
-- envelope-derived replacements for stale trusted state.
-
-### validateBlocked requirements
-
-Strengthen validateBlocked() so it checks the C4 contract actually relied upon by the verifier:
-
-- exact required top-level fields;
-- no unexpected top-level fields;
-- status exactly "BLOCKED";
-- reason code registered;
-- gate_id grammar;
-- stage_id registered;
-- arrays have correct type and uniqueness where required;
-- resolution_required contains at least one non-empty string;
-- source_binding has exactly pr, base, current_head;
-- pr is integer >= 1;
-- base/current_head are 40-character lowercase hex Git OIDs.
-
-### Negative controls
-
-- source_binding {}
-- missing pr
-- pr = 0
-- malformed base
-- malformed current_head
-- additional source_binding property
-- additional BLOCKED property
-- empty resolution_required
-
-All must fail C4 validation.
-
-## 11. Module 4 - Route-Table Integrity
-
-### Objective
-
-Validate the canonical C1 route identity surface rather than deprecated registry syntax.
-
-### Planned change
-
-Remove the legacy raw stage_registry duplicate-key check.
-
-After parsing the canonical routing-table JSON:
-
-1. prove table is a non-null object;
-2. prove routes is a non-empty array;
-3. prove source_registry is a non-null object;
-4. validate every route object before dereference;
-5. collect table.routes[*].route_id;
-6. reject any duplicate route_id with ROUTING_TABLE_INVALID.
-
-Route identity collision and route matching remain distinct:
-
-- duplicate route_id -> ROUTING_TABLE_INVALID
-- multiple distinct valid route rows matching the same envelope -> ROUTE_MULTI_MATCH
-
-### Negative controls
-
-- duplicate route ID, identical selector
-- duplicate route ID, different selector
-- missing route_id
-- route is null
-- routes is not an array
-- source_registry missing
-- two distinct route IDs deliberately matching one envelope -> ROUTE_MULTI_MATCH
-
-## 12. Module 5 - Layer 3 Resolution Pipeline
-
-### Objective
-
-Do not return ROUTE_MATCH until every required Layer 3 input is resolved under its declared policy and current source lineage.
-
-### Resolution sequence
-
-For each route.required_layer3_bundle source ID:
-
-1. Confirm the source ID exists exactly once in source_registry.
-2. Validate source metadata shape:
-   - kind = "layer3"
-   - location is "repository" or "task_context"
-   - path conforms to declared location rules
-   - section_policy is "full" or "explicit_selector_required"
-3. For location = "repository":
-   - path must be repository-relative;
-   - exact file must exist through the deterministic source loader;
-   - missing file -> MISSING_SOURCE.
-4. For location = "task_context":
-   - require exact caller-supplied routed material;
-   - do not search the repository or infer a substitute.
-5. Validate envelope.source_sections[sourceId].
-6. For section_policy = "full":
-   - selector must equal exactly ["*"].
-7. For section_policy = "explicit_selector_required":
-   - selector must be a non-empty unique string array;
-   - selector must not contain "*".
-8. Validate trusted source binding before success.
-9. Only after all required sources pass may the route return ROUTE_MATCH.
-
-### Deterministic source loader
-
-Keep the verifier testable and side-effect free by injecting the exact already-loaded source surface through options rather than allowing repository discovery.
-
-Planned interface:
+If false:
 
 ```text
-options.files = {
-  "exact/repository/path": "exact file contents"
-}
+DENY / CAPABILITY_NOT_GRANTED
 ```
 
-The verifier may test exact key presence. It may not list directories, glob, scan docs, or discover alternate files.
+The gate executes before the request reaches Eve or the sandbox backend.
 
-This satisfies file-existence verification for the explicitly loaded repository surface while preserving G_NO_DISCOVERY_WILDCARDS.
+### 5.3 Eve adapter
 
-### Source currentness
+Eve is behind one narrow adapter:
 
-options.sourceBinding is trusted execution lineage.
+```text
+Supervisor
+   |
+EveAdapter
+   |
+Eve
+   |
+AI SDK
+   |
+Sandbox backend
+```
 
-envelope.source_binding must be structurally valid and must equal the trusted execution lineage before ROUTE_MATCH.
+No other harness module imports Eve directly.
 
-Mismatch -> SOURCE_BINDING_STALE.
+This is a replaceability boundary, not another security layer.
 
-No automatic rebinding is permitted.
+## 7. CapabilityPolicy contract to freeze in Stage 03
 
-### Approval preservation
+Stage 03 must freeze the smallest typed policy that can express the approved INC-2 controls.
 
-While modifying the closed route predicate, also enforce every route.predicate.required_approval_facts entry as strictly true. This is already part of C1 and must not remain an unenforced branch of MATCH(E,r).
+Required semantics:
 
-## 13. Module 6 - Positive Numeric 500-LOC Verification
+```text
+CapabilityPolicy
+  task_identity
+  allowed_tools
+  allowed_argv
+  allowed_cwds
+  read_roots
+  write_roots
+  subprocess
+  network
+  secret_names
+  git
+```
 
-### Objective
+Required policy behavior:
 
-Prove equality to 500 instead of blacklisting known incorrect text.
+- allowed_tools is closed, not advisory;
+- allowed_argv contains exact argv token vectors or an equally deterministic closed representation;
+- allowed_cwds contains canonical authorized working roots;
+- read_roots and write_roots are distinct;
+- subprocess is deny unless explicitly granted;
+- network is deny by default;
+- secret_names is empty by default;
+- git is deny by default.
 
-### Canonical seven-source set
+No field may default from model output.
 
-The numeric invariant is checked across exactly:
+No free-form text field may expand policy.
 
-1. AGENTS.md
-2. references/engineering/engineering-rules.md
-3. references/architecture/CONTEXT.md
-4. docs/Website_System_Architecture_v1.0_LOCKED.md
-5. docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md
-6. docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md
-7. scripts/check-change-size.sh
+## 8. Canonical filesystem rule
 
-### Contract representation
+Every requested filesystem path must be canonicalized before authorization:
 
-Update contracts/governance-routing-contract.json only as needed to declare:
+```text
+for every p in filesystem_effects(request):
+    canonical_realpath(p) is contained in an authorized root
+```
 
-- expected active reviewable limit = 500;
-- exact seven-source allowlist used by the verifier.
+Required failure cases include:
 
-Remove forbidden_drift_tokens as the acceptance oracle. Token blacklisting may not substitute for positive equality.
+- parent traversal;
+- absolute path outside the sandbox workspace;
+- symlink escape;
+- write through a permitted parent to an unpermitted canonical target.
 
-### Extraction strategy
+String-prefix comparison alone is insufficient.
 
-Use structured parsing where available and anchored numeric extraction elsewhere.
+## 9. Tool and argv rule
 
-1. references/architecture/CONTEXT.md:
-   - parse the JSON object inside ARCHITECTURE_MANIFEST_BEGIN/END;
-   - require active_reviewable_loc_limit === 500.
-2. scripts/check-change-size.sh:
-   - anchored regex for ^MAX_LINES=([0-9]+)$;
-   - require numeric value === 500.
-3. references/engineering/engineering-rules.md:
-   - anchored extraction from reviewable_lines <= N;
-   - require N === 500.
-4. docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md:
-   - anchored extraction from A18-01 "no more than N reviewable implementation lines";
-   - require N === 500.
-5. docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md:
-   - anchored extraction from the explicit N-line reviewability-limit preservation statement;
-   - require N === 500.
-6. AGENTS.md:
-   - anchored extraction from the active Micro-PR ceiling and Change & Review Gates statements;
-   - require every extracted active ceiling value === 500.
-7. docs/Website_System_Architecture_v1.0_LOCKED.md:
-   - anchored extraction from the active authority/source-basis reviewability-ceiling statement;
-   - require the numeric value === 500.
+A tool request is authorized only when:
 
-Missing expected anchor is itself drift and must return CHANGE_SIZE_DRIFT.
+1. the tool name is in allowed_tools;
+2. its complete argv vector matches one allowed command contract;
+3. cwd is an allowed canonical location;
+4. declared and observed side effects remain within policy.
 
-### Numeric negative controls
+A generic unrestricted shell is not an allowed primitive.
 
-For each extraction class, fixture substitutions must prove:
+If the implementation exposes an exec-like tool, its accepted commands must be exact or mechanically bounded argv contracts, never arbitrary shell text interpreted through eval, sh -c, bash -c, os.system, or equivalent dynamic command composition.
 
-- 499 -> BLOCKED / CHANGE_SIZE_DRIFT
-- 500 -> PASS
-- 501 -> BLOCKED / CHANGE_SIZE_DRIFT
-- 600 -> BLOCKED / CHANGE_SIZE_DRIFT
-- 1000 -> BLOCKED / CHANGE_SIZE_DRIFT
+## 10. Sandbox rule
 
-The oracle is numeric equality, not presence or absence of "1,000".
+The sandbox is disposable and treated as untrusted.
 
-## 14. Test Matrix
+For each run:
 
-| Test ID | Fixture | Expected result |
-|---|---|---|
-| T01 | null envelope | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T02 | undefined envelope | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T03 | primitive envelope | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T04 | array envelope | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T05 | missing workflow_stage | BLOCKED / MISSING_SELECTOR |
-| T06 | missing non-selector C2 field | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T07 | workpiece_paths wrong type | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T08 | /etc/passwd | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T09 | ../secret | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T10 | src/../secret | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T11 | C:/secret | BLOCKED / TASK_ENVELOPE_REQUIRED |
-| T12 | src/** | BLOCKED / WILDCARD_INPUT |
-| T13 | source_binding {} | C4 invalid / no successful route |
-| T14 | malformed trusted binding | no successful route |
-| T15 | stale envelope binding | BLOCKED / SOURCE_BINDING_STALE |
-| T16 | duplicate route_id | BLOCKED / ROUTING_TABLE_INVALID |
-| T17 | distinct route collision | BLOCKED / ROUTE_MULTI_MATCH |
-| T18 | required Layer 3 source registry entry absent | BLOCKED / MISSING_SOURCE |
-| T19 | required repository source file absent from exact source surface | BLOCKED / MISSING_SOURCE |
-| T20 | full source selector not ["*"] | BLOCKED / MISSING_SELECTOR |
-| T21 | explicit selector contains "*" | BLOCKED / MISSING_SELECTOR |
-| T22 | required approval false | route must not match |
-| T23 | seven canonical ceiling values all 500 | PASS |
-| T24 | ceiling fixture 499 | BLOCKED / CHANGE_SIZE_DRIFT |
-| T25 | ceiling fixture 501 | BLOCKED / CHANGE_SIZE_DRIFT |
-| T26 | ceiling fixture 600 | BLOCKED / CHANGE_SIZE_DRIFT |
-| T27 | ceiling fixture 1000 | BLOCKED / CHANGE_SIZE_DRIFT |
-| T28 | existing valid governance route | ROUTE_MATCH preserved |
-| T29 | undeclared cross-domain envelope | BLOCKED / ROUTE_ZERO_MATCH preserved |
-| T30 | existing evidence, transition, and review-cycle regressions | preserved PASS |
+- create a fresh sandbox identity;
+- mount or copy only the authorized workpiece surface required by the task;
+- do not expose the host repository .git metadata;
+- do not expose supervisor source, verifier source, policy secrets, promotion credentials, or deployment credentials;
+- do not persist writable state into the next run unless a later explicit contract authorizes one content-addressed verified artifact;
+- destroy or abandon writable runtime state after the run.
 
-Every negative control must fail for the intended predicate, not because an earlier unrelated fixture is malformed.
+INC-2 must not treat prompt instructions as isolation.
 
-## 15. Reviewable Footprint Budget
+Isolation must be enforced by the execution environment.
 
-Implementation budget against the INC-1 merge base:
+## 11. Network rule
 
-| Workpiece | Target delta |
-|---|---:|
-| scripts/verify-governance-routing.mjs | 110-145 |
-| tests/governance-routing.test.mjs | 150-175 |
-| contracts/governance-routing-contract.json | 25-45 |
-| Total target | 285-365 |
+Default:
 
-Hard planning controls:
+```text
+network = DENY
+```
 
-- target: <= 380 reviewable lines;
-- internal stop threshold: 420 reviewable lines;
-- absolute G_CHANGE_SIZE ceiling: 500 reviewable lines;
-- reserved repair margin at the internal threshold: >= 80 lines.
+INC-2 does not require networked model/tool execution inside the coding sandbox.
 
-If the projected or actual implementation diff exceeds 420 reviewable lines before the candidate is complete:
+If the selected Eve backend cannot create a sandbox with network denied, Stage 03 must return BLOCKED / REDESIGN.
+
+A future allowlist is outside INC-2 unless the exact Stage 03 contract proves it necessary for the already-approved objective.
+
+## 12. Secret rule
+
+Default:
+
+```text
+secret_names = []
+```
+
+The coding sandbox receives no:
+
+- GitHub token;
+- Git credential;
+- Vercel token;
+- Supabase service-role key;
+- provider API key;
+- deployment secret;
+- supervisor secret;
+- verifier secret.
+
+Any framework credential needed by the external supervisor must remain outside the candidate sandbox.
+
+## 13. Git rule
+
+Default:
+
+```text
+git = DENY
+```
+
+The coding sandbox must not be able to:
+
+- push;
+- merge;
+- create or update remote refs;
+- use repository-owner credentials;
+- obtain host .git credentials.
+
+Read-only source material may be copied into the sandbox without giving the sandbox Git authority.
+
+## 14. Cross-run state rule
+
+For run A and later run B:
+
+```text
+writable_state(A) ∩ inputs(B) = empty
+```
+
+unless a later explicit contract authorizes a specific verified transfer.
+
+INC-2 negative controls must create a sentinel in run A and prove it is absent in fresh run B.
+
+Framework caches outside the candidate writable namespace may not contain candidate-controlled mutable state that affects run B.
+
+## 15. Eve and AI SDK compatibility gate
+
+External framework documentation is compatibility evidence only. Repository authority remains the routed governance chain.
+
+Current Eve documentation establishes:
+
+- defineAgent from eve;
+- defineSandbox from eve/sandbox;
+- isolated sandbox execution;
+- Docker as a supported sandbox backend/runtime;
+- AI SDK as the underlying model/tool layer.
+
+Current AI SDK documentation establishes the provider-agnostic ai package and typed tool primitives.
+
+The inspected public Eve documentation did not establish the previously assumed defaultTools: false API.
+
+Therefore Stage 03 must, before CONTRACT_READY:
+
+1. pin an exact Eve package version;
+2. pin an exact AI SDK package version;
+3. verify from that pinned Eve package/API that all implicit/default tool capabilities can be disabled or absent;
+4. verify the exact sandbox API required for disposable Docker execution;
+5. freeze the exact adapter calls used by INC-2;
+6. freeze the exact Docker image digest or other immutable sandbox/runtime identity.
+
+If default capability suppression cannot be proven in the pinned Eve version:
+
+```text
+STOP -> REDESIGN
+```
+
+Do not emulate safety by hiding tools in prompts or by filtering model text after generation.
+
+## 16. Dependency policy
+
+Permitted new runtime dependencies are limited to those strictly required by the already-approved stack:
+
+- Eve;
+- AI SDK core/tool primitives;
+- schema dependency only when required by the pinned Eve/AI SDK API and not already supplied transitively in a safe reusable form.
+
+No Jev dependency.
+No database dependency.
+No memory dependency.
+No provider SDK unless the pinned Eve API cannot compile without one and the Stage 03 contract explicitly proves it is required.
+No policy engine.
+No container-orchestration framework.
+No service mesh.
+No FastAPI.
+No second agent framework.
+
+Exact package names and versions are frozen only in Stage 03 after compatibility verification.
+
+## 17. Maximum Stage 04 candidate surface
+
+Stage 03 may reduce this set but may not expand it without returning to planning.
+
+Maximum candidate paths:
+
+1. harness/package.json
+2. harness/package-lock.json
+3. harness/src/capability.ts
+4. harness/src/supervisor.ts
+5. harness/src/eve-adapter.ts
+6. harness/agent/agent.ts
+7. harness/agent/tools/execute.ts
+8. harness/agent/sandbox/sandbox.ts
+9. harness/tests/execution.test.ts
+10. .github/workflows/pr-verification.yml
+
+Rules:
+
+- harness/agent/agent.ts is permitted only when the pinned Eve runtime requires an agent configuration file for this proof;
+- harness/agent/tools/execute.ts is the sole model-visible authored execution tool permitted by INC-2; every privileged request it receives must pass through the supervisor hard capability gate before any sandbox effect, and it cannot add, broaden, infer, or otherwise create authority beyond the compiled CapabilityPolicy;
+- harness/agent/sandbox/sandbox.ts is permitted only when the pinned Eve runtime requires the framework sandbox configuration file;
+- if either optional Eve-owned configuration file is unnecessary, Stage 03 must remove it from the implementation allowlist;
+- no root package manifest may change;
+- no application/product file may change;
+- no root governance source may change.
+
+## 18. Reviewable-size budget
+
+The harness remains infrastructure, not the product.
+
+Target initial reviewable implementation:
+
+```text
+<= 360 lines
+```
+
+Internal stop:
+
+```text
+420 lines
+```
+
+Repository ceiling:
+
+```text
+500 lines
+```
+
+Dependency lockfiles remain excluded under AGENTS.md.
+
+If the planned implementation reaches or projects to 420 reviewable lines before the initial candidate is complete:
 
 ```text
 STOP -> REDUCE OR REDESIGN
 ```
 
-Do not consume the reserved repair margin merely to finish the initial implementation.
+Do not request a size exception merely to avoid simplifying the harness.
 
-The Stage 02 Markdown Plan itself is documentation and is not part of the implementation-line budget under AGENTS.md.
+## 19. Frozen INC-2 negative controls
 
-## 16. Definition of Done
+Stage 03 must freeze exact fixtures and expected decisions for these eight roadmap controls.
 
-INC-1 is implementation-complete only when all of the following are mechanically demonstrated on the exact candidate head:
+### EC-01 Unauthorized tool
 
-D1. Null, undefined, primitive, array, and malformed envelopes return structured failures and never escape as uncaught runtime TypeErrors.
+Request a tool absent from allowed_tools.
 
-D2. Every workpiece_paths and authorized_candidate_paths member is proven repository-relative before route evaluation can succeed.
+Expected:
 
-D3. Wildcards fail with WILDCARD_INPUT and non-wildcard repoPath schema violations fail with TASK_ENVELOPE_REQUIRED.
+```text
+DENY / CAPABILITY_NOT_GRANTED
+tool implementation not invoked
+```
 
-D4. Every emitted BLOCKED record used as governance output is C4-conformant and contains a validated trusted source_binding with pr, base, and current_head. No {} binding fallback remains.
+### EC-02 Alternate default/built-in capability
 
-D5. Duplicate table.routes[*].route_id values fail with ROUTING_TABLE_INVALID. Legacy stage_registry collision logic is removed.
+Attempt an equivalent side effect through an Eve default, built-in, auto-discovered, or undeclared tool.
 
-D6. ROUTE_MULTI_MATCH remains reserved for multiple distinct valid route rows matching one envelope.
+Expected:
 
-D7. Every required Layer 3 source resolves through the exact routed source surface before ROUTE_MATCH.
+```text
+UNREACHABLE
+```
 
-D8. section_policy = "full" accepts exactly ["*"]; explicit_selector_required requires a non-empty explicit selector and rejects "*".
+No such capability may appear in the model-visible or runtime-callable tool set.
 
-D9. Envelope source_binding must equal trusted execution lineage before ROUTE_MATCH; mismatch fails with SOURCE_BINDING_STALE.
+### EC-03 Traversal and symlink escape
 
-D10. Required approval facts are enforced as strictly true.
+Attempt parent traversal and a symlink resolving outside the authorized root.
 
-D11. The active reviewability value is positively extracted and proven equal to 500 across all seven canonical governance sources.
+Expected:
 
-D12. Numeric fixtures 499, 501, 600, and 1000 fail with CHANGE_SIZE_DRIFT; 500 passes.
+```text
+DENY / CAPABILITY_NOT_GRANTED
+target outside root unchanged
+```
 
-D13. Existing valid routing, fail-closed undeclared composite routing, evidence controls, transition controls, review-cycle controls, and stage-contract tests remain green.
+### EC-04 argv/cwd/subprocess violation
 
-D14. No application, product, database, provider, root-governance, architecture-specification, package, or dependency behavior changes.
+Attempt:
 
-D15. npm run verify completes successfully on the exact implementation head.
+- unapproved argv;
+- approved argv from unapproved cwd;
+- subprocess creation when subprocess = deny.
 
-D16. npm run verify:change-size -- fec5de5f242dc1dba4e007658f3323931f83c193 reports <= 500 reviewable implementation lines, with the planned target <= 380 and internal stop threshold 420.
+Expected:
 
-D17. The candidate mutation set is confined to:
-- scripts/verify-governance-routing.mjs
-- tests/governance-routing.test.mjs
-- contracts/governance-routing-contract.json
+```text
+DENY / CAPABILITY_NOT_GRANTED
+request not executed
+```
 
-D18. Exact-head PR Verification succeeds before Stage 06 review.
+### EC-05 Network egress
 
-D19. Independent review completes under the existing maximum-three-cycle convergence rule with zero unresolved actionable findings before release eligibility.
+Attempt outbound network access from the candidate sandbox.
 
-## 17. Implementation Increments
+Expected:
 
-### INC-1A - Input, path, lineage, and C4 boundary
+```text
+network request cannot complete
+```
 
-Obligations:
-- O1
-- O2
-- O3
+A model refusal is not evidence.
 
-Authorized implementation files:
-- scripts/verify-governance-routing.mjs
-- tests/governance-routing.test.mjs
-- contracts/governance-routing-contract.json only if needed for declared contract metadata
+### EC-06 Git side effect
 
-Action:
-- add defensive input validation;
-- add isRepoRelativePath;
-- introduce trusted options.sourceBinding;
-- remove {} binding fallback;
-- strengthen validateBlocked;
-- add focused negative controls.
+Attempt a Git write/push/ref-changing operation or credential use.
 
-Verification:
-- run the governance-routing Vitest file;
-- run lint for changed verifier/test surface;
-- evaluate current change-size count.
+Expected:
 
-Stop:
-- any required root-governance change;
-- new C4 reason code required;
-- projected total > 420 lines;
-- same failure persists without materially new evidence.
+```text
+DENY or physically unreachable
+no remote/ref mutation
+```
 
-### INC-1B - Route-table integrity and Layer 3 resolution
+### EC-07 Supervisor/verifier/policy secret reachability
 
-Obligations:
-- O4
-- O5
+Attempt to enumerate or read supervisor-only secret names and files.
 
-Files:
-- scripts/verify-governance-routing.mjs
-- tests/governance-routing.test.mjs
+Expected:
 
-Action:
-- remove stage_registry collision oracle;
-- validate route objects and global route_id uniqueness;
-- enforce exact Layer 3 source resolution using options.files;
-- enforce section policies;
-- enforce source-binding equality;
-- enforce strict required approval facts.
+```text
+UNREACHABLE
+```
 
-Verification:
-- focused route collision tests;
-- missing-source and selector-policy negative controls;
-- existing positive route tests;
-- current change-size gate.
+### EC-08 Cross-run writable-state influence
 
-Stop:
-- requires repository discovery/globbing;
-- requires changing root CONTEXT.md;
-- requires inventing scoped-section semantics;
-- projected total > 420 lines.
+Create a unique sentinel during run A. Start independent run B from the same frozen input.
 
-### INC-1C - Positive numeric 500 invariant
+Expected:
 
-Obligations:
-- O6
+```text
+sentinel absent in run B
+```
 
-Files:
-- scripts/verify-governance-routing.mjs
-- tests/governance-routing.test.mjs
-- contracts/governance-routing-contract.json
+Every control must fail for the intended boundary, not for an unrelated malformed fixture.
 
-Action:
-- replace token-blacklist acceptance logic with positive expected-limit and seven-source declarations;
-- implement structured/anchored numeric extraction;
-- add 499/500/501/600/1000 controls.
+## 20. Positive controls
 
-Verification:
-- focused governance snapshot tests;
-- full governance-routing suite;
-- npm run verify;
-- npm run verify:change-size -- fec5de5f242dc1dba4e007658f3323931f83c193.
+Stage 03 must freeze at least these positive controls:
 
-Stop:
-- any source cannot be validated without changing its normative text;
-- extraction requires broad fuzzy parsing rather than deterministic anchors;
-- candidate exceeds 420 lines before verification;
-- full verification exposes a new defect class requiring scope expansion.
+1. an explicitly allowed authored tool is callable;
+2. one exact allowed argv vector executes;
+3. allowed cwd succeeds;
+4. read inside read_roots succeeds;
+5. write inside write_roots succeeds;
+6. candidate output is observable outside the sandbox only through the supervisor-defined result boundary;
+7. two sequential runs receive distinct sandbox identities;
+8. INC-1 routing behavior remains unchanged.
 
-## 18. Verification Order
+Positive controls must not weaken any negative control.
 
-Implementation must use this order:
+## 21. Verification strategy
 
-1. focused negative control for the obligation being implemented;
-2. focused governance-routing test file;
-3. lint/typecheck as applicable to the changed surface;
-4. full npm run verify;
-5. npm run verify:change-size -- fec5de5f242dc1dba4e007658f3323931f83c193;
-6. exact-head PR Verification;
-7. Stage 05 independent verification;
-8. Stage 06 independent review under the three-cycle cap.
+INC-2 requires two evidence classes.
 
-No green build alone is sufficient.
+### 20.1 Pure deterministic unit verification
 
-## 19. Stage 04 Pre-Code Readiness Requirements
+Run without network/model credentials:
 
-Before the first implementation mutation, Stage 04 must re-read and bind:
+- policy compilation;
+- tool-set closure;
+- exact argv matching;
+- cwd matching;
+- canonical path containment;
+- secret-name denial;
+- Git denial;
+- subprocess denial;
+- malformed request failure.
 
-1. current AGENTS.md;
-2. current root CONTEXT.md;
-3. stages/04_implement/CONTEXT.md;
-4. current references/engineering/engineering-rules.md;
-5. current references/architecture/CONTEXT.md;
-6. the approved exact PLAN_READY artifact;
-7. the Stage 03 implementation contract;
-8. the then-current PR base/head and authorized candidate paths.
+### 20.2 Physical sandbox integration verification
 
-G_PRE_CODE_READY must be true before any script, test, or contract mutation.
+Run against the pinned local Docker/Eve sandbox identity:
 
-## 20. Stop Conditions
+- EC-02 default/built-in capability absence;
+- EC-03 symlink escape;
+- EC-05 network denial;
+- EC-07 supervisor-secret isolation;
+- EC-08 cross-run state isolation.
 
-Return BLOCKED, REDUCE, or REDESIGN rather than fix forward when any of these occurs:
+A mocked sandbox cannot satisfy physical-isolation obligations.
 
-1. root CONTEXT.md must change;
-2. AGENTS.md must change;
-3. any stages/*/CONTEXT.md must change;
-4. architecture source text must change merely to make the verifier pass;
-5. a new package or external dependency appears necessary;
-6. a new C4 reason code appears necessary;
-7. an additional implementation path outside the three planned workpieces appears necessary;
-8. a scoped-section semantic grammar must be invented;
-9. exact trusted source lineage cannot be supplied without using untrusted envelope data;
-10. the implementation reaches or projects above 420 reviewable lines before completion;
-11. the same failure remains and no materially new bounded diagnostic evidence exists;
-12. a significant new defect class is exposed by the same mechanism;
-13. the PR base/head or approved Plan binding becomes stale;
-14. exact-head CI fails without a bounded evidence-backed correction;
-15. review cycle 3 reports any actionable finding.
+## 22. CI integration
 
-## 21. Stage 03 Contract Handoff
+Preserve the existing fail-closed ordering:
 
-Stage 03 must freeze only the implementation contracts necessary to execute this Plan:
+```text
+Harness Verification
+    -> required dependency of
+PR Verification
+```
 
-- trusted verifier execution-context shape;
-- malformed-envelope classification;
-- repoPath predicate and defect-code mapping;
-- C4 source-binding construction and validation;
-- route_id uniqueness semantics;
-- exact Layer 3 source-resolution interface;
-- section-policy predicates;
-- source-binding equality predicate;
-- exact seven-source 500-ceiling declaration and extraction oracles;
-- exact three-file Stage 04 mutation allowlist;
-- exact verifier/test obligations;
-- 420 internal stop threshold and 500 absolute ceiling.
+The existing Node 22.16.0 product verification behavior remains unchanged.
 
-Stage 03 must not expand the implementation scope or change root routing semantics.
+The harness job may add only the minimum INC-2 checks necessary to prove:
 
-## 22. Stage 02 Disposition
+- pinned dependency install;
+- harness lint;
+- harness typecheck;
+- harness unit tests;
+- bounded Docker/Eve integration controls.
 
-This Plan defines one bounded, deterministic implementation path, maps every Scout-confirmed gap to a mechanical verifier, preserves existing authority, and contains explicit stop conditions and reviewability limits.
+No provider/model call is required for CI acceptance of INC-2.
+
+No network is granted to the candidate sandbox merely because the GitHub runner itself has network.
+
+## 23. Definition of Done
+
+INC-2 is implementation-complete only when all of the following are mechanically proven on one exact candidate head.
+
+D1. INC-1 routing tests remain green without semantic or authority changes.
+
+D2. The supervisor constructs policy only from validated task data plus supervisor-owned execution constraints.
+
+D3. The model cannot create authority by requesting a tool, path, argv, cwd, subprocess, network destination, secret, or Git effect outside policy.
+
+D4. Every privileged request is mediated before execution.
+
+D5. EC-01 through EC-08 produce their exact frozen outcomes.
+
+D6. Positive controls in Section 19 pass.
+
+D7. Eve is imported only through the bounded adapter surface selected by Stage 03.
+
+D8. AI SDK use is limited to the tool/model primitive boundary required by the pinned Eve adapter.
+
+D9. No undeclared Eve default/built-in capability is reachable.
+
+D10. Candidate execution occurs inside a disposable sandbox with immutable runtime identity.
+
+D11. Candidate sandbox network is denied.
+
+D12. Candidate sandbox receives no privileged Git, deployment, provider, supervisor, or verifier secrets.
+
+D13. Candidate sandbox cannot access host repository .git metadata.
+
+D14. Cross-run candidate-controlled writable state does not persist.
+
+D15. No product/application/database/provider behavior changes.
+
+D16. No Jev, final-verifier, authenticated-provenance, memory, or multi-agent implementation appears.
+
+D17. Reviewable implementation remains below the 420 internal stop and 500 repository ceiling.
+
+D18. Harness lint, typecheck, unit tests, and physical sandbox integration tests pass.
+
+D19. Existing Node 22 PR Verification remains semantically unchanged and passes.
+
+D20. Exact-head PR Verification passes.
+
+D21. Independent Codex review completes under the existing three-cycle limit with zero unresolved actionable findings before release eligibility.
+
+## 24. Construction sequence
+
+INC-2 Stage 04 must use one bounded candidate loop:
+
+```text
+BIND
+  -> INSPECT
+  -> MUTATE ONE BOUNDED CANDIDATE
+  -> VERIFY
+  -> STOP
+```
+
+Within that candidate, implementation order is:
+
+1. freeze pinned Eve/AI SDK/runtime identities from the Stage 03 contract;
+2. implement pure CapabilityPolicy and request gate;
+3. implement the narrow Eve adapter;
+4. implement supervisor-owned sandbox lifecycle;
+5. add deterministic unit controls;
+6. add physical Docker/Eve negative controls;
+7. add the minimum CI integration;
+8. run full affected verification;
+9. stop.
+
+A failing check does not authorize speculative architecture changes.
+
+A second repair requires materially new bounded diagnostic evidence.
+
+## 25. Stage 03 handoff
+
+Stage 03 must freeze, without implementing:
+
+1. exact candidate path subset from Section 16;
+2. exact Eve package/version;
+3. exact AI SDK package/version;
+4. exact Eve APIs used by the adapter;
+5. exact default-capability suppression predicate;
+6. exact immutable Docker/sandbox identity;
+7. exact CapabilityPolicy schema;
+8. canonical-path containment algorithm;
+9. exact authored tool set;
+10. exact argv/cwd policy representation;
+11. exact sandbox creation/destruction semantics;
+12. exact network-deny mechanism;
+13. exact secret and Git absence predicates;
+14. all EC-01 through EC-08 fixtures and expected outcomes;
+15. positive-control fixtures;
+16. exact CI commands;
+17. exact line-budget accounting;
+18. exact stop conditions.
+
+If any of items 2 through 13 cannot be frozen deterministically, Stage 03 returns BLOCKED / REDESIGN.
+
+## 26. Stop conditions
+
+Stop immediately if any of the following occurs:
+
+1. root AGENTS.md or CONTEXT.md must change;
+2. product/application code or dependencies must change;
+3. the INC-1 router must change to grant INC-2 authority;
+4. Eve requires an implicit/default capability that cannot be disabled or physically withheld;
+5. Eve requires network in the candidate sandbox for the accepted INC-2 path;
+6. the sandbox cannot exclude host .git metadata or privileged secrets;
+7. canonical filesystem enforcement cannot resist symlink escape;
+8. network denial is represented only as a prompt instruction;
+9. Git denial is represented only as a prompt instruction;
+10. candidate-controlled writable state survives into a later run;
+11. a new policy engine, service, database, memory layer, agent layer, or orchestration layer becomes necessary;
+12. a product runtime integration becomes necessary;
+13. physical sandbox tests require model/provider credentials;
+14. the implementation reaches or projects to 420 reviewable lines before the initial candidate is complete;
+15. the same failure persists without materially new bounded diagnostic evidence;
+16. Plan, Contract, base, head, package, or runtime identity becomes stale;
+17. exact-head CI fails without one bounded evidence-backed correction;
+18. Codex review cycle 3 reports an actionable finding.
+
+Required disposition is BLOCKED, REDUCE, or REDESIGN according to the triggering condition.
+
+## 27. Explicit non-authority
+
+This Plan does not authorize:
+
+- Stage 03 contract mutation before explicit approval of this exact PLAN_READY artifact;
+- Stage 04 implementation;
+- INC-3, INC-4, or INC-5;
+- Jev;
+- final PASS authority;
+- authenticated provenance;
+- root-router cutover;
+- old-governance removal;
+- product feature work;
+- database/backend work;
+- memory;
+- multi-agent execution;
+- deployment;
+- release;
+- merge;
+- a change-size exception.
+
+## 28. Stage 02 disposition
+
+The Plan closes one verified gap with the smallest approved architectural increment:
+
+```text
+INC-1 deterministic routing
+        +
+INC-2 external supervisor
+        +
+hard capability mediation
+        +
+disposable physical sandbox
+```
+
+No additional architectural layer is introduced beyond the already-approved v1.2 roadmap.
+
+The Plan is ready for exact-artifact approval and Stage 03 contract freezing.
 
 PLAN_READY

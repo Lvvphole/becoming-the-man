@@ -36,9 +36,11 @@ jobs:
           npm ci
           npm ci --prefix harness
       - name: Lint harness
-        run: npx eslint harness/src/routing.ts harness/tests/routing.test.ts
+        run: npx eslint harness/src/routing.ts harness/src/capability.ts harness/src/supervisor.ts harness/src/eve-adapter.ts harness/agent/agent.ts harness/agent/tools/execute.ts harness/agent/sandbox/sandbox.ts harness/tests/routing.test.ts harness/tests/execution.test.ts
       - name: Typecheck harness
         run: npm --prefix harness run typecheck
+      - name: Typecheck authored Eve files
+        run: npm --prefix harness run typecheck:agent
       - name: Test harness
         run: npm --prefix harness run test
 

@@ -1,43 +1,66 @@
-# Stage 04 Candidate Manifest - INC-1-PATCH
+# Stage 04 Candidate Manifest - INC-2
 
 Artifact disposition: IMPLEMENTATION_CANDIDATE_READY
 Stage lifecycle disposition: CANDIDATE_READY
 Stage: 04_implement
 Route: route:04_implement:governance
-PR: 50
-Merge base: 4aa398f2fbc85c519be932b1c547732e06791511
-Technical candidate head: 09fbec1222dc94c396eb21fd4b3d94bbfa85324f
-Verified PR Verification run: 35450657248
+PR: 53
+Merge base: 93a2edc3f8729f30f6772ce8a8df7a955c5c2fff
+Technical candidate head: ff70b23299e2fcda3499cbbc480895f52af2ed53
+Verified PR Verification run: 35646589550
 
-## 1. Prior-Stage Cryptographic Bindings
+## 1. Prior-Stage Source Bindings
 
-- Approved Plan SHA-256: 9d26be5ca0fd8bcc19ea6fdf30bfcd2899b5570fa9eb87ef5758dc87ebd511a7
-- Implementation Contract SHA-256: 532e3fb95c55c26cd7c4439e9532088fecfa5d22f17d849575cf7b0da6e90ff9
+- Approved Plan Git blob: d3e203120d4231c72d524e6a1cd8a6f3f173abeb
+- Implementation Contract Git blob: 52d74f4caa528f01e07cabc04392be499e2419d1
 
 ## 2. Technical Candidate Verification Evidence
 
-Exact-head CI run 35450657248 concluded with 'success' testing candidate SHA 09fbec1222dc94c396eb21fd4b3d94bbfa85324f:
-- Governance routing suite: 55 passed / 55 total
-- Full repository test suite: 164 passed / 164 total across 18 files
-- Exact-SHA evidence: PASS (tested exact SHA 09fbec1222dc94c396eb21fd4b3d94bbfa85324f)
+Exact-head CI run 35646589550 concluded with success testing candidate SHA ff70b23299e2fcda3499cbbc480895f52af2ed53:
 
-## 3. Workpiece Confinement & Lineage Footprint
+- Harness lint: PASS, including `harness/agent/sandbox/sandbox.ts`.
+- Harness source typecheck: PASS.
+- Authored Eve-file typecheck: PASS, including `agent/sandbox/sandbox.ts`.
+- Harness tests: 19 passed / 19 total across 2 files.
+- Harness Verification: PASS.
+- PR Verification: PASS.
+- Exact-SHA binding: PASS.
 
-Counted implementation files (2):
-- scripts/verify-governance-routing.mjs
-- tests/governance-routing.test.mjs
+## 3. Workpiece Confinement & Reviewable Footprint
 
-Reviewable footprint: 25 / 500 lines against PR base 4aa398f2fbc85c519be932b1c547732e06791511.
+Counted implementation files (9):
 
-## 4. Behavioral Invariants Verified
+- `.github/workflows/pr-verification.yml`
+- `harness/agent/agent.ts`
+- `harness/agent/sandbox/sandbox.ts`
+- `harness/agent/tools/execute.ts`
+- `harness/package.json`
+- `harness/src/capability.ts`
+- `harness/src/eve-adapter.ts`
+- `harness/src/supervisor.ts`
+- `harness/tests/execution.test.ts`
 
-1. Evidence Validity Diagnostics:
-   - Preserves fail-fast diagnostics (EVIDENCE_INDEX_MISSING, EVIDENCE_ID_UNKNOWN, EVIDENCE_BINDING_STALE) prior to candidate route pruning.
-2. Allowlist Route Pruning:
-   - Enforces envelope.selected_evidence_ids containment against route.allowed_evidence_ids inside the candidate filter predicate.
-3. Multi-Match Resolution:
-   - Overlapping routes sharing stage, task_domains, and source_sections but distinguished by allowed evidence resolve uniquely without raising ROUTE_MULTI_MATCH.
+Dependency lockfiles are excluded by repository governance.
+
+Reviewable implementation footprint: 419 lines against PR base 93a2edc3f8729f30f6772ce8a8df7a955c5c2fff.
+INC-2 internal stop: 420 lines.
+Repository ceiling: 500 lines.
+
+## 4. INC-2 Boundary Evidence
+
+The technical candidate verifies the contracted INC-2 boundaries, including:
+
+1. Signed authority is bound to the exact Eve session and rejects tamper/cross-session replay before sandbox effects.
+2. Model-visible tool closure is exactly `["execute"]`.
+3. The real authored Eve sandbox binds to the locked Docker backend with physical deny-all networking.
+4. Workspace policy roots are limited to exactly `/workspace` or the `/workspace/` path segment.
+5. Run cwd is canonicalized and equality-checked before process execution.
+6. Git is denied both by supplied executable name and when an otherwise authorized executable alias resolves canonically to Git.
+7. EC-05 inspects effective Docker network attachments directly rather than depending on curl, DNS, TLS, or an external site.
+8. EC-07 includes a real supervisor-only filesystem sentinel and verifies that it is unreachable from the sandbox, alongside supervisor-secret environment isolation.
+9. Supervisor-scoped prewarmed Eve sessions are terminally reset in cleanup-protected control flow on both successful and throwing operations.
+10. Independent physical sandboxes have distinct identities and no writable-state carryover.
 
 ## 5. Lifecycle Boundary Declaration
 
-This manifest records Stage 04 candidate evidence only and does not establish Stage 05 PASS, Stage 06 review clearance, release eligibility, or merge authority.
+This manifest records Stage 04 candidate evidence only. It does not establish Stage 05 PASS, Stage 06 review clearance, release eligibility, merge readiness, or merge authority.
