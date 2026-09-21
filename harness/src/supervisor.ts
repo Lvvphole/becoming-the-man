@@ -1,9 +1,10 @@
-import { randomUUID } from "node:crypto";
 import { Buffer } from "node:buffer";
+import { sign } from "node:crypto";
 import {
   DENIED, allowedGrant, inside, quote,
-  type CapabilityPolicy, type ExecuteInput, type ExecuteResult, type Grant,
+  type CapabilityPolicy, type ExecuteInput, type ExecuteResult, type Grant, type VerifiedAuthorization,
 } from "./capability.js";
+import { prewarmEveSession } from "./eve-adapter.js";
 
 export interface SandboxPort {
   readonly id: string;
@@ -12,42 +13,48 @@ export interface SandboxPort {
   writeTextFile(input: { path: string; content: string }): PromiseLike<void>;
 }
 
-export interface BackendPort {
-  create(input: {
-    templateKey: null;
-    sessionKey: string;
-    runtimeContext: { appRoot: string };
-  }): Promise<{ session: SandboxPort; delete(): Promise<void> }>;
-}
-
-const bindings = new Map<string, { policy: CapabilityPolicy; grants: ReadonlyMap<string, Grant> }>();
-
-export function bindSession(id: string, policy: CapabilityPolicy, grants: readonly Grant[]): () => void {
-  if (!id || new Set(grants.map((g) => g.id)).size !== grants.length) {
+export function issueAuthorization(
+  privateKey: string,
+  sessionId: string,
+  policy: CapabilityPolicy,
+  grants: readonly Grant[],
+): string {
+  if (!sessionId || new Set(grants.map((g) => g.id)).size !== grants.length) {
     throw new Error("CAPABILITY_CATALOG_INVALID");
   }
-  bindings.set(id, { policy, grants: new Map(grants.map((g) => [g.id, g])) });
-  return () => { bindings.delete(id); };
+  const payload = Buffer.from(JSON.stringify({
+    version: 1, session_id: sessionId, policy, grants,
+  })).toString("base64url");
+  return `${payload}.${sign(null, Buffer.from(payload), privateKey).toString("base64url")}`;
 }
 
-async function canonical(sandbox: SandboxPort, relative: string, missing: boolean): Promise<string | null> {
-  const absolute = `/workspace/${relative}`;
-  const result = await sandbox.run({ command: `realpath ${missing ? "-m " : ""}-- ${quote(absolute)}` });
+export async function prepareExecutionSession(
+  host: string,
+  privateKey: string,
+  policy: CapabilityPolicy,
+  grants: readonly Grant[],
+): Promise<{ session_id: string; authorization: string }> {
+  const session_id = await prewarmEveSession(host);
+  return { session_id, authorization: issueAuthorization(privateKey, session_id, policy, grants) };
+}
+
+async function canonical(sandbox: SandboxPort, path: string, missing = false): Promise<string | null> {
+  const result = await sandbox.run({ command: `realpath ${missing ? "-m " : ""}-- ${quote(path)}` });
   return result.exitCode === 0 ? result.stdout.trim() : null;
 }
 
-export async function executeForSession(
-  sessionId: string,
+export async function executeAuthorized(
+  auth: VerifiedAuthorization,
   sandbox: SandboxPort,
   input: ExecuteInput,
 ): Promise<ExecuteResult> {
-  const bound = bindings.get(sessionId);
-  const grant = bound?.grants.get(input.capability_id);
-  if (!bound || !allowedGrant(bound.policy, grant, input)) return DENIED;
+  const grant = auth.grants.find((g) => g.id === input.capability_id);
+  if (!allowedGrant(auth.policy, grant, input)) return DENIED;
 
   if (grant.kind === "read" || grant.kind === "write") {
-    const target = await canonical(sandbox, grant.path, grant.kind === "write");
-    const roots = grant.kind === "read" ? bound.policy.read_roots : bound.policy.write_roots;
+    const absolute = `/workspace/${grant.path}`;
+    const target = await canonical(sandbox, absolute, grant.kind === "write");
+    const roots = grant.kind === "read" ? auth.policy.read_roots : auth.policy.write_roots;
     if (!target || !inside(target, roots)) return DENIED;
     if (grant.kind === "read") {
       const content = await sandbox.readTextFile({ path: target });
@@ -57,28 +64,10 @@ export async function executeForSession(
     return { kind: "write", bytes_written: Buffer.byteLength(input.content ?? "") };
   }
 
-  const command = `cd -- ${quote(grant.cwd)} && exec ${grant.argv.map(quote).join(" ")}`;
-  const result = await sandbox.run({ command });
-  return { kind: "run", exit_code: result.exitCode, stdout: result.stdout, stderr: result.stderr };
-}
-
-export async function withExecutionSandbox<T>(
-  backend: BackendPort,
-  appRoot: string,
-  policy: CapabilityPolicy,
-  grants: readonly Grant[],
-  run: (sandbox: SandboxPort) => Promise<T>,
-): Promise<T> {
-  const handle = await backend.create({
-    templateKey: null,
-    sessionKey: `inc2-${randomUUID()}`,
-    runtimeContext: { appRoot },
+  const cwd = await canonical(sandbox, grant.cwd);
+  if (cwd !== grant.cwd) return DENIED;
+  const result = await sandbox.run({
+    command: `cd -- ${quote(grant.cwd)} && exec ${grant.argv.map(quote).join(" ")}`,
   });
-  const unbind = bindSession(handle.session.id, policy, grants);
-  try {
-    return await run(handle.session);
-  } finally {
-    unbind();
-    await handle.delete();
-  }
+  return { kind: "run", exit_code: result.exitCode, stdout: result.stdout, stderr: result.stderr };
 }

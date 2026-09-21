@@ -1,4 +1,7 @@
-export type ExecuteInput = { capability_id: string; content?: string };
+import { Buffer } from "node:buffer";
+import { verify as verifySignature } from "node:crypto";
+
+export type ExecuteInput = { capability_id: string; authorization: string; content?: string };
 export type ExecuteResult =
   | { kind: "read"; content: string }
   | { kind: "write"; bytes_written: number }
@@ -23,6 +26,11 @@ export type CapabilityPolicy = Readonly<{
   git: "deny";
 }>;
 
+export type VerifiedAuthorization = Readonly<{
+  policy: CapabilityPolicy;
+  grants: readonly Grant[];
+}>;
+
 export const DENIED: ExecuteResult = Object.freeze({
   kind: "deny",
   diagnostic: "CAPABILITY_NOT_GRANTED",
@@ -30,6 +38,8 @@ export const DENIED: ExecuteResult = Object.freeze({
 
 const unique = (values: readonly string[]) =>
   values.length === new Set(values).size && values.every(Boolean);
+const strings = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string");
 
 export function compilePolicy(input: {
   task_identity: string;
@@ -41,7 +51,7 @@ export function compilePolicy(input: {
 }): CapabilityPolicy {
   if (!input.task_identity || !unique(input.allowed_cwds) ||
       !unique(input.read_roots) || !unique(input.write_roots) ||
-      input.allowed_argv.some((argv) => argv.length === 0 || !unique(argv.map((v, i) => `${i}:${v}`))) ||
+      input.allowed_argv.some((argv) => argv.length === 0) ||
       [...input.allowed_cwds, ...input.read_roots, ...input.write_roots]
         .some((p) => !p.startsWith("/workspace") || p.includes(".."))) {
     throw new Error("CAPABILITY_POLICY_INVALID");
@@ -58,6 +68,66 @@ export function compilePolicy(input: {
     secret_names: Object.freeze([]) as readonly [],
     git: "deny" as const,
   });
+}
+
+function parsePolicy(value: unknown): CapabilityPolicy | null {
+  if (typeof value !== "object" || value === null) return null;
+  const v = value as Record<string, unknown>;
+  if (v.task_identity === undefined || typeof v.task_identity !== "string" ||
+      !Array.isArray(v.allowed_tools) || v.allowed_tools.length !== 1 || v.allowed_tools[0] !== "execute" ||
+      !Array.isArray(v.allowed_argv) || !v.allowed_argv.every(strings) ||
+      !strings(v.allowed_cwds) || !strings(v.read_roots) || !strings(v.write_roots) ||
+      (v.subprocess !== "deny" && v.subprocess !== "exact") ||
+      v.network !== "deny" || !Array.isArray(v.secret_names) || v.secret_names.length !== 0 ||
+      v.git !== "deny") return null;
+  try {
+    return compilePolicy({
+      task_identity: v.task_identity,
+      allowed_argv: v.allowed_argv,
+      allowed_cwds: v.allowed_cwds,
+      read_roots: v.read_roots,
+      write_roots: v.write_roots,
+      subprocess: v.subprocess,
+    });
+  } catch {
+    return null;
+  }
+}
+
+function parseGrants(value: unknown): readonly Grant[] | null {
+  if (!Array.isArray(value)) return null;
+  const grants: Grant[] = [];
+  for (const item of value) {
+    if (typeof item !== "object" || item === null) return null;
+    const g = item as Record<string, unknown>;
+    if (typeof g.id !== "string" || !g.id) return null;
+    if ((g.kind === "read" || g.kind === "write") && typeof g.path === "string") {
+      grants.push(Object.freeze({ id: g.id, kind: g.kind, path: g.path }));
+    } else if (g.kind === "run" && strings(g.argv) && typeof g.cwd === "string") {
+      grants.push(Object.freeze({ id: g.id, kind: "run", argv: Object.freeze(g.argv), cwd: g.cwd }));
+    } else return null;
+  }
+  return unique(grants.map((g) => g.id)) ? Object.freeze(grants) : null;
+}
+
+export function verifyAuthorization(
+  token: string,
+  publicKey: string,
+  sessionId: string,
+): VerifiedAuthorization | null {
+  const parts = token.split(".");
+  if (parts.length !== 2 || !publicKey || !sessionId) return null;
+  try {
+    const [payload, signature] = parts;
+    if (!verifySignature(null, Buffer.from(payload), publicKey, Buffer.from(signature, "base64url"))) return null;
+    const value = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Record<string, unknown>;
+    const policy = parsePolicy(value.policy);
+    const grants = parseGrants(value.grants);
+    if (value.version !== 1 || value.session_id !== sessionId || !policy || !grants) return null;
+    return Object.freeze({ policy, grants });
+  } catch {
+    return null;
+  }
 }
 
 export function safeRelativePath(path: string): boolean {

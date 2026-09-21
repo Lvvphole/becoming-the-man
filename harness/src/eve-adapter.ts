@@ -1,6 +1,7 @@
 import { defineAgent } from "eve";
-import { defineTool, type ToolContext } from "eve/tools";
+import { Client } from "eve/client";
 import { docker } from "eve/sandbox/docker";
+import { defineTool, type ToolContext } from "eve/tools";
 import { z } from "zod";
 import type { ExecuteInput, ExecuteResult } from "./capability.js";
 
@@ -20,12 +21,19 @@ export const createSandboxBackend = () => docker({
   env: {},
 });
 
+export async function prewarmEveSession(host: string): Promise<string> {
+  const client = new Client({ host, redirect: "error" });
+  const { session } = await client.sessions.create();
+  return session.state.sessionId;
+}
+
 export const createExecuteTool = (
   execute: (input: ExecuteInput, ctx: ToolContext) => Promise<ExecuteResult>,
 ) => defineTool({
   description: "Execute one supervisor-authorized capability.",
   inputSchema: z.object({
     capability_id: z.string().min(1),
+    authorization: z.string().min(1),
     content: z.string().optional(),
   }),
   execute,
