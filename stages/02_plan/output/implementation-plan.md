@@ -59,7 +59,41 @@ At bootstrap base 93a2edc3f8729f30f6772ce8a8df7a955c5c2fff:
 
 The gap is therefore execution authority, not routing authority.
 
-## 4. Approved architectural boundary
+## 4. Complexity admission
+
+INC-2 adds no mechanism beyond the already-approved v1.2 roadmap. Each retained control satisfies the repository's harness-complexity admission rule.
+
+| Gate | INC-2 evidence |
+|---|---|
+| C1 concrete gap demonstrated | INC-1 admits tasks but cannot physically constrain runtime tool, filesystem, subprocess, network, secret, Git, or cross-run effects. |
+| C2 simpler existing control insufficient | Routing and prompt instructions can deny semantic authority but cannot physically mediate or remove runtime capabilities from an untrusted sandbox. |
+| C3 peer-reviewed support | Saltzer & Schroeder, "The Protection of Information in Computer Systems," Proceedings of the IEEE 63(9), 1975, DOI 10.1109/PROC.1975.9939, supports fail-safe defaults, complete mediation, least privilege, and economy of mechanism. Jarkas et al., "A Container Security Survey: Exploits, Attacks, and Defenses," ACM Computing Surveys 57(7), 2025, DOI 10.1145/3715001, supports explicit layered controls for container isolation, access, network, and host-risk boundaries while documenting that container isolation alone is not sufficient. |
+| C4 deterministic benefit testable | EC-01 through EC-08 and the positive controls mechanically test the hard gate and physical isolation properties. |
+| C5 no duplicated control | INC-1 owns deterministic admission/routing; INC-2 owns execution capability enforcement. Neither duplicates the other. |
+
+Complexity disposition:
+
+```text
+ADD:
+  external supervisor
+  hard capability gate
+  disposable sandbox
+  narrow Eve/AI SDK adapter
+
+DO_NOT_ADD:
+  policy engine
+  service mesh
+  database
+  memory layer
+  Jev
+  final verifier
+  multi-agent orchestration
+  any other architectural layer
+```
+
+Peer-reviewed evidence is justification for the control classes only. It does not make Eve, Docker, or any specific package authoritative. Exact framework behavior remains subject to the deterministic compatibility and negative-control gates below.
+
+## 5. Approved architectural boundary
 
 The fixed execution order for INC-2 is:
 
@@ -92,7 +126,7 @@ The coding agent, model output, generated command arguments, candidate repositor
 
 The sandbox cannot grant authority back to the supervisor.
 
-## 5. Minimum trusted kernel
+## 6. Minimum trusted kernel
 
 INC-2 adds only three logical responsibilities:
 
@@ -152,7 +186,7 @@ No other harness module imports Eve directly.
 
 This is a replaceability boundary, not another security layer.
 
-## 6. CapabilityPolicy contract to freeze in Stage 03
+## 7. CapabilityPolicy contract to freeze in Stage 03
 
 Stage 03 must freeze the smallest typed policy that can express the approved INC-2 controls.
 
@@ -187,7 +221,7 @@ No field may default from model output.
 
 No free-form text field may expand policy.
 
-## 7. Canonical filesystem rule
+## 8. Canonical filesystem rule
 
 Every requested filesystem path must be canonicalized before authorization:
 
@@ -205,7 +239,7 @@ Required failure cases include:
 
 String-prefix comparison alone is insufficient.
 
-## 8. Tool and argv rule
+## 9. Tool and argv rule
 
 A tool request is authorized only when:
 
@@ -218,7 +252,7 @@ A generic unrestricted shell is not an allowed primitive.
 
 If the implementation exposes an exec-like tool, its accepted commands must be exact or mechanically bounded argv contracts, never arbitrary shell text interpreted through eval, sh -c, bash -c, os.system, or equivalent dynamic command composition.
 
-## 9. Sandbox rule
+## 10. Sandbox rule
 
 The sandbox is disposable and treated as untrusted.
 
@@ -235,7 +269,7 @@ INC-2 must not treat prompt instructions as isolation.
 
 Isolation must be enforced by the execution environment.
 
-## 10. Network rule
+## 11. Network rule
 
 Default:
 
@@ -249,7 +283,7 @@ If the selected Eve backend cannot create a sandbox with network denied, Stage 0
 
 A future allowlist is outside INC-2 unless the exact Stage 03 contract proves it necessary for the already-approved objective.
 
-## 11. Secret rule
+## 12. Secret rule
 
 Default:
 
@@ -270,7 +304,7 @@ The coding sandbox receives no:
 
 Any framework credential needed by the external supervisor must remain outside the candidate sandbox.
 
-## 12. Git rule
+## 13. Git rule
 
 Default:
 
@@ -288,7 +322,7 @@ The coding sandbox must not be able to:
 
 Read-only source material may be copied into the sandbox without giving the sandbox Git authority.
 
-## 13. Cross-run state rule
+## 14. Cross-run state rule
 
 For run A and later run B:
 
@@ -302,7 +336,7 @@ INC-2 negative controls must create a sentinel in run A and prove it is absent i
 
 Framework caches outside the candidate writable namespace may not contain candidate-controlled mutable state that affects run B.
 
-## 14. Eve and AI SDK compatibility gate
+## 15. Eve and AI SDK compatibility gate
 
 External framework documentation is compatibility evidence only. Repository authority remains the routed governance chain.
 
@@ -335,7 +369,7 @@ STOP -> REDESIGN
 
 Do not emulate safety by hiding tools in prompts or by filtering model text after generation.
 
-## 15. Dependency policy
+## 16. Dependency policy
 
 Permitted new runtime dependencies are limited to those strictly required by the already-approved stack:
 
@@ -355,7 +389,7 @@ No second agent framework.
 
 Exact package names and versions are frozen only in Stage 03 after compatibility verification.
 
-## 16. Maximum Stage 04 candidate surface
+## 17. Maximum Stage 04 candidate surface
 
 Stage 03 may reduce this set but may not expand it without returning to planning.
 
@@ -380,7 +414,7 @@ Rules:
 - no application/product file may change;
 - no root governance source may change.
 
-## 17. Reviewable-size budget
+## 18. Reviewable-size budget
 
 The harness remains infrastructure, not the product.
 
@@ -412,7 +446,7 @@ STOP -> REDUCE OR REDESIGN
 
 Do not request a size exception merely to avoid simplifying the harness.
 
-## 18. Frozen INC-2 negative controls
+## 19. Frozen INC-2 negative controls
 
 Stage 03 must freeze exact fixtures and expected decisions for these eight roadmap controls.
 
@@ -510,7 +544,7 @@ sentinel absent in run B
 
 Every control must fail for the intended boundary, not for an unrelated malformed fixture.
 
-## 19. Positive controls
+## 20. Positive controls
 
 Stage 03 must freeze at least these positive controls:
 
@@ -525,7 +559,7 @@ Stage 03 must freeze at least these positive controls:
 
 Positive controls must not weaken any negative control.
 
-## 20. Verification strategy
+## 21. Verification strategy
 
 INC-2 requires two evidence classes.
 
@@ -555,7 +589,7 @@ Run against the pinned local Docker/Eve sandbox identity:
 
 A mocked sandbox cannot satisfy physical-isolation obligations.
 
-## 21. CI integration
+## 22. CI integration
 
 Preserve the existing fail-closed ordering:
 
@@ -579,7 +613,7 @@ No provider/model call is required for CI acceptance of INC-2.
 
 No network is granted to the candidate sandbox merely because the GitHub runner itself has network.
 
-## 22. Definition of Done
+## 23. Definition of Done
 
 INC-2 is implementation-complete only when all of the following are mechanically proven on one exact candidate head.
 
@@ -625,7 +659,7 @@ D20. Exact-head PR Verification passes.
 
 D21. Independent Codex review completes under the existing three-cycle limit with zero unresolved actionable findings before release eligibility.
 
-## 23. Construction sequence
+## 24. Construction sequence
 
 INC-2 Stage 04 must use one bounded candidate loop:
 
@@ -653,7 +687,7 @@ A failing check does not authorize speculative architecture changes.
 
 A second repair requires materially new bounded diagnostic evidence.
 
-## 24. Stage 03 handoff
+## 25. Stage 03 handoff
 
 Stage 03 must freeze, without implementing:
 
@@ -678,7 +712,7 @@ Stage 03 must freeze, without implementing:
 
 If any of items 2 through 13 cannot be frozen deterministically, Stage 03 returns BLOCKED / REDESIGN.
 
-## 25. Stop conditions
+## 26. Stop conditions
 
 Stop immediately if any of the following occurs:
 
@@ -703,7 +737,7 @@ Stop immediately if any of the following occurs:
 
 Required disposition is BLOCKED, REDUCE, or REDESIGN according to the triggering condition.
 
-## 26. Explicit non-authority
+## 27. Explicit non-authority
 
 This Plan does not authorize:
 
@@ -724,7 +758,7 @@ This Plan does not authorize:
 - merge;
 - a change-size exception.
 
-## 27. Stage 02 disposition
+## 28. Stage 02 disposition
 
 The Plan closes one verified gap with the smallest approved architectural increment:
 
