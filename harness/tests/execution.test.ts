@@ -45,7 +45,7 @@ async function withPhysical<T>(run: (sandbox: SandboxPort) => Promise<T>): Promi
 describe("INC-2 deterministic capability gate", () => {
   it("EC-01 binds authority to signature/session and denies unknown grants before sandbox access", async () => {
     const token = issueAuthorization(privateKey, "session-a", policy(), grants);
-    expect(verifyAuthorization(token + "x", publicKey, "session-a")).toBeNull();
+    for (const malformed of [token + "x", token + ".", token + "..anything"]) expect(verifyAuthorization(malformed, publicKey, "session-a")).toBeNull();
     expect(verifyAuthorization(token, publicKey, "session-b")).toBeNull();
     process.env.INC2_SUPERVISOR_PUBLIC_KEY = publicKey;
     let sandboxRequests = 0;
@@ -124,6 +124,8 @@ describe("INC-2 Eve and physical Docker boundary", () => {
         expect(await executeAuthorized(verified, sandbox, { capability_id: "run", authorization: "unused" }))
           .toMatchObject({ kind: "run", exit_code: 0, stdout: "ok" });
         await sandbox.run({ command: "printf outside >/tmp/outside.txt && ln -s /tmp/outside.txt /workspace/link" });
+        const traversal = auth("physical", policy(), [{ id: "traversal", kind: "write", path: "../tmp/outside.txt" }]);
+        expect((await executeAuthorized(traversal, sandbox, { capability_id: "traversal", authorization: "unused", content: "changed" })).kind).toBe("deny");
         const escape = auth("physical", policy(), [{ id: "escape", kind: "write", path: "link" }]);
         expect((await executeAuthorized(escape, sandbox,
           { capability_id: "escape", authorization: "unused", content: "changed" })).kind).toBe("deny");
