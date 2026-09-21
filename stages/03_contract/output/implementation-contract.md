@@ -1430,7 +1430,30 @@ every check is exact argv tokens, never a shell string
 
 Duplicate requirement IDs are therefore detectable without YAML, a custom parser, or another policy framework.
 
-### 13.4 Deterministic path ownership
+### 13.4 Shadow decision boundary
+
+INC-1 shadow evaluations are not C4 governance records.
+
+```text
+ShadowDecision :=
+  ALLOW
+  OR
+  DENY(diagnostic)
+```
+
+The diagnostic namespace is local to the non-authoritative INC-1 shadow kernel and does not extend C4 `reason_code`.
+
+If a required INC-1 oracle or verifier predicate is false, Stage 04 emits a C4-conformant BLOCKED record with:
+
+```text
+reason_code = TRANSITION_PRECONDITION_FALSE
+```
+
+The exact failed shadow control and diagnostic, for example `NC-03 / UNKNOWN_REQUIREMENT`, are recorded in `conflicts`.
+
+INC-1 introduces no C4 reason code. Shadow diagnostics must not be serialized into C4 `reason_code`.
+
+### 13.5 Deterministic path ownership
 
 For candidate path `p`:
 
@@ -1449,7 +1472,7 @@ one exact match
   -> owner
 
 more than one exact match
-  -> BLOCKED / AMBIGUOUS_PATH_ROUTE
+  -> DENY / AMBIGUOUS_PATH_ROUTE
 
 otherwise select the longest matching prefix
 
@@ -1457,30 +1480,30 @@ one longest-prefix match
   -> owner
 
 multiple equal longest-prefix matches
-  -> BLOCKED / AMBIGUOUS_PATH_ROUTE
+  -> DENY / AMBIGUOUS_PATH_ROUTE
 
 zero matches
-  -> BLOCKED / UNROUTED_PATH
+  -> DENY / UNROUTED_PATH
 ```
 
 A model may not choose between collisions or substitute semantic similarity.
 
-### 13.5 Deterministic requirement and source resolution
+### 13.6 Deterministic requirement and source resolution
 
 For each requirement reference `q`:
 
 ```text
 zero requirement IDs equal q
-  -> BLOCKED / UNKNOWN_REQUIREMENT
+  -> DENY / UNKNOWN_REQUIREMENT
 
 more than one requirement ID equals q
-  -> BLOCKED / AMBIGUOUS_REQUIREMENT
+  -> DENY / AMBIGUOUS_REQUIREMENT
 
 exactly one requirement maps to absent source ID
-  -> BLOCKED / REQUIREMENT_SOURCE_UNAVAILABLE
+  -> DENY / REQUIREMENT_SOURCE_UNAVAILABLE
 
 mapped source path absent from the trusted supplied source surface
-  -> BLOCKED / REQUIREMENT_SOURCE_UNAVAILABLE
+  -> DENY / REQUIREMENT_SOURCE_UNAVAILABLE
 
 exactly one valid requirement
   -> exact source + exact selector
@@ -1488,7 +1511,7 @@ exactly one valid requirement
 
 No semantic heading search, repository scan, fallback source, or inferred selector is permitted.
 
-### 13.6 Minimum-check composition
+### 13.7 Minimum-check composition
 
 For an admitted task:
 
@@ -1512,12 +1535,12 @@ G_CHECKS_NOT_WEAKENED :=
 If false:
 
 ```text
-BLOCKED / MINIMUM_CHECKS_WEAKENED
+DENY / MINIMUM_CHECKS_WEAKENED
 ```
 
 The task may add checks but may not remove repository-derived minimum checks.
 
-### 13.7 Compact immutable task contract
+### 13.8 Compact immutable task contract
 
 INC-1 validates exactly these execution semantics:
 
@@ -1535,37 +1558,37 @@ stop_condition: required non-empty string
 Malformed input, unknown authority-bearing fields, duplicate list members, invalid paths, or invalid base identity:
 
 ```text
-BLOCKED / TASK_CONTRACT_INVALID
+DENY / TASK_CONTRACT_INVALID
 ```
 
 Observed repository base different from `base_sha`:
 
 ```text
-BLOCKED / STALE_OR_WRONG_BASE
+DENY / STALE_OR_WRONG_BASE
 ```
 
 The free-form goal is descriptive only and cannot expand paths, tools, checks, sources, or authority.
 
-### 13.8 Frozen independent negative-control oracle
+### 13.9 Frozen independent negative-control oracle
 
 The Stage 04 candidate may reproduce these cases but may not redefine their required dispositions.
 
-| ID | Input defect | Required disposition |
+| ID | Input defect | Required shadow decision |
 |---|---|---|
-| NC-01 | authorized path has zero owners | `BLOCKED / UNROUTED_PATH` |
-| NC-02 | authorized path has two equal-specificity owners | `BLOCKED / AMBIGUOUS_PATH_ROUTE` |
-| NC-03 | unknown requirement ID | `BLOCKED / UNKNOWN_REQUIREMENT` |
-| NC-04 | duplicate requirement IDs in the parsed array | `BLOCKED / AMBIGUOUS_REQUIREMENT` |
-| NC-05 | requirement source ID/path unavailable | `BLOCKED / REQUIREMENT_SOURCE_UNAVAILABLE` |
-| NC-06 | task omits one derived minimum check | `BLOCKED / MINIMUM_CHECKS_WEAKENED` |
-| NC-07 | observed base differs from task `base_sha` | `BLOCKED / STALE_OR_WRONG_BASE` |
-| NC-08 | malformed compact task contract | `BLOCKED / TASK_CONTRACT_INVALID` |
+| NC-01 | authorized path has zero owners | `DENY / UNROUTED_PATH` |
+| NC-02 | authorized path has two equal-specificity owners | `DENY / AMBIGUOUS_PATH_ROUTE` |
+| NC-03 | unknown requirement ID | `DENY / UNKNOWN_REQUIREMENT` |
+| NC-04 | duplicate requirement IDs in the parsed array | `DENY / AMBIGUOUS_REQUIREMENT` |
+| NC-05 | requirement source ID/path unavailable | `DENY / REQUIREMENT_SOURCE_UNAVAILABLE` |
+| NC-06 | task omits one derived minimum check | `DENY / MINIMUM_CHECKS_WEAKENED` |
+| NC-07 | observed base differs from task `base_sha` | `DENY / STALE_OR_WRONG_BASE` |
+| NC-08 | malformed compact task contract | `DENY / TASK_CONTRACT_INVALID` |
 
 Every negative control must fail because of its intended predicate, not an earlier unrelated defect. A thrown exception or permissive fallback is not an accepted BLOCKED result.
 
 This Stage 03 artifact is outside the Stage 04 allowlist and is the authoritative bootstrap oracle for these eight expected outcomes.
 
-### 13.9 Harness package boundary
+### 13.10 Harness package boundary
 
 INC-1 creates a standalone `harness/` package with:
 
@@ -1582,7 +1605,7 @@ INC-1 creates a standalone `harness/` package with:
 
 A dependency outside this boundary is `BLOCKED / CONTRACT_SCOPE_EXPANSION`.
 
-### 13.10 Node 24 harness verification
+### 13.11 Node 24 harness verification
 
 The new harness job runs in this deterministic order:
 
@@ -1605,7 +1628,7 @@ test      -> vitest run
 
 No dev server, code generation, network call, product build, or product test is part of the Node 24 harness job.
 
-### 13.11 Fail-closed workflow integration
+### 13.12 Fail-closed workflow integration
 
 The existing required job remains named exactly `PR Verification`.
 
@@ -1641,9 +1664,9 @@ H9 no path filter suppresses the required harness job
 
 Any false predicate is `BLOCKED / CONTRACT_SCOPE_EXPANSION`.
 
-No new C4 reason code is introduced.
+The workflow integration introduces no C4 reason code; its failures use the active C4 boundary defined in Section 13.4.
 
-### 13.12 One-candidate construction discipline
+### 13.13 One-candidate construction discipline
 
 Stage 04 is limited to:
 
@@ -1661,7 +1684,7 @@ After every mutation, re-evaluate changed-path confinement, current head, active
 
 A failed check does not authorize speculative fix-forward.
 
-### 13.13 Reviewable-size boundary
+### 13.14 Reviewable-size boundary
 
 ```text
 TARGET <= 350 reviewable implementation lines
@@ -1677,13 +1700,13 @@ STOP -> REDUCE OR REDESIGN
 
 Greater than 500 fails the active repository gate absent a separately authorized owner exception.
 
-### 13.14 INC-1 verification obligations
+### 13.15 INC-1 verification obligations
 
 Before INC-1 may advance beyond implementation:
 
 1. final implementation paths are a subset of the exact seven-path allowlist;
 2. active root governance, product files, root package manifests, and architecture sources are unchanged;
-3. all eight Section 13.8 negative controls produce the exact required dispositions;
+3. all eight Section 13.9 negative controls produce their exact required shadow decisions;
 4. positive controls prove exact ownership, longest-prefix ownership, exact requirement/source resolution, minimum-check union, and valid compact-task admission;
 5. harness typecheck passes;
 6. harness tests pass with no skipped/todo/disabled INC-1 controls;
@@ -1692,13 +1715,13 @@ Before INC-1 may advance beyond implementation:
 9. Node 24 harness verification must be successful for `PR Verification` to succeed;
 10. exact-head CI binds to the final candidate;
 11. implementation remains below the 420 initial-candidate stop threshold and within the 500 final ceiling;
-12. candidate-controlled tests do not redefine Section 13.8 expectations;
+12. candidate-controlled tests do not redefine Section 13.9 expectations;
 13. no semantic routing or second active router appears;
 14. no INC-2 implementation appears.
 
 Any false predicate stops progression.
 
-### 13.15 Stop conditions
+### 13.16 Stop conditions
 
 Stop immediately when any of these becomes true:
 
@@ -1706,7 +1729,7 @@ Stop immediately when any of these becomes true:
 2. product code or product dependencies must change;
 3. an eighth candidate path is required;
 4. semantic inference is required for routing;
-5. the frozen Section 13.8 oracle would need to change after implementation begins;
+5. the frozen Section 13.9 oracle would need to change after implementation begins;
 6. a new architectural layer or service becomes necessary;
 7. Eve, AI SDK, Jev, sandbox, supervisor, or final-verifier implementation becomes necessary;
 8. the workflow change weakens or bypasses an existing product check;
@@ -1720,7 +1743,7 @@ Stop immediately when any of these becomes true:
 
 The required disposition is `BLOCKED`, `REDUCE`, or `REDESIGN` according to the active condition. No silent scope expansion is permitted.
 
-### 13.16 Explicit non-authority
+### 13.17 Explicit non-authority
 
 This contract does not authorize:
 
