@@ -23,10 +23,9 @@ export const createSandboxBackend = () => docker({
 
 export const createSandboxDefinition = () => ({ backend: createSandboxBackend });
 
-export async function prewarmEveSession(host: string): Promise<string> {
+export async function prewarmEveSession(host: string) {
   const client = new Client({ host, redirect: "error" });
-  const { session } = await client.sessions.create();
-  return session.state.sessionId;
+  return (await client.sessions.create()).session;
 }
 
 export const createExecuteTool = (
