@@ -35,8 +35,8 @@ describe("mobile primary navigation", () => {
 
     expect(html).toContain('<nav aria-label="Legal">');
     expect(html).toContain('<a href="/disclaimer">Disclaimer</a>');
-    expect(html).toContain('<span aria-disabled="true">Privacy</span>');
-    expect(html).toContain('<span aria-disabled="true">Terms</span>');
+    expect(html).toContain('<a href="/privacy">Privacy</a>');
+    expect(html).toContain('<a href="/terms">Terms</a>');
     expect(html).toContain('<span aria-disabled="true">Accessibility</span>');
   });
 });

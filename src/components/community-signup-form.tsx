@@ -170,6 +170,9 @@ export function CommunitySignupForm({
             at any time.
           </label>
         </p>
+        <p className="community-privacy">
+          We use your information to manage this mailing list. Read our <a href="/privacy">Privacy Policy</a>.
+        </p>
 
         <button type="submit" disabled={submitting}>
           {submitting ? "Joining\u2026" : "Join the Community"}
