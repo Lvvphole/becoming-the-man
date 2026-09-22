@@ -1,781 +1,434 @@
 PLAN_READY
 
-# Zero-Trust Repository Harness v1.2 — INC-2 Implementation Plan
+# Zero-Trust Repository Harness v1.2 — INC-3 Trusted Verification and Oracle Plan
 
-Lifecycle stage: 02_plan
-Task domain: governance
-Route: route:02_plan:governance
-Planning mode: BROWNFIELD
-Branch: harness-v1-2-inc2-plan
-Bootstrap base: 93a2edc3f8729f30f6772ce8a8df7a955c5c2fff
-Predecessor: merged INC-1 from PR #52
-Bootstrap exception: one Plan mutation permitted before PR creation; no other governance or implementation exception applies
+## 1. Disposition
 
-## 1. Goal
+This artifact plans only INC-3 from the approved Eve Zero-Trust Engineering Harness v3.2 roadmap: trusted verification selection, an external mechanical verifier, verifier-owned oracle identity, evidence capture, resume revalidation, and the bounded two-repair loop.
 
-Build the smallest execution boundary that can take the already-validated INC-1 compact task contract and prove that an untrusted coding agent can exercise only explicitly granted capabilities inside a disposable sandbox.
+It does not authorize implementation. It does not authorize INC-4 publication, INC-5 runtime acceptance, root-router cutover, product work, release, or merge.
 
-INC-2 adds:
+## 2. Source binding
 
-1. an external supervisor process;
-2. a narrow Eve replaceability adapter;
-3. AI SDK tool primitives only where needed to expose authored tools;
-4. a typed hard capability policy;
-5. per-request complete mediation before privileged execution;
-6. disposable Docker-backed sandbox execution;
-7. default-deny network, secret, Git, and cross-run state behavior.
+Planning mode: BROWNFIELD.
 
-INC-2 does not add semantic risk scoring, Jev, the final external verifier, authenticated provenance, memory, databases, provider integrations, multi-agent routing, product behavior, or release automation.
+Target repository: `Lvvphole/becoming-the-man`
 
-## 2. Authority and predecessor binding
+Bound repository revision:
 
-INC-2 is subordinate to:
+`27228b8a81e3cd14b96b2d08bfc578ad12a2e317`
 
-1. AGENTS.md;
-2. root CONTEXT.md;
-3. the uniquely selected stage CONTEXT.md;
-4. references/engineering/engineering-rules.md;
-5. references/architecture/CONTEXT.md;
-6. the approved Zero-Trust Repository Harness v1.2 roadmap;
-7. the merged INC-1 routing kernel.
+Observed current bindings at that revision:
 
-INC-1 remains the only new shadow routing mechanism. Root CONTEXT.md remains active repository routing authority.
-
-INC-2 may consume an INC-1 ALLOW result and compact task contract. It may not reinterpret routing, invent selectors, expand allowed paths, weaken required checks, or create authority from the free-form goal.
-
-## 3. Verified current-state gap
-
-At bootstrap base 93a2edc3f8729f30f6772ce8a8df7a955c5c2fff:
-
-- harness/src/routing.ts implements the deterministic INC-1 shadow router and compact task validation;
-- harness/tests/routing.test.ts freezes the eight INC-1 routing negative controls;
-- harness/fixtures/CONTEXT.target.md is non-authoritative routing fixture data;
-- the harness package contains no Eve dependency;
-- the harness package contains no direct AI SDK dependency;
-- no external supervisor exists;
-- no hard per-request capability gate exists;
-- no disposable coding-agent sandbox contract exists;
-- no network, secret, Git, subprocess, or cross-run-state enforcement exists.
-
-The gap is therefore execution authority, not routing authority.
-
-## 4. Complexity admission
-
-INC-2 adds no mechanism beyond the already-approved v1.2 roadmap. Each retained control satisfies the repository's harness-complexity admission rule.
-
-| Gate | INC-2 evidence |
+| Source / workpiece | Git blob OID |
 |---|---|
-| C1 concrete gap demonstrated | INC-1 admits tasks but cannot physically constrain runtime tool, filesystem, subprocess, network, secret, Git, or cross-run effects. |
-| C2 simpler existing control insufficient | Routing and prompt instructions can deny semantic authority but cannot physically mediate or remove runtime capabilities from an untrusted sandbox. |
-| C3 peer-reviewed support | Saltzer & Schroeder, "The Protection of Information in Computer Systems," Proceedings of the IEEE 63(9), 1975, DOI 10.1109/PROC.1975.9939, supports fail-safe defaults, complete mediation, least privilege, and economy of mechanism. Jarkas et al., "A Container Security Survey: Exploits, Attacks, and Defenses," ACM Computing Surveys 57(7), 2025, DOI 10.1145/3715001, supports explicit layered controls for container isolation, access, network, and host-risk boundaries while documenting that container isolation alone is not sufficient. |
-| C4 deterministic benefit testable | EC-01 through EC-08 and the positive controls mechanically test the hard gate and physical isolation properties. |
-| C5 no duplicated control | INC-1 owns deterministic admission/routing; INC-2 owns execution capability enforcement. Neither duplicates the other. |
+| `AGENTS.md` | `b3319d00d7fb489c7164f3a9af5577df710ce33e` |
+| `CONTEXT.md` | `2dded90579c2ad7b491ab0072a44b030f94750c6` |
+| `stages/02_plan/CONTEXT.md` | `96df11d70c3a067cdaa4caa511a979cbff4494da` |
+| `.claude/skills/plan/SKILL.md` | `5b9325558cc0a792b2bf6e98fb7b018b30492d53` |
+| `references/engineering/engineering-rules.md` | `67e1228ff4eb4d9646e1413d1fb208062359b72a` |
+| `references/architecture/CONTEXT.md` | `56ac0b7f4e978ae3c237a8be9acc2b7afdb639f4` |
+| `harness/package.json` | `398baf3e9a59d0521452fc7708c3ab7d6a4e5e82` |
+| `harness/src/routing.ts` | `4d4321abb4e131a9359755c647ad8c76313451a8` |
+| `harness/src/capability.ts` | `fd4a31b7c07336c1538372b034b90e5d25f31a12` |
+| `harness/src/supervisor.ts` | `da4a0af0ab4e32631ef0a22a4a1b8f7ad018e7de` |
+| `.github/workflows/pr-verification.yml` | `d735549a844c2bd0a9c482ca1da5f85088b90d89` |
 
-Complexity disposition:
+Repository baseline is a clean GitHub commit; no staged, unstaged, or untracked working-tree state is part of this Plan binding.
 
-```text
-ADD:
-  external supervisor
-  hard capability gate
-  disposable sandbox
-  narrow Eve/AI SDK adapter
+Roadmap authority is the approved v3.2 harness plan merged historically at commit `cec892c99d9f97ecc8d97a247850558fa0909d91`. Its INC-3 slice and D12-D16/D20 are the selected user handoff for this Plan. Current repository governance controls wherever the historical roadmap and current repository differ.
 
-DO_NOT_ADD:
-  policy engine
-  service mesh
-  database
-  memory layer
-  Jev
-  final verifier
-  multi-agent orchestration
-  any other architectural layer
-```
+Any stale binding before Stage 03 or Stage 04 requires re-plan or re-bind under the active lifecycle; it is not silently accepted.
 
-Peer-reviewed evidence is justification for the control classes only. It does not make Eve, Docker, or any specific package authoritative. Exact framework behavior remains subject to the deterministic compatibility and negative-control gates below.
+## 3. Frozen outcome contract
 
-## 5. Approved architectural boundary
+### Goal
 
-The fixed execution order for INC-2 is:
+Add the smallest external mechanical verification layer that can select only trusted checks, execute them outside the untrusted candidate sandbox, bind raw evidence to the exact candidate and verifier identities, fail closed on stale resume, and permit at most two evidence-backed repairs.
 
-```text
-validated INC-1 task
-        |
-        v
-EXTERNAL SUPERVISOR
-        |
-        +--> compile immutable capability policy
-        |
-        v
-HARD REQUEST GATE
-        |
-        +--> DENY before execution when any requested effect exceeds policy
-        |
-        v
-EVE ADAPTER
-        |
-        v
-DISPOSABLE DOCKER SANDBOX
-        |
-        v
-AUTHORED TOOL EXECUTION ONLY
-```
-
-The supervisor is trusted for enforcement in INC-2.
-
-The coding agent, model output, generated command arguments, candidate repository, and sandbox are untrusted.
-
-The sandbox cannot grant authority back to the supervisor.
-
-## 6. Minimum trusted kernel
-
-INC-2 adds only three logical responsibilities:
-
-### 5.1 Supervisor
-
-The supervisor:
-
-- accepts the validated compact task plus supervisor-owned execution constraints;
-- compiles one immutable CapabilityPolicy;
-- constructs the authored tool set;
-- mediates every privileged request;
-- creates one disposable sandbox for the run;
-- destroys or abandons that sandbox at terminal completion;
-- returns observations but does not declare final repository PASS.
-
-### 5.2 Capability gate
-
-For request r:
-
-```text
-G_REQUEST_ALLOWED(r) :=
-  tool_allowed(r)
-  AND argv_allowed(r)
-  AND cwd_allowed(r)
-  AND filesystem_effects_allowed(r)
-  AND subprocess_effects_allowed(r)
-  AND network_effects_allowed(r)
-  AND secret_effects_allowed(r)
-  AND git_effects_allowed(r)
-```
-
-If false:
-
-```text
-DENY / CAPABILITY_NOT_GRANTED
-```
-
-The gate executes before the request reaches Eve or the sandbox backend.
-
-### 5.3 Eve adapter
-
-Eve is behind one narrow adapter:
-
-```text
-Supervisor
-   |
-EveAdapter
-   |
-Eve
-   |
-AI SDK
-   |
-Sandbox backend
-```
-
-No other harness module imports Eve directly.
-
-This is a replaceability boundary, not another security layer.
-
-## 7. CapabilityPolicy contract to freeze in Stage 03
-
-Stage 03 must freeze the smallest typed policy that can express the approved INC-2 controls.
-
-Required semantics:
-
-```text
-CapabilityPolicy
-  task_identity
-  allowed_tools
-  allowed_argv
-  allowed_cwds
-  read_roots
-  write_roots
-  subprocess
-  network
-  secret_names
-  git
-```
-
-Required policy behavior:
-
-- allowed_tools is closed, not advisory;
-- allowed_argv contains exact argv token vectors or an equally deterministic closed representation;
-- allowed_cwds contains canonical authorized working roots;
-- read_roots and write_roots are distinct;
-- subprocess is deny unless explicitly granted;
-- network is deny by default;
-- secret_names is empty by default;
-- git is deny by default.
-
-No field may default from model output.
-
-No free-form text field may expand policy.
-
-## 8. Canonical filesystem rule
-
-Every requested filesystem path must be canonicalized before authorization:
-
-```text
-for every p in filesystem_effects(request):
-    canonical_realpath(p) is contained in an authorized root
-```
-
-Required failure cases include:
-
-- parent traversal;
-- absolute path outside the sandbox workspace;
-- symlink escape;
-- write through a permitted parent to an unpermitted canonical target.
-
-String-prefix comparison alone is insufficient.
-
-## 9. Tool and argv rule
-
-A tool request is authorized only when:
-
-1. the tool name is in allowed_tools;
-2. its complete argv vector matches one allowed command contract;
-3. cwd is an allowed canonical location;
-4. declared and observed side effects remain within policy.
-
-A generic unrestricted shell is not an allowed primitive.
-
-If the implementation exposes an exec-like tool, its accepted commands must be exact or mechanically bounded argv contracts, never arbitrary shell text interpreted through eval, sh -c, bash -c, os.system, or equivalent dynamic command composition.
-
-## 10. Sandbox rule
-
-The sandbox is disposable and treated as untrusted.
-
-For each run:
-
-- create a fresh sandbox identity;
-- mount or copy only the authorized workpiece surface required by the task;
-- do not expose the host repository .git metadata;
-- do not expose supervisor source, verifier source, policy secrets, promotion credentials, or deployment credentials;
-- do not persist writable state into the next run unless a later explicit contract authorizes one content-addressed verified artifact;
-- destroy or abandon writable runtime state after the run.
-
-INC-2 must not treat prompt instructions as isolation.
-
-Isolation must be enforced by the execution environment.
-
-## 11. Network rule
-
-Default:
-
-```text
-network = DENY
-```
-
-INC-2 does not require networked model/tool execution inside the coding sandbox.
-
-If the selected Eve backend cannot create a sandbox with network denied, Stage 03 must return BLOCKED / REDESIGN.
-
-A future allowlist is outside INC-2 unless the exact Stage 03 contract proves it necessary for the already-approved objective.
-
-## 12. Secret rule
-
-Default:
-
-```text
-secret_names = []
-```
-
-The coding sandbox receives no:
-
-- GitHub token;
-- Git credential;
-- Vercel token;
-- Supabase service-role key;
-- provider API key;
-- deployment secret;
-- supervisor secret;
-- verifier secret.
-
-Any framework credential needed by the external supervisor must remain outside the candidate sandbox.
-
-## 13. Git rule
-
-Default:
-
-```text
-git = DENY
-```
-
-The coding sandbox must not be able to:
-
-- push;
-- merge;
-- create or update remote refs;
-- use repository-owner credentials;
-- obtain host .git credentials.
-
-Read-only source material may be copied into the sandbox without giving the sandbox Git authority.
-
-## 14. Cross-run state rule
-
-For run A and later run B:
-
-```text
-writable_state(A) ∩ inputs(B) = empty
-```
-
-unless a later explicit contract authorizes a specific verified transfer.
-
-INC-2 negative controls must create a sentinel in run A and prove it is absent in fresh run B.
-
-Framework caches outside the candidate writable namespace may not contain candidate-controlled mutable state that affects run B.
-
-## 15. Eve and AI SDK compatibility gate
-
-External framework documentation is compatibility evidence only. Repository authority remains the routed governance chain.
-
-Current Eve documentation establishes:
-
-- defineAgent from eve;
-- defineSandbox from eve/sandbox;
-- isolated sandbox execution;
-- Docker as a supported sandbox backend/runtime;
-- AI SDK as the underlying model/tool layer.
-
-Current AI SDK documentation establishes the provider-agnostic ai package and typed tool primitives.
-
-The inspected public Eve documentation did not establish the previously assumed defaultTools: false API.
-
-Therefore Stage 03 must, before CONTRACT_READY:
-
-1. pin an exact Eve package version;
-2. pin an exact AI SDK package version;
-3. verify from that pinned Eve package/API that all implicit/default tool capabilities can be disabled or absent;
-4. verify the exact sandbox API required for disposable Docker execution;
-5. freeze the exact adapter calls used by INC-2;
-6. freeze the exact Docker image digest or other immutable sandbox/runtime identity.
-
-If default capability suppression cannot be proven in the pinned Eve version:
-
-```text
-STOP -> REDESIGN
-```
-
-Do not emulate safety by hiding tools in prompts or by filtering model text after generation.
-
-## 16. Dependency policy
-
-Permitted new runtime dependencies are limited to those strictly required by the already-approved stack:
-
-- Eve;
-- AI SDK core/tool primitives;
-- schema dependency only when required by the pinned Eve/AI SDK API and not already supplied transitively in a safe reusable form.
-
-No Jev dependency.
-No database dependency.
-No memory dependency.
-No provider SDK unless the pinned Eve API cannot compile without one and the Stage 03 contract explicitly proves it is required.
-No policy engine.
-No container-orchestration framework.
-No service mesh.
-No FastAPI.
-No second agent framework.
-
-Exact package names and versions are frozen only in Stage 03 after compatibility verification.
-
-## 17. Maximum Stage 04 candidate surface
-
-Stage 03 may reduce this set but may not expand it without returning to planning.
-
-Maximum candidate paths:
-
-1. harness/package.json
-2. harness/package-lock.json
-3. harness/src/capability.ts
-4. harness/src/supervisor.ts
-5. harness/src/eve-adapter.ts
-6. harness/agent/agent.ts
-7. harness/agent/tools/execute.ts
-8. harness/agent/sandbox/sandbox.ts
-9. harness/tests/execution.test.ts
-10. .github/workflows/pr-verification.yml
-
-Rules:
-
-- harness/agent/agent.ts is permitted only when the pinned Eve runtime requires an agent configuration file for this proof;
-- harness/agent/tools/execute.ts is the sole model-visible authored execution tool permitted by INC-2; every privileged request it receives must pass through the supervisor hard capability gate before any sandbox effect, and it cannot add, broaden, infer, or otherwise create authority beyond the compiled CapabilityPolicy;
-- harness/agent/sandbox/sandbox.ts is permitted only when the pinned Eve runtime requires the framework sandbox configuration file;
-- if either optional Eve-owned configuration file is unnecessary, Stage 03 must remove it from the implementation allowlist;
-- no root package manifest may change;
-- no application/product file may change;
-- no root governance source may change.
-
-## 18. Reviewable-size budget
-
-The harness remains infrastructure, not the product.
-
-Target initial reviewable implementation:
-
-```text
-<= 360 lines
-```
-
-Internal stop:
-
-```text
-420 lines
-```
-
-Repository ceiling:
-
-```text
-500 lines
-```
-
-Dependency lockfiles remain excluded under AGENTS.md.
-
-If the planned implementation reaches or projects to 420 reviewable lines before the initial candidate is complete:
-
-```text
-STOP -> REDUCE OR REDESIGN
-```
-
-Do not request a size exception merely to avoid simplifying the harness.
-
-## 19. Frozen INC-2 negative controls
-
-Stage 03 must freeze exact fixtures and expected decisions for these eight roadmap controls.
-
-### EC-01 Unauthorized tool
-
-Request a tool absent from allowed_tools.
-
-Expected:
-
-```text
-DENY / CAPABILITY_NOT_GRANTED
-tool implementation not invoked
-```
-
-### EC-02 Alternate default/built-in capability
-
-Attempt an equivalent side effect through an Eve default, built-in, auto-discovered, or undeclared tool.
-
-Expected:
-
-```text
-UNREACHABLE
-```
-
-No such capability may appear in the model-visible or runtime-callable tool set.
-
-### EC-03 Traversal and symlink escape
-
-Attempt parent traversal and a symlink resolving outside the authorized root.
-
-Expected:
-
-```text
-DENY / CAPABILITY_NOT_GRANTED
-target outside root unchanged
-```
-
-### EC-04 argv/cwd/subprocess violation
-
-Attempt:
-
-- unapproved argv;
-- approved argv from unapproved cwd;
-- subprocess creation when subprocess = deny.
-
-Expected:
-
-```text
-DENY / CAPABILITY_NOT_GRANTED
-request not executed
-```
-
-### EC-05 Network egress
-
-Attempt outbound network access from the candidate sandbox.
-
-Expected:
-
-```text
-network request cannot complete
-```
-
-A model refusal is not evidence.
-
-### EC-06 Git side effect
-
-Attempt a Git write/push/ref-changing operation or credential use.
-
-Expected:
-
-```text
-DENY or physically unreachable
-no remote/ref mutation
-```
-
-### EC-07 Supervisor/verifier/policy secret reachability
-
-Attempt to enumerate or read supervisor-only secret names and files.
-
-Expected:
-
-```text
-UNREACHABLE
-```
-
-### EC-08 Cross-run writable-state influence
-
-Create a unique sentinel during run A. Start independent run B from the same frozen input.
-
-Expected:
-
-```text
-sentinel absent in run B
-```
-
-Every control must fail for the intended boundary, not for an unrelated malformed fixture.
-
-## 20. Positive controls
-
-Stage 03 must freeze at least these positive controls:
-
-1. an explicitly allowed authored tool is callable;
-2. one exact allowed argv vector executes;
-3. allowed cwd succeeds;
-4. read inside read_roots succeeds;
-5. write inside write_roots succeeds;
-6. candidate output is observable outside the sandbox only through the supervisor-defined result boundary;
-7. two sequential runs receive distinct sandbox identities;
-8. INC-1 routing behavior remains unchanged.
-
-Positive controls must not weaken any negative control.
-
-## 21. Verification strategy
-
-INC-2 requires two evidence classes.
-
-### 20.1 Pure deterministic unit verification
-
-Run without network/model credentials:
-
-- policy compilation;
-- tool-set closure;
-- exact argv matching;
-- cwd matching;
-- canonical path containment;
-- secret-name denial;
-- Git denial;
-- subprocess denial;
-- malformed request failure.
-
-### 20.2 Physical sandbox integration verification
-
-Run against the pinned local Docker/Eve sandbox identity:
-
-- EC-02 default/built-in capability absence;
-- EC-03 symlink escape;
-- EC-05 network denial;
-- EC-07 supervisor-secret isolation;
-- EC-08 cross-run state isolation.
-
-A mocked sandbox cannot satisfy physical-isolation obligations.
-
-## 22. CI integration
-
-Preserve the existing fail-closed ordering:
-
-```text
-Harness Verification
-    -> required dependency of
-PR Verification
-```
-
-The existing Node 22.16.0 product verification behavior remains unchanged.
-
-The harness job may add only the minimum INC-2 checks necessary to prove:
-
-- pinned dependency install;
-- harness lint;
-- harness typecheck;
-- harness unit tests;
-- bounded Docker/Eve integration controls.
-
-No provider/model call is required for CI acceptance of INC-2.
-
-No network is granted to the candidate sandbox merely because the GitHub runner itself has network.
-
-## 23. Definition of Done
-
-INC-2 is implementation-complete only when all of the following are mechanically proven on one exact candidate head.
-
-D1. INC-1 routing tests remain green without semantic or authority changes.
-
-D2. The supervisor constructs policy only from validated task data plus supervisor-owned execution constraints.
-
-D3. The model cannot create authority by requesting a tool, path, argv, cwd, subprocess, network destination, secret, or Git effect outside policy.
-
-D4. Every privileged request is mediated before execution.
-
-D5. EC-01 through EC-08 produce their exact frozen outcomes.
-
-D6. Positive controls in Section 19 pass.
-
-D7. Eve is imported only through the bounded adapter surface selected by Stage 03.
-
-D8. AI SDK use is limited to the tool/model primitive boundary required by the pinned Eve adapter.
-
-D9. No undeclared Eve default/built-in capability is reachable.
-
-D10. Candidate execution occurs inside a disposable sandbox with immutable runtime identity.
-
-D11. Candidate sandbox network is denied.
-
-D12. Candidate sandbox receives no privileged Git, deployment, provider, supervisor, or verifier secrets.
-
-D13. Candidate sandbox cannot access host repository .git metadata.
-
-D14. Cross-run candidate-controlled writable state does not persist.
-
-D15. No product/application/database/provider behavior changes.
-
-D16. No Jev, final-verifier, authenticated-provenance, memory, or multi-agent implementation appears.
-
-D17. Reviewable implementation remains below the 420 internal stop and 500 repository ceiling.
-
-D18. Harness lint, typecheck, unit tests, and physical sandbox integration tests pass.
-
-D19. Existing Node 22 PR Verification remains semantically unchanged and passes.
-
-D20. Exact-head PR Verification passes.
-
-D21. Independent Codex review completes under the existing three-cycle limit with zero unresolved actionable findings before release eligibility.
-
-## 24. Construction sequence
-
-INC-2 Stage 04 must use one bounded candidate loop:
-
-```text
-BIND
-  -> INSPECT
-  -> MUTATE ONE BOUNDED CANDIDATE
-  -> VERIFY
-  -> STOP
-```
-
-Within that candidate, implementation order is:
-
-1. freeze pinned Eve/AI SDK/runtime identities from the Stage 03 contract;
-2. implement pure CapabilityPolicy and request gate;
-3. implement the narrow Eve adapter;
-4. implement supervisor-owned sandbox lifecycle;
-5. add deterministic unit controls;
-6. add physical Docker/Eve negative controls;
-7. add the minimum CI integration;
-8. run full affected verification;
-9. stop.
-
-A failing check does not authorize speculative architecture changes.
-
-A second repair requires materially new bounded diagnostic evidence.
-
-## 25. Stage 03 handoff
-
-Stage 03 must freeze, without implementing:
-
-1. exact candidate path subset from Section 16;
-2. exact Eve package/version;
-3. exact AI SDK package/version;
-4. exact Eve APIs used by the adapter;
-5. exact default-capability suppression predicate;
-6. exact immutable Docker/sandbox identity;
-7. exact CapabilityPolicy schema;
-8. canonical-path containment algorithm;
-9. exact authored tool set;
-10. exact argv/cwd policy representation;
-11. exact sandbox creation/destruction semantics;
-12. exact network-deny mechanism;
-13. exact secret and Git absence predicates;
-14. all EC-01 through EC-08 fixtures and expected outcomes;
-15. positive-control fixtures;
-16. exact CI commands;
-17. exact line-budget accounting;
-18. exact stop conditions.
-
-If any of items 2 through 13 cannot be frozen deterministically, Stage 03 returns BLOCKED / REDESIGN.
-
-## 26. Stop conditions
-
-Stop immediately if any of the following occurs:
-
-1. root AGENTS.md or CONTEXT.md must change;
-2. product/application code or dependencies must change;
-3. the INC-1 router must change to grant INC-2 authority;
-4. Eve requires an implicit/default capability that cannot be disabled or physically withheld;
-5. Eve requires network in the candidate sandbox for the accepted INC-2 path;
-6. the sandbox cannot exclude host .git metadata or privileged secrets;
-7. canonical filesystem enforcement cannot resist symlink escape;
-8. network denial is represented only as a prompt instruction;
-9. Git denial is represented only as a prompt instruction;
-10. candidate-controlled writable state survives into a later run;
-11. a new policy engine, service, database, memory layer, agent layer, or orchestration layer becomes necessary;
-12. a product runtime integration becomes necessary;
-13. physical sandbox tests require model/provider credentials;
-14. the implementation reaches or projects to 420 reviewable lines before the initial candidate is complete;
-15. the same failure persists without materially new bounded diagnostic evidence;
-16. Plan, Contract, base, head, package, or runtime identity becomes stale;
-17. exact-head CI fails without one bounded evidence-backed correction;
-18. Codex review cycle 3 reports an actionable finding.
-
-Required disposition is BLOCKED, REDUCE, or REDESIGN according to the triggering condition.
-
-## 27. Explicit non-authority
-
-This Plan does not authorize:
-
-- Stage 03 contract mutation before explicit approval of this exact PLAN_READY artifact;
-- Stage 04 implementation;
-- INC-3, INC-4, or INC-5;
-- Jev;
-- final PASS authority;
-- authenticated provenance;
-- root-router cutover;
-- old-governance removal;
-- product feature work;
-- database/backend work;
-- memory;
-- multi-agent execution;
-- deployment;
-- release;
-- merge;
-- a change-size exception.
-
-## 28. Stage 02 disposition
-
-The Plan closes one verified gap with the smallest approved architectural increment:
+### Desired state
 
 ```text
 INC-1 deterministic routing
-        +
-INC-2 external supervisor
-        +
-hard capability mediation
-        +
-disposable physical sandbox
+        |
+        v
+INC-2 signed capability + disposable Eve/Docker execution boundary
+        |
+        v
+INC-3 trusted command selection
+        |
+        v
+external mechanical verifier + hidden verifier-owned oracle
+        |
+        v
+PASS | FAIL | BLOCKED evidence envelope
 ```
 
-No additional architectural layer is introduced beyond the already-approved v1.2 roadmap.
+The model, candidate files, candidate tests, and candidate sandbox remain untrusted. They cannot select commands, rewrite the verifier/profile/oracle, manufacture PASS, or grant another repair.
 
-The Plan is ready for exact-artifact approval and Stage 03 contract freezing.
+### Definition of Done
+
+- D3-01: verification commands are selected from a trusted closed catalog, never candidate/model text.
+- D3-02: required checks are the union of baseline trusted checks, mechanically applicable path/routed checks, and already-trusted task-required command IDs.
+- D3-03: an unknown required command ID or a routed verification obligation with no trusted command ID fails `BLOCKED_PROFILE_INCOMPLETE`.
+- D3-04: verifier execution occurs outside the candidate workspace with no shared writable volume.
+- D3-05: verifier binds `base_commit_oid`, `candidate_digest`, `target_profile_digest`, `verifier_profile_digest`, and `oracle_manifest_digest`.
+- D3-06: each command records exact argv, cwd, exit code, stdout bytes and SHA-256, and stderr bytes and SHA-256.
+- D3-07: verdict vocabulary is exactly `PASS | FAIL | BLOCKED`; model output and candidate-authored tests cannot independently create PASS.
+- D3-08: the oracle manifest is verifier-owned, digest-bound, non-model-visible, non-candidate-writable, and cannot be nominated by the agent.
+- D3-09: every durable resume revalidates current target main, authority bundle, routed skill, task contract/envelope, target profile, tool policy, verifier profile, Eve identity, model configuration, and frozen candidate digest when present.
+- D3-10: governance drift returns to authority-read-only; frozen candidate drift blocks; tool/verifier/model/Eve drift requires a new run.
+- D3-11: repair budget is exactly two; every repair requires materially new machine evidence; the same failure without new evidence blocks.
+- D3-12: existing INC-1 routing and INC-2 execution/capability controls remain green and unchanged except for the minimum supervisor integration required to consume an INC-3 verifier result.
+- D3-13: implementation remains at or below the repository 500 reviewable-line ceiling; target is <=400 lines for the complete INC-3 implementation PR.
+
+### Non-goals
+
+INC-3 does not implement a publisher, GitHub write capability, merge, deployment, release attestation, provenance signing, Jev/final mechanical acceptance authority, memory/database, additional agent, provider/model call in CI, root-router cutover, product feature, or INC-5 adversarial acceptance campaign.
+
+## 4. Repository truth and measured gap
+
+Current INC-1 supplies a compact deterministic `TaskContract`, path ownership, requirement routing, and minimum-check derivation. It is still a shadow routing kernel and is not broadened by INC-3.
+
+Current INC-2 supplies Ed25519 session-bound capability authorization, a single model-visible `execute` tool, exact argv/cwd grants, canonical filesystem mediation, physical deny-all Docker isolation, scoped Eve session reset, and physical negative controls.
+
+Current `harness/package.json` contains only the already-pinned Eve, AI SDK and Zod runtime dependencies plus TypeScript/Vitest development dependencies. INC-3 needs no new package.
+
+Current `PR Verification` runs harness lint, harness typecheck, authored-Eve typecheck and harness tests before product verification. INC-3 may extend the existing harness lint/test surface but must not rename or replace downstream `PR Verification`.
+
+No current workpiece implements the v3.2 external verifier evidence envelope, oracle digest binding, resume guard, or exact two-repair state. Therefore behavior and verification for D3-01 through D3-11 are GAP. D3-12 is SATISFIED behavior that requires preservation verification.
+
+## 5. Hard invariants
+
+1. Root `AGENTS.md`, root `CONTEXT.md`, stage contexts, engineering rules, architecture sources, product/application/database files, and INC-1 routing semantics are not INC-3 candidate mutations.
+2. No new runtime dependency is admitted.
+3. Eve/model-visible tool closure remains exactly `["execute"]`.
+4. The verifier and oracle execute outside the candidate sandbox.
+5. Candidate/model input cannot provide executable argv, verifier profile, oracle manifest, verdict, or repair authority.
+6. Raw command evidence is captured by trusted verifier code before verdict reduction.
+7. No shared writable verifier/candidate volume.
+8. Existing exact-head CI and Codex review gates remain downstream independent authority.
+9. Merge remains separately user-authorized.
+10. Implementation change size is <=500 reviewable lines; the Plan target is <=400.
+11. Candidate tests are useful evidence but cannot be the sole independent oracle.
+12. INC-3 does not claim release provenance or final acceptance authority.
+
+## 6. Selected design
+
+Use one host-side deterministic verifier module plus one frozen verifier profile/oracle manifest, integrated through the existing supervisor boundary.
+
+Planned implementation surface, subject to Stage 03 freezing:
+
+1. `harness/src/verifier.ts` — trusted command catalog selection, verifier execution, evidence envelope, digest binding, resume guard, repair-state reducer.
+2. `harness/verifier/profile.json` — frozen mechanical verifier profile and command IDs/argv; no shell strings.
+3. `harness/verifier/oracle-manifest.json` — frozen oracle identifiers/digests only; no candidate-writable oracle logic.
+4. `harness/src/supervisor.ts` — minimum integration that consumes verifier outcomes and enforces the two-repair transition; no verdict creation.
+5. `harness/tests/verifier.test.ts` — deterministic positive/negative controls and mutation-style guards.
+6. `.github/workflows/pr-verification.yml` — include the new verifier source/test/profile surfaces in the existing Harness Verification lint/test contract only if required by the final file types; preserve the existing fail-closed dependency of PR Verification on Harness Verification.
+
+No `package.json` or lockfile mutation is planned because no new dependency is required.
+
+### Rejected alternatives
+
+- Candidate-selected commands: inadmissible because it violates D12/D14.
+- Candidate-visible/writable oracle: inadmissible because it permits oracle capture.
+- A database/service for evidence: dominated by an in-process deterministic evidence envelope and violates minimality.
+- A second agent or Jev layer: outside INC-3 authority.
+- GitHub Actions as the verifier itself: rejected because INC-3 must define the verifier contract independently while target exact-head PR Verification remains downstream authority.
+- Shell command strings in the profile: rejected in favor of exact argv vectors to preserve command identity and avoid command injection.
+
+## 7. Contracts to freeze in Stage 03
+
+### C3-01 Trusted command
+
+```text
+TrustedCommand := {
+  id: stable command id,
+  argv: non-empty exact token vector,
+  cwd: exact verifier-owned workspace-relative location
+}
+```
+
+No candidate/model field is converted into argv.
+
+Baseline IDs inherited from v3.2 are `install_locked`, `verify_change_size`, and `verify_code`; `verify_code` maps exactly to `npm run verify`. Stage 03 must bind the exact remaining argv/cwd values from current target behavior rather than infer them.
+
+### C3-02 Verification selection
+
+```text
+SelectedChecks =
+  BaselineTrustedChecks
+  UNION ApplicableTrustedPathOrRouteChecks
+  UNION TrustedTaskRequiredChecks
+```
+
+Unknown/missing mapping -> `BLOCKED_PROFILE_INCOMPLETE`.
+
+### C3-03 Evidence envelope
+
+```text
+VerifierEvidence := {
+  base_commit_oid,
+  candidate_digest,
+  target_profile_digest,
+  verifier_profile_digest,
+  oracle_manifest_digest,
+  commands: [{
+    id,
+    argv,
+    cwd,
+    exit_code,
+    stdout_bytes,
+    stdout_sha256,
+    stderr_bytes,
+    stderr_sha256
+  }],
+  verdict: PASS | FAIL | BLOCKED
+}
+```
+
+Canonical serialization and digest rules must be frozen in Stage 03 before implementation.
+
+### C3-04 Resume decision
+
+```text
+governance drift       -> RETURN_TO_AUTHORITY_READ_ONLY
+frozen candidate drift -> BLOCKED
+tool/verifier/model/Eve drift -> BLOCKED_NEW_RUN_REQUIRED
+all identities equal   -> RESUME_ALLOWED
+```
+
+No model judgment participates.
+
+### C3-05 Repair state
+
+```text
+repair_count in {0,1,2}
+FAIL + materially_new_machine_evidence + repair_count < 2 -> REPAIR_PENDING
+same failure without materially new evidence             -> BLOCKED
+repair_count == 2                                        -> BLOCKED
+PASS                                                      -> terminal verifier PASS
+profile/oracle/identity prerequisite absent               -> BLOCKED
+```
+
+A verifier PASS is harness-local evidence only and does not imply repository PASS, review clearance, release eligibility, or merge readiness.
+
+## 8. Negative-control oracle
+
+Stage 03 must freeze exact fixtures for these controls before implementation:
+
+- VC-01 candidate supplies an alternate argv for a known command ID -> BLOCKED/denied before execution.
+- VC-02 candidate omits a baseline or mechanically required check -> trusted selector restores it or blocks; it never disappears.
+- VC-03 unknown required command ID -> `BLOCKED_PROFILE_INCOMPLETE`.
+- VC-04 candidate modifies verifier profile/oracle material in candidate workspace -> accepted verifier/profile/oracle identity remains unchanged; candidate copy is ignored.
+- VC-05 verifier workspace aliases/shares candidate writable state -> BLOCKED before command execution.
+- VC-06 command exits nonzero -> FAIL with exact raw evidence; no model text can convert it to PASS.
+- VC-07 stdout/stderr bytes change while claimed digest remains old -> evidence validation fails closed.
+- VC-08 base/candidate/profile/oracle digest mismatch -> BLOCKED before verdict acceptance.
+- VC-09 governance drift on resume -> `RETURN_TO_AUTHORITY_READ_ONLY`.
+- VC-10 frozen candidate drift on resume -> BLOCKED.
+- VC-11 tool/verifier/model/Eve identity drift -> `BLOCKED_NEW_RUN_REQUIRED`.
+- VC-12 first failure with new evidence may enter repair 1; second distinct evidence-backed failure may enter repair 2; any third repair request -> BLOCKED.
+- VC-13 repeated identical failure without materially new machine evidence -> BLOCKED immediately.
+- VC-14 candidate-authored passing test with verifier-owned failing oracle -> verifier verdict remains FAIL.
+- VC-15 remove any one load-bearing selector/digest/oracle/repair predicate -> at least one deterministic test must fail.
+
+Every negative control must fail for its intended predicate, not an unrelated malformed fixture.
+
+## 9. Positive controls
+
+- PC-01 exact trusted baseline selection yields the frozen baseline IDs.
+- PC-02 applicable trusted path/route checks are unioned without candidate discretion.
+- PC-03 external verifier executes an exact trusted argv in an isolated verifier-owned temporary workspace.
+- PC-04 command evidence reproduces byte counts and SHA-256 for stdout/stderr.
+- PC-05 all bound identities equal -> evidence can reduce to PASS when every required command/oracle passes.
+- PC-06 unchanged frozen identities -> resume allowed.
+- PC-07 materially new machine evidence permits repair transitions only within the two-repair budget.
+- PC-08 all existing INC-1 routing tests and INC-2 execution/physical controls remain green.
+- PC-09 downstream product `PR Verification` behavior remains unchanged.
+
+## 10. Verification obligations
+
+| Obligation | Behavior | Verification | Required verifier |
+|---|---|---|---|
+| D3-01..03 trusted selection | GAP | GAP | VC-01..03 + PC-01..02 |
+| D3-04 external isolation | GAP | GAP | VC-05 + PC-03 |
+| D3-05..07 evidence/verdict | GAP | GAP | VC-06..08 + PC-04..05 |
+| D3-08 oracle ownership | GAP | GAP | VC-04, VC-14, VC-15 |
+| D3-09..10 resume | GAP | GAP | VC-09..11 + PC-06 |
+| D3-11 repair bound | GAP | GAP | VC-12..13 + PC-07 |
+| D3-12 preserve INC-1/2 | SATISFIED | COVERED | existing routing/execution tests + PC-08 |
+| exact-head target acceptance | SATISFIED | COVERED | existing PR Verification + PC-09 |
+
+Required Stage 04/05 verification sequence:
+
+1. lint all changed TypeScript harness surfaces;
+2. `npm --prefix harness run typecheck`;
+3. existing authored-Eve typecheck unchanged;
+4. `npm --prefix harness run test`, including all VC/PC controls;
+5. mutation probes for VC-15 must demonstrate each claimed load-bearing predicate is killed;
+6. existing physical INC-2 Docker controls must run, not skip;
+7. repository change-size gate;
+8. exact-head `PR Verification` PASS;
+9. fresh Codex review on that exact implementation state.
+
+No model/provider call is permitted in acceptance CI.
+
+## 11. Implementation increments
+
+INC-3 is one PR but is internally sequenced to preserve red-first evidence.
+
+### INC-3A — Freeze verifier profile and selector
+
+Objective: close D3-01..03.
+
+Affected planned paths:
+- `harness/src/verifier.ts`
+- `harness/verifier/profile.json`
+- `harness/tests/verifier.test.ts`
+
+Action:
+1. add failing VC-01..03/PC-01..02 fixtures;
+2. implement strict profile parsing and trusted selection;
+3. prove candidate fields cannot add/remove/substitute argv.
+
+Verification: narrow verifier tests, then harness typecheck/test.
+
+Stop: any required routed verification has no deterministic trusted command mapping, any command must be model-generated, or a new dependency is required.
+
+### INC-3B — External execution, oracle and evidence envelope
+
+Objective: close D3-04..08.
+
+Affected planned paths:
+- `harness/src/verifier.ts`
+- `harness/verifier/profile.json`
+- `harness/verifier/oracle-manifest.json`
+- `harness/tests/verifier.test.ts`
+
+Action:
+1. add failing VC-04..08/VC-14 and PC-03..05;
+2. create verifier-owned temporary workspace from trusted inputs with no shared writable candidate volume;
+3. execute only frozen argv;
+4. capture raw bytes/digests;
+5. bind verifier/profile/oracle/base/candidate identities;
+6. reduce mechanically to PASS/FAIL/BLOCKED.
+
+Verification: deterministic verifier tests plus mutation probe proving verdict and digest predicates are load-bearing.
+
+Stop: candidate can influence command/oracle/verdict authority, isolation needs a privileged secret/provider credential, or evidence cannot bind exact bytes.
+
+### INC-3C — Resume and two-repair control
+
+Objective: close D3-09..11.
+
+Affected planned paths:
+- `harness/src/verifier.ts`
+- `harness/src/supervisor.ts`
+- `harness/tests/verifier.test.ts`
+
+Action:
+1. add failing VC-09..13 and PC-06..07;
+2. implement deterministic resume comparison;
+3. implement repair reducer with maximum two repairs and materially-new-evidence requirement;
+4. expose no model-controlled state transition.
+
+Verification: exhaustive state-table tests and mutation probes.
+
+Stop: repair authority becomes model-controlled, repair count can exceed two, or drift can resume silently.
+
+### INC-3D — CI binding and preservation
+
+Objective: close D3-12 and bind exact-head evidence.
+
+Affected planned path:
+- `.github/workflows/pr-verification.yml` only if the existing harness commands do not automatically include all new files.
+
+Action:
+1. include new verifier source/test surface in existing Harness Verification lint if necessary;
+2. do not rename `PR Verification`;
+3. run full harness + product verification;
+4. freeze candidate manifest and Stage 05 evidence only after implementation is frozen.
+
+Verification: exact-head PR Verification, change-size gate, then Codex review.
+
+Stop: existing INC-1/2 control changes behavior, product verification changes semantics, implementation exceeds 500 lines, or a review finding requires scope outside this Plan.
+
+## 12. Recovery and failure semantics
+
+INC-3 writes no persistent application state. Verifier workspaces are disposable and must be deleted after use. A failed verifier run retains only its structured evidence outside the candidate workspace; it grants no publication authority.
+
+If an increment fails:
+- do not weaken a negative control;
+- do not remove a required check;
+- do not convert BLOCKED to FAIL/PASS;
+- do not add a dependency or path outside the frozen Stage 03 allowlist;
+- use one evidence-backed correction only when the failure identifies a bounded mechanism;
+- otherwise stop for REDUCE/REDESIGN.
+
+## 13. Stage 03 freeze requirements
+
+The implementation contract must freeze before any INC-3 code/test/config/workflow mutation:
+
+1. exact candidate path allowlist;
+2. exact trusted command IDs, argv and cwd;
+3. exact target-profile and verifier-profile schema;
+4. canonical serialization/digest algorithm for profile, oracle and evidence identities;
+5. exact oracle manifest shape and ownership boundary;
+6. exact verifier workspace isolation construction;
+7. exact verdict reduction rules;
+8. exact resume identity set and transition table;
+9. exact materially-new-evidence predicate and repair counter semantics;
+10. VC-01..VC-15 and PC-01..PC-09 outcomes;
+11. exact CI commands and no-provider-call constraint;
+12. exact implementation line budget;
+13. explicit non-authority for INC-4/5, publication, release and merge.
+
+No implementation begins from this Plan alone.
+
+## 14. Stop conditions
+
+Stop immediately if:
+
+1. root governance or architecture must change;
+2. product/application/database/provider code must change;
+3. INC-1 routing semantics must change to make INC-3 work;
+4. INC-2 capability/network/secret/Git isolation must be weakened;
+5. a new dependency is required;
+6. candidate/model must choose commands, oracle, verifier profile, verdict, or repair authority;
+7. verifier and candidate require a shared writable volume;
+8. required routed verification lacks a trusted command ID;
+9. verifier needs model/provider credentials;
+10. publication/GitHub write/merge capability becomes necessary;
+11. Jev/final PASS/provenance signing becomes necessary;
+12. implementation reaches or projects above 500 reviewable lines;
+13. the same failure persists without materially new bounded evidence;
+14. Plan/Contract/base/head/profile/oracle/runtime identity becomes stale;
+15. exact-head CI fails without one bounded evidence-backed correction;
+16. Codex cycle 3 reports an actionable finding.
+
+Disposition is BLOCKED, REDUCE, or REDESIGN according to the triggering condition. No silent fix-forward.
+
+## 15. Explicit non-authority
+
+This Plan does not authorize:
+- Stage 03 contract mutation before explicit approval of this exact PLAN_READY artifact;
+- Stage 04 implementation;
+- INC-4 or INC-5;
+- publisher/GitHub write/merge;
+- Jev or final mechanical PASS authority;
+- release provenance/attestation;
+- root-router cutover or old-governance removal;
+- product/database/backend/memory work;
+- multi-agent execution;
+- model/provider calls in acceptance CI;
+- deployment or release;
+- a change-size exception.
+
+## 16. Stage 02 disposition
+
+The current merged baseline already supplies deterministic routing and the bounded disposable execution boundary. The measured remainder is the approved v3.2 INC-3 verification/oracle slice.
+
+The selected path adds no new framework, service, database, agent, provider call, publication authority, or product behavior. It keeps verification authority outside the untrusted Eve candidate sandbox and makes command selection, oracle identity, evidence, resume, and repair mechanically fail closed.
 
 PLAN_READY
