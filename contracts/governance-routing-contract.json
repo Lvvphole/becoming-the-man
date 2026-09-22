@@ -1,98 +1,81 @@
 {
-  "version": "1.0.0",
-  "task_envelope": {
-    "required_fields": [
-      "workflow_stage",
-      "task_domains",
-      "source_sections",
-      "workpiece_paths",
-      "selected_evidence_ids",
-      "prior_outputs",
-      "authorized_candidate_paths",
-      "approvals",
-      "source_binding"
+  "version": "2.0.0",
+  "authority": "CONTEXT.md",
+  "purpose": "Machine-checkable invariants for deterministic repository path routing. CONTEXT.md remains the sole route table.",
+  "input_contract": {
+    "required": [
+      "affected_paths"
     ],
-    "path_array_fields": [
-      "workpiece_paths",
-      "authorized_candidate_paths"
+    "affected_paths": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "task_domain": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional explicit disambiguator only; never inferred from semantic similarity."
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "invariants": {
+    "exact_path_resolution": true,
+    "unknown_path": "BLOCKED: ROUTE_NOT_FOUND",
+    "ambiguous_path": "BLOCKED: ROUTE_AMBIGUOUS",
+    "multi_path_composition": "UNION_REQUIREMENTS",
+    "semantic_similarity_routing": false,
+    "evidence_is_authority": false,
+    "external_harness_is_authority": false,
+    "external_harness_grants_merge": false,
+    "merge_requires_separate_owner_authorization": true
+  },
+  "output_contract": {
+    "required": [
+      "resolved_paths",
+      "required_sources",
+      "required_verification",
+      "stop_conditions"
     ],
-    "repo_path_pattern": "^(?![/])[A-Za-z0-9._/-]+$",
-    "forbid_parent_traversal": true
+    "resolved_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_verification": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "stop_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    }
   },
-  "blocked_record": {
-    "required_fields": [
-      "status",
-      "reason_code",
-      "gate_id",
-      "stage_id",
-      "route_candidates",
-      "missing_inputs",
-      "conflicts",
-      "source_binding",
-      "resolution_required"
-    ],
-    "source_binding_required_fields": ["pr", "base", "current_head"],
-    "status": "BLOCKED",
-    "reason_codes": [
-      "ROUTING_TABLE_INVALID",
-      "ROUTE_ZERO_MATCH",
-      "ROUTE_MULTI_MATCH",
-      "MISSING_SELECTOR",
-      "MISSING_SOURCE",
-      "SOURCE_BINDING_STALE",
-      "WILDCARD_INPUT",
-      "EVIDENCE_INDEX_MISSING",
-      "EVIDENCE_ID_UNKNOWN",
-      "EVIDENCE_BINDING_STALE",
-      "EVIDENCE_AUTHORITY_FORBIDDEN",
-      "UNLISTED_INPUT",
-      "TRANSITION_PRECONDITION_FALSE",
-      "REVIEW_CYCLE_EXCEEDED",
-      "CHANGE_SIZE_DRIFT",
-      "STAGE_CONTRACT_INVALID",
-      "TASK_ENVELOPE_REQUIRED",
-      "STAGE_MUTATION_MISMATCH",
-      "CONTRACT_INCOMPLETE",
-      "CONTRACT_SCOPE_EXPANSION",
-      "VERIFIER_UNDEFINED"
-    ]
-  },
-  "stage_contract": {
-    "success_dispositions_by_stage": {"01_scout": ["SCOUT_READY"], "02_plan": ["PLAN_READY"], "03_contract": ["CONTRACT_READY"], "04_implement": ["CANDIDATE_READY"], "05_verify": ["PASS"], "06_review": ["REVIEW_CLEAR"], "07_release": ["RELEASE_ELIGIBLE"]},
-    "artifact_dispositions": ["IMPLEMENTATION_CANDIDATE_READY", "VERIFICATION_PASS"],
-    "required_fields": [
-      "stage_id",
-      "job",
-      "required_inputs",
-      "allowed_layer3",
-      "allowed_layer4",
-      "permitted_mutations",
-      "forbidden_mutations",
-      "required_verifier",
-      "blocked_disposition",
-      "success_disposition",
-      "primary_output",
-      "next_stage",
-      "human_gate"
-    ]
-  },
-  "architecture": {
-    "active_sources": [
-      "docs/Website_System_Architecture_v1.0_LOCKED.md",
-      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md",
-      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md"
-    ]
-  },
-  "governance": {
-    "active_reviewable_loc_limit": 500,
-    "active_500_paths": [
-      "AGENTS.md",
-      "references/architecture/CONTEXT.md",
-      "references/engineering/engineering-rules.md",
-      "docs/Website_System_Architecture_v1.0_LOCKED.md",
-      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md",
-      "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md",
-      "scripts/check-change-size.sh"
-    ]
+  "authority_boundary": {
+    "canonical_route_table": "CONTEXT.md",
+    "engineering_rules": "references/engineering/engineering-rules.md",
+    "evidence_prefix": "docs/evidence/",
+    "evidence_role": "non-authoritative observed-state evidence only"
   }
 }
