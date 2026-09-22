@@ -86,7 +86,7 @@ terms_contract_summary="$(
           (select bool_or(value like '%within 30 days after you first become subject to these Terms%') from body)::text || '|' ||
           (select bool_or(value like '%30 days after receipt of the notice%') from body)::text || '|' ||
           (select bool_or(value like '%defend, indemnify, and hold harmless Love Purpose Flourish Inc%') from body)::text || '|' ||
-          (select bool_or(value = '• (b) $100.') from body)::text || '|' ||
+          (select bool_or(value = '• (b) \$100.') from body)::text || '|' ||
           (select bool_or(value like '%Book purchases may currently be completed through third-party retailers rather than directly through Love Purpose Flourish Inc.%') from body)::text || '|' ||
           (select bool_or(value like '%provided “as is” and “as available.”%') from body)::text || '|' ||
           (select bool_or(value like '%therapist-client, counselor-client, physician-patient, attorney-client, fiduciary, or other professional relationship%') from body)::text
