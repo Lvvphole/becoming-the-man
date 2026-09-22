@@ -39,6 +39,9 @@ describe("R1-01 route rendering", () => {
     expect(html).not.toContain("Community signup will be available soon.");
     expect(html).toContain('href="#non-negotiables"');
     expect(html).toContain('href="/disclaimer"');
+    expect(html).toContain('href="/privacy"');
+    expect(html).toContain('href="/terms"');
+    expect(html).toContain("Privacy Policy");
     expect(html).toContain('href="https://example.test/book"');
     expect(html).toContain("Get Your Copy →");
   });

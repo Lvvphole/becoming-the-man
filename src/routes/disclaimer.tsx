@@ -101,8 +101,8 @@ export function DisclaimerPage({ page }: { page: LegalPage }) {
         </nav>
         <nav aria-label="Legal">
           <a href="/disclaimer" aria-current="page">Disclaimer</a>
-          <span aria-disabled="true">Privacy</span>
-          <span aria-disabled="true">Terms</span>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
           <span aria-disabled="true">Accessibility</span>
         </nav>
       </footer>
