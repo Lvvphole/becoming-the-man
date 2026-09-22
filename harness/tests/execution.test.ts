@@ -45,7 +45,7 @@ async function withPhysical<T>(run: (sandbox: SandboxPort) => Promise<T>): Promi
 describe("INC-2 deterministic capability gate", () => {
   it("EC-01 binds authority to signature/session and denies unknown grants before sandbox access", async () => {
     const token = issueAuthorization(privateKey, "session-a", policy(), grants);
-    for (const malformed of [token + "x", token + ".", token + "..anything", token + "!", token + " ", token + "="]) expect(verifyAuthorization(malformed, publicKey, "session-a")).toBeNull();
+    for (const malformed of [token + "x", token + ".", token + "..anything", token + "!", token + " ", token + "=", (() => { const [p, s] = token.split("."); const a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_", i = a.indexOf(s.at(-1)!); return `${p}.${s.slice(0, -1)}${a[i + 1]}`; })()]) expect(verifyAuthorization(malformed, publicKey, "session-a")).toBeNull();
     expect(verifyAuthorization(token, publicKey, "session-b")).toBeNull();
     process.env.INC2_SUPERVISOR_PUBLIC_KEY = publicKey;
     let sandboxRequests = 0;
