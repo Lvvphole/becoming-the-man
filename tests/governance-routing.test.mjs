@@ -7,6 +7,7 @@ import {
   validateEvidenceRole, validateGovernanceSnapshot, validateLoadedInputs,
   validateReviewCycle,
 } from "../scripts/verify-governance-routing.mjs";
+import * as governanceRouting from "../scripts/verify-governance-routing.mjs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const contract = JSON.parse(read("contracts/governance-routing-contract.json"));
@@ -64,6 +65,74 @@ describe("governance route positives", () => {
       "01_scout", "02_plan", "03_contract", "04_implement",
       "05_verify", "06_review", "07_release",
     ]) expect(governed).not.toContain(token);
+  });
+});
+
+describe("read-only localization bootstrap contract", () => {
+  const discoveryRequest = (overrides = {}) => ({
+    task_domains: ["product_behavior"],
+    subject: "Accessibility page",
+    source_binding: binding,
+    ...overrides,
+  });
+  const discover = (request = discoveryRequest(), more = {}) => {
+    const fn = governanceRouting.evaluateDiscovery;
+    if (typeof fn !== "function") return { status: "DISCOVERY_API_MISSING" };
+    return fn(table, request, options(more));
+  };
+
+  test("admits bounded read-only localization before the full task envelope exists", () => {
+    expect(discover()).toEqual({
+      status: "DISCOVERY_ALLOWED",
+      route_id: "route:product_behavior",
+      layer3: ["architecture_manifest", "engineering_rules", "product_prd"],
+      permissions: {
+        routed_source_section_localization: true,
+        repository_workpiece_localization: true,
+        evidence_access: false,
+        mutation_access: false,
+        route_inference: false,
+      },
+    });
+  });
+
+  test("missing task domain remains blocked rather than inferred", () => {
+    const request = discoveryRequest();
+    delete request.task_domains;
+    expect(reason(discover(request))).toBe("MISSING_SELECTOR");
+  });
+
+  test("unknown and undeclared composite task domains remain blocked", () => {
+    expect(reason(discover(discoveryRequest({ task_domains: ["unknown"] })))).toBe("ROUTE_ZERO_MATCH");
+    expect(reason(discover(discoveryRequest({
+      task_domains: ["product_behavior", "ui_ux"],
+    })))).toBe("ROUTE_ZERO_MATCH");
+  });
+
+  test("stale discovery source binding is blocked", () => {
+    expect(reason(discover(discoveryRequest({
+      source_binding: { ...binding, current_head: "0".repeat(40) },
+    })))).toBe("SOURCE_BINDING_STALE");
+  });
+
+  test("discovery output grants neither mutation nor evidence authority", () => {
+    const result = discover();
+    expect(result.permissions?.mutation_access).toBe(false);
+    expect(result.permissions?.evidence_access).toBe(false);
+    expect(result).not.toHaveProperty("authorized_candidate_paths");
+    expect(result).not.toHaveProperty("approvals");
+    expect(result).not.toHaveProperty("selected_evidence_ids");
+  });
+
+  test("discovery source localization is confined to the selected route bundle", () => {
+    expect(discover().layer3).toEqual([
+      "architecture_manifest", "engineering_rules", "product_prd",
+    ]);
+  });
+
+  test("a discovery request and discovery result cannot bypass normal envelope validation", () => {
+    expect(reason(route(discoveryRequest()))).toBe("TASK_ENVELOPE_REQUIRED");
+    expect(reason(route(discover()))).toBe("TASK_ENVELOPE_REQUIRED");
   });
 });
 
