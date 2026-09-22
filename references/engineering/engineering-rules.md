@@ -6,7 +6,7 @@ Purpose: express repository engineering governance as deterministic, fail-closed
 
 ## 1. Core State Model
 
-For caller/prior-stage task envelope `E` and canonical route set `Routes`:
+For task envelope `E` and canonical route set `Routes`:
 
 ```text
 M(E) := { r in Routes | predicate_r(E) = true }
@@ -23,14 +23,10 @@ G_EVIDENCE_NONAUTH :=
   no Requirement has source_kind = evidence
   AND no Permission has source_kind = evidence
   AND no Waiver has source_kind = evidence
-  AND no TransitionAuthority has source_kind = evidence
+  AND no RouteChoice has source_kind = evidence
+  AND no MergeAuthority has source_kind = evidence
 
 G_EVIDENCE_CURRENT(e,s) := binding(e) = identity(s)
-
-G_TRANSITION :=
-  predecessor_disposition_satisfies_transition = true
-  AND every required_transition_fact = true
-  AND every required_human_gate = true
 
 G_CHANGE_SIZE :=
   reviewable_lines <= 500
@@ -48,28 +44,27 @@ Every required predicate is binary. False returns `BLOCKED`. No model judgment m
 
 ```text
 G_AUTHORITY_ROOT := root_authority = "AGENTS.md"
-G_CONTEXT_ROUTER := task_stage_router = "CONTEXT.md"
+G_CONTEXT_ROUTER := task_source_router = "CONTEXT.md"
 G_NO_PARALLEL_AUTHORITY := no subordinate source claims precedence over AGENTS.md
 ```
 
 Authority chain:
 
 ```text
-CLAUDE.md -> AGENTS.md -> CONTEXT.md -> one stage CONTEXT.md -> exact routed Layer 3 references
+CLAUDE.md -> AGENTS.md -> CONTEXT.md -> exact routed Layer 3 references
 ```
 
 Plans, contracts, schemas, tests, skills, implementation files, and evidence are subordinate.
 
-## 3. C4 BLOCKED Record
+## 3. BLOCKED Record
 
-A failed gate emits exactly one terminal C4 record containing:
+A failed gate emits exactly one terminal record containing:
 
 ```json
 {
   "status": "BLOCKED",
   "reason_code": "STABLE_MACHINE_CODE",
   "gate_id": "G_*",
-  "stage_id": "NN_stage",
   "route_candidates": [],
   "missing_inputs": [],
   "conflicts": [],
@@ -78,19 +73,17 @@ A failed gate emits exactly one terminal C4 record containing:
 }
 ```
 
-The record reports state. It does not authorize a repair or transition.
+The record reports state. It does not authorize a repair, route change, or merge.
 
 ## 4. Input and Source Gates
 
-A stage may load only:
+A task may load only:
 
 1. `AGENTS.md`;
 2. root `CONTEXT.md`;
-3. its selected stage `CONTEXT.md`;
-4. exact Layer 3 sources in the unique route;
-5. exact Layer 4 inputs explicitly allowed by the route and envelope;
-6. exact prior-stage outputs;
-7. exact workpiece paths.
+3. exact Layer 3 sources in the unique route;
+4. exact workpiece paths declared by the task;
+5. exact non-authoritative evidence explicitly allowed by the route and envelope.
 
 ```text
 G_NO_DISCOVERY_WILDCARDS :=
@@ -103,25 +96,25 @@ Unknown, missing, stale, or unlisted input returns `BLOCKED`.
 
 ## 5. Evidence Gates
 
-`docs/evidence/**` is Layer 4 proof only.
+`docs/evidence/**` is proof only.
 
-Evidence may establish what happened, what was observed, or what was proven. It may not define what must be built, what is allowed, a waiver, route selection, transition authority, or merge authority.
+Evidence may establish what happened, what was observed, or what was proven. It may not define what must be built, what is allowed, a waiver, route choice, or merge authority.
 
 Historical or stale evidence cannot satisfy a current-state gate.
 
 ## 6. Pre-Code Readiness Gate
 
-Before creating or modifying code, tests, schemas, migrations, build logic, workflow logic, or harness/verifier logic, every predicate below must be true:
+Before creating or modifying code, tests, schemas, migrations, build logic, workflow logic, harness/verifier logic, or repository governance, every predicate below must be true:
 
 ```text
 G_PC_01_AGENTS_READ :=
   current AGENTS.md was read
 
-G_PC_02_ROUTE_SELECTED :=
-  G_ROUTE_UNIQUE(E) = true
+G_PC_02_CONTEXT_READ :=
+  current CONTEXT.md was read
 
-G_PC_03_STAGE_READ :=
-  selected stage CONTEXT.md was read
+G_PC_03_ROUTE_SELECTED :=
+  G_ROUTE_UNIQUE(E) = true
 
 G_PC_04_ENGINEERING_RULES_READ :=
   this routed engineering-rules document was read
@@ -147,16 +140,15 @@ G_PC_10_NO_UNRESOLVED_CONFLICT :=
 G_PC_11_500_LOC :=
   G_CHANGE_SIZE = true
 
-G_PC_12_PLAN_APPROVAL :=
-  when Plan approval is required, the exact PLAN_READY artifact has explicit user approval
-
 G_PRE_CODE_READY :=
   G_PC_01 AND G_PC_02 AND G_PC_03 AND G_PC_04
   AND G_PC_05 AND G_PC_06 AND G_PC_07 AND G_PC_08
-  AND G_PC_09 AND G_PC_10 AND G_PC_11 AND G_PC_12
+  AND G_PC_09 AND G_PC_10 AND G_PC_11
 ```
 
 If `G_PRE_CODE_READY = false`, protected mutation is unauthorized.
+
+A plan, contract, or skill may be used when explicitly requested or independently required by routed authority. No repository-global lifecycle makes such an artifact a prerequisite for ordinary work.
 
 ## 7. Mutation Gate
 
@@ -207,23 +199,13 @@ G_REPAIR :=
 
 A second repair attempt requires materially new diagnostic evidence identifying one bounded correction.
 
-## 10. Lifecycle Transition Gate
+## 10. Repository Work Admission
 
-Canonical lifecycle:
+Repository work has no mandatory lifecycle stage, predecessor-stage artifact, or automatic stage transition.
 
-```text
-01_scout -> 02_plan -> 03_contract -> 04_implement -> 05_verify -> 06_review -> 07_release
-```
+Admission is task-local and requires the unique route, exact sources, verified gap, exact scope, deterministic verifier or BLOCKED condition, named stop condition, and the active change-size gate. External execution state may supply task facts, but it cannot create repository authority, waive routed constraints, or grant merge authority.
 
-Admission requires `G_TRANSITION = true`.
-
-- Scout -> Plan: valid Scout handoff plus original pre-authorization.
-- Plan -> Contract: PLAN_READY plus explicit user approval and current plan binding.
-- Contract -> Implement: CONTRACT_READY plus current approved Plan binding and readiness.
-- Implement -> Verify: valid candidate manifest plus clear stop condition.
-- Verify -> Review: PASS plus exact-state binding.
-- Review -> Release: `G_REVIEW = true`.
-- Release -> Merge: never automatic.
+Verification and review remain independent completion controls defined by `AGENTS.md` and the active architecture amendments.
 
 ## 11. Review and Completion Gate
 
@@ -231,4 +213,4 @@ If review cycle 3 reports an actionable finding, return `BLOCKED`. No repair or 
 
 `G_REVIEW = true` creates review eligibility only. Merge always requires separate explicit user authorization.
 
-No implementation agent may self-declare final PASS, completion, release eligibility, or merge readiness without the exact external evidence required by the active stage.
+No implementation agent may self-declare final PASS, completion, release eligibility, or merge readiness without the exact external evidence required by `AGENTS.md` and the active architecture authority.
