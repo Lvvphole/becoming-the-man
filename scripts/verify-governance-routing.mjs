@@ -111,7 +111,8 @@ export function evaluateRoute(table, envelope, options = {}) {
   if (!object(envelope)) return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", binding);
   const missing = requiredEnvelopeFields.filter((field) => !Object.hasOwn(envelope, field) || envelope[field] === null);
   if (missing.length) {
-    return makeBlocked(missing.includes("task_domains") ? "MISSING_SELECTOR" : "TASK_ENVELOPE_REQUIRED",
+    const onlySelectorMissing = missing.length === 1 && missing[0] === "task_domains";
+    return makeBlocked(onlySelectorMissing ? "MISSING_SELECTOR" : "TASK_ENVELOPE_REQUIRED",
       "G_ROUTE_UNIQUE", binding);
   }
   if (!strings(envelope.task_domains) || !object(envelope.source_sections) ||
