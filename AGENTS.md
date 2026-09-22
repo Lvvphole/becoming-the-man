@@ -9,6 +9,7 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 - `CLAUDE.md` may only route to this file. It must not duplicate or reinterpret governance.
 - Product specifications, architecture documents/amendments, skills, contracts, schemas, tests, plans, and evidence are subordinate to this file.
 - The executing agent must not infer, broaden, substitute, or choose a route. Any missing, conflicting, zero-match, or multi-match route returns the machine-readable `BLOCKED` record defined by the routed engineering rules.
+- Before a full task envelope exists, the bounded read-only localization bootstrap defined by root `CONTEXT.md` may derive exact `source_sections` and `workpiece_paths` only after a caller- or controller-supplied task domain resolves exactly one route. It cannot infer a task domain, access evidence, mutate state, run verification, or grant authority.
 - Before creating or modifying code, tests, schemas, migrations, build/workflow logic, or harness/verifier logic, read the engineering-rules source selected by `CONTEXT.md` and satisfy its Pre-Code Readiness Gate.
 
 ## Build & Test
@@ -96,7 +97,7 @@ Do not introduce microservices, queues, Kubernetes, custom payment/order systems
 
 ## Routing Boundary
 - Root `CONTEXT.md` is the only task-domain and source router. Do not maintain a second skill router, source router, or evidence router in this file.
-- Load only the exact Layer 3 sources, workpiece paths, and evidence IDs selected by the validated task envelope.
-- Do not scan or preload `.claude/skills/`, `docs/`, or `docs/evidence/` to discover a route or source.
+- Outside the read-only localization bootstrap, load only the exact Layer 3 sources, workpiece paths, and evidence IDs selected by the validated task envelope.
+- Do not scan or preload `.claude/skills/`, `docs/`, or `docs/evidence/` to discover a route or source. The sole exception is the `CONTEXT.md` read-only localization bootstrap: after exact task-domain routing, it may use locator-only search inside that route's registered Layer 3 sources and subject-targeted repository search to identify exact selectors. It must not inspect `docs/evidence/**`.
 - Skills are optional task procedures, not mandatory lifecycle stages, and cannot grant write, review, PASS, merge-readiness, or merge authority.
 - If root `CONTEXT.md` or any required routed source is unavailable, stale, ambiguous, or conflicts without explicit precedence, stop and return `BLOCKED`. Do not substitute memory or guess.
