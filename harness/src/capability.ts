@@ -96,7 +96,7 @@ export function verifyAuthorization(
   token: string, publicKey: string, sessionId: string,
 ): VerifiedAuthorization | null {
   const [payload, signature, ...extra] = token.split(".");
-  if (!payload || !signature || extra.length || !publicKey || !sessionId) return null;
+  if (!payload || !signature || extra.length || !/^[A-Za-z0-9_-]+$/.test(signature) || !publicKey || !sessionId) return null;
   try {
     if (!verifySignature(null, Buffer.from(payload), publicKey,
       Buffer.from(signature, "base64url"))) return null;
