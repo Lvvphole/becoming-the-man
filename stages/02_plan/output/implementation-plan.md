@@ -1,781 +1,281 @@
 PLAN_READY
 
-# Zero-Trust Repository Harness v1.2 — INC-2 Implementation Plan
+# Embedded SDLC Removal and Repository Routing Migration Plan
 
-Lifecycle stage: 02_plan
-Task domain: governance
-Route: route:02_plan:governance
-Planning mode: BROWNFIELD
-Branch: harness-v1-2-inc2-plan
-Bootstrap base: 93a2edc3f8729f30f6772ce8a8df7a955c5c2fff
-Predecessor: merged INC-1 from PR #52
-Bootstrap exception: one Plan mutation permitted before PR creation; no other governance or implementation exception applies
+Status: PLAN_READY
+Target repository: Lvvphole/becoming-the-man
+Base: 27228b8a81e3cd14b96b2d08bfc578ad12a2e317
+Domain: governance
 
 ## 1. Goal
 
-Build the smallest execution boundary that can take the already-validated INC-1 compact task contract and prove that an untrusted coding agent can exercise only explicitly granted capabilities inside a disposable sandbox.
-
-INC-2 adds:
-
-1. an external supervisor process;
-2. a narrow Eve replaceability adapter;
-3. AI SDK tool primitives only where needed to expose authored tools;
-4. a typed hard capability policy;
-5. per-request complete mediation before privileged execution;
-6. disposable Docker-backed sandbox execution;
-7. default-deny network, secret, Git, and cross-run state behavior.
-
-INC-2 does not add semantic risk scoring, Jev, the final external verifier, authenticated provenance, memory, databases, provider integrations, multi-agent routing, product behavior, or release automation.
-
-## 2. Authority and predecessor binding
-
-INC-2 is subordinate to:
-
-1. AGENTS.md;
-2. root CONTEXT.md;
-3. the uniquely selected stage CONTEXT.md;
-4. references/engineering/engineering-rules.md;
-5. references/architecture/CONTEXT.md;
-6. the approved Zero-Trust Repository Harness v1.2 roadmap;
-7. the merged INC-1 routing kernel.
-
-INC-1 remains the only new shadow routing mechanism. Root CONTEXT.md remains active repository routing authority.
-
-INC-2 may consume an INC-1 ALLOW result and compact task contract. It may not reinterpret routing, invent selectors, expand allowed paths, weaken required checks, or create authority from the free-form goal.
-
-## 3. Verified current-state gap
-
-At bootstrap base 93a2edc3f8729f30f6772ce8a8df7a955c5c2fff:
-
-- harness/src/routing.ts implements the deterministic INC-1 shadow router and compact task validation;
-- harness/tests/routing.test.ts freezes the eight INC-1 routing negative controls;
-- harness/fixtures/CONTEXT.target.md is non-authoritative routing fixture data;
-- the harness package contains no Eve dependency;
-- the harness package contains no direct AI SDK dependency;
-- no external supervisor exists;
-- no hard per-request capability gate exists;
-- no disposable coding-agent sandbox contract exists;
-- no network, secret, Git, subprocess, or cross-run-state enforcement exists.
-
-The gap is therefore execution authority, not routing authority.
-
-## 4. Complexity admission
-
-INC-2 adds no mechanism beyond the already-approved v1.2 roadmap. Each retained control satisfies the repository's harness-complexity admission rule.
-
-| Gate | INC-2 evidence |
-|---|---|
-| C1 concrete gap demonstrated | INC-1 admits tasks but cannot physically constrain runtime tool, filesystem, subprocess, network, secret, Git, or cross-run effects. |
-| C2 simpler existing control insufficient | Routing and prompt instructions can deny semantic authority but cannot physically mediate or remove runtime capabilities from an untrusted sandbox. |
-| C3 peer-reviewed support | Saltzer & Schroeder, "The Protection of Information in Computer Systems," Proceedings of the IEEE 63(9), 1975, DOI 10.1109/PROC.1975.9939, supports fail-safe defaults, complete mediation, least privilege, and economy of mechanism. Jarkas et al., "A Container Security Survey: Exploits, Attacks, and Defenses," ACM Computing Surveys 57(7), 2025, DOI 10.1145/3715001, supports explicit layered controls for container isolation, access, network, and host-risk boundaries while documenting that container isolation alone is not sufficient. |
-| C4 deterministic benefit testable | EC-01 through EC-08 and the positive controls mechanically test the hard gate and physical isolation properties. |
-| C5 no duplicated control | INC-1 owns deterministic admission/routing; INC-2 owns execution capability enforcement. Neither duplicates the other. |
-
-Complexity disposition:
+Remove completely from active repository architecture and governance the generic seven-stage lifecycle:
 
 ```text
-ADD:
-  external supervisor
-  hard capability gate
-  disposable sandbox
-  narrow Eve/AI SDK adapter
-
-DO_NOT_ADD:
-  policy engine
-  service mesh
-  database
-  memory layer
-  Jev
-  final verifier
-  multi-agent orchestration
-  any other architectural layer
+Scout -> Plan -> Contract -> Implement -> Verify -> Review -> Release
 ```
 
-Peer-reviewed evidence is justification for the control classes only. It does not make Eve, Docker, or any specific package authoritative. Exact framework behavior remains subject to the deterministic compatibility and negative-control gates below.
+The reusable lifecycle belongs exclusively to a separate external multi-repository SDLC agentic harness.
 
-## 5. Approved architectural boundary
-
-The fixed execution order for INC-2 is:
+The target repository retains only deterministic repository navigation and repository-specific authority:
 
 ```text
-validated INC-1 task
-        |
-        v
-EXTERNAL SUPERVISOR
-        |
-        +--> compile immutable capability policy
-        |
-        v
-HARD REQUEST GATE
-        |
-        +--> DENY before execution when any requested effect exceeds policy
-        |
-        v
-EVE ADAPTER
-        |
-        v
-DISPOSABLE DOCKER SANDBOX
-        |
-        v
-AUTHORED TOOL EXECUTION ONLY
+AGENTS.md
+  -> CONTEXT.md
+  -> deterministic task/path routing
+  -> applicable domain instructions
+  -> authoritative product/architecture source
+  -> work
+  -> required verification
 ```
 
-The supervisor is trusted for enforcement in INC-2.
+## 2. Architectural invariants
 
-The coding agent, model output, generated command arguments, candidate repository, and sandbox are untrusted.
+R1. No active repository governance document requires, routes through, transitions through, or derives authority from 01_scout, 02_plan, 03_contract, 04_implement, 05_verify, 06_review, or 07_release.
 
-The sandbox cannot grant authority back to the supervisor.
+R2. AGENTS.md remains the compact root repository authority for precedence, deterministic routing entry, universal engineering constraints, mutation/repair safety, security, repository verification, review/merge requirements, and stop conditions. It does not orchestrate a generic SDLC.
 
-## 6. Minimum trusted kernel
+R3. Root CONTEXT.md becomes a pure deterministic task/path router. It resolves domain ownership, governing instructions, authoritative sources, required verification, and prohibitions. It does not resolve workflow stage, predecessor stage, next stage, or lifecycle artifacts.
 
-INC-2 adds only three logical responsibilities:
+R4. Routing is mechanical. No semantic similarity, best-fit routing, inferred lifecycle state, authority discovery scans, duplicated routers, or agent-invented fallback routes.
 
-### 5.1 Supervisor
+R5. Domain-specific instructions remain local to governed surfaces where needed. Expected routing surfaces include src/**, server/**, api/**, contracts/**, supabase/**, config/**, tests/**, scripts/**, .github/workflows/**, and docs/**.
 
-The supervisor:
+R6. Product authority survives. Product Specification, System Architecture, architecture amendments, security, provider boundaries, data ownership, Supabase/RLS, API contracts, UI/UX, accessibility, SEO, tests, CI, exact-head verification, change-size controls, Codex review, and user-only merge authority must not be weakened.
 
-- accepts the validated compact task plus supervisor-owned execution constraints;
-- compiles one immutable CapabilityPolicy;
-- constructs the authored tool set;
-- mediates every privileged request;
-- creates one disposable sandbox for the run;
-- destroys or abandons that sandbox at terminal completion;
-- returns observations but does not declare final repository PASS.
+R7. Generic lifecycle stages, transitions, admission, artifact promotion, candidate manifests, lifecycle dispositions, generic Plan/Contract/Verify handoffs, and reusable autonomous-agent orchestration belong to the external harness.
 
-### 5.2 Capability gate
+## 3. Removal inventory
 
-For request r:
+Before deletion, enumerate active references to the embedded lifecycle, including:
+- Scout, Plan, Contract, Implement, Verify, Review, Release when used as lifecycle states;
+- 01_scout through 07_release;
+- workflow_stage, target_stage, from_stage, to_stage, transition, prior_outputs;
+- PLAN_READY, CONTRACT_READY, CANDIDATE_READY;
+- G_TRANSITION, stage_id, stage contract, lifecycle.
+
+Classify each occurrence:
+- SDLC -> REMOVE.
+- ROUTING -> REWRITE into deterministic repository routing.
+- PRODUCT -> PRESERVE.
+- HISTORICAL -> remove if part of active governance; otherwise make explicitly non-authoritative.
+
+No blind global search-and-replace.
+
+## 4. Remove stages/** as repository architecture
+
+Remove the active generic stage hierarchy:
+- stages/01_scout/**
+- stages/02_plan/**
+- stages/03_contract/**
+- stages/04_implement/**
+- stages/05_verify/**
+- stages/06_review/**
+- stages/07_release/**
+
+This includes stage CONTEXT files, transitions, required stage inputs, outputs, stage dispositions, candidate manifests, stage evidence contracts, and lifecycle authority.
+
+Before deletion, migrate any repository-specific requirement to its proper surviving authority.
+
+## 5. Rewrite root CONTEXT.md
+
+Replace the lifecycle route matrix with one deterministic repository router:
 
 ```text
-G_REQUEST_ALLOWED(r) :=
-  tool_allowed(r)
-  AND argv_allowed(r)
-  AND cwd_allowed(r)
-  AND filesystem_effects_allowed(r)
-  AND subprocess_effects_allowed(r)
-  AND network_effects_allowed(r)
-  AND secret_effects_allowed(r)
-  AND git_effects_allowed(r)
+task/path -> domain -> governing context -> authoritative sources -> required checks
 ```
 
-If false:
+Remove workflow_stage, target_stage, transition.from_stage, transition.to_stage, transition facts, prior-stage admission, stage-specific route IDs, and stage-specific outputs.
+
+Every governed path must resolve deterministically to the applicable domain instructions, authoritative sources, required checks, and stop conditions.
+
+## 6. Simplify AGENTS.md
+
+Remove language whose only purpose is operating the seven-stage lifecycle.
+
+Preserve:
+- authority and precedence;
+- routing;
+- repository invariants;
+- engineering constraints;
+- mutation and repair rules;
+- security;
+- verification;
+- review;
+- merge authority;
+- stop conditions.
+
+The resulting execution rule is: read AGENTS.md, route through CONTEXT.md using explicit task/path information, load only applicable authorities, perform bounded work, run prescribed checks, stop on explicit violation.
+
+## 7. Refactor engineering rules
+
+Preserve applicable repository controls including authority root, context router, source presence, change size, review, Pre-Code Readiness, mutation safety, and bug-repair controls.
+
+Remove G_TRANSITION and the seven-stage lifecycle.
+
+Pre-Code Readiness becomes repository-work readiness:
+- root authority read;
+- deterministic route resolved;
+- applicable domain authority read;
+- requested gap established;
+- mutation scope explicit;
+- verifier defined;
+- stop condition defined;
+- no authority conflict;
+- change-size constraint satisfied.
+
+Ordinary product work must not require PLAN_READY or CONTRACT_READY.
+
+## 8. Preserve CI independently of the harness
+
+Do not weaken:
+- locked dependency installation;
+- <=500 reviewable implementation lines;
+- lint;
+- typecheck;
+- applicable tests;
+- production build;
+- required SSR regressions;
+- exact-head PR Verification;
+- applicable domain-specific checks;
+- independent Codex review;
+- protected-main behavior;
+- user-only merge authority.
+
+Website CI is not the external harness lifecycle.
+
+## 9. Active architecture documentation
+
+Inspect the active architecture set:
+- docs/Website_System_Architecture_v1.0_LOCKED.md
+- docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md
+- docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md
+
+Remove or supersede only language that makes the seven-stage agent lifecycle part of website architecture. Preserve repository-specific controls, including A18 bounded changes, exact-head CI, Codex review, branch protection, and merge authority.
+
+Distinguish legitimate software/product release concepts from the removed 07_release lifecycle state.
+
+## 10. Skills
+
+Repository skills that exist specifically to implement the seven-stage lifecycle cease being repository lifecycle authority. Useful task-specific skills may remain only as subordinate procedures reached through deterministic repository routing. Generic SDLC skills belong in the external harness.
+
+## 11. Tests and schemas
+
+Remove tests/schemas whose sole purpose is validating the embedded lifecycle. Preserve tests for surviving repository governance.
+
+Deterministic routing verification must prove:
+1. governed product paths resolve exactly;
+2. unknown governed paths fail closed;
+3. routes cannot silently broaden authority;
+4. unrelated domain instructions are not required;
+5. routing does not depend on SDLC stage;
+6. routes do not require lifecycle predecessor artifacts;
+7. product verification can be selected without harness availability.
+
+## 12. Anti-drift control
+
+Add a narrow deterministic regression check preventing reintroduction of lifecycle identifiers in active governance, including 01_scout through 07_release, workflow_stage, target_stage, stage_id, PLAN_READY, CONTRACT_READY, and CANDIDATE_READY.
+
+Do not ban ordinary English uses of plan, review, release, or similar product/software terminology.
+
+## 13. External harness interface
+
+The repository may expose a minimal machine-readable interface for an external harness to consume repository authority entry point, routing entry point, permitted commands, required CI, protected paths, verification commands, and repository invariants.
+
+It must not reproduce the external lifecycle.
+
+Dependency direction:
 
 ```text
-DENY / CAPABILITY_NOT_GRANTED
+External Harness -> reads/operates on -> Repository
 ```
 
-The gate executes before the request reaches Eve or the sandbox backend.
+Ordinary website development must not require the external harness to be operational.
 
-### 5.3 Eve adapter
+## 14. Migration increments
 
-Eve is behind one narrow adapter:
+Increment 1 — Inventory and frozen removal manifest.
+Enumerate every active lifecycle dependency and classify REMOVE / REWRITE / PRESERVE / HISTORICAL. Prove the preserved product/CI authority set before deletion.
+
+Increment 2 — Replacement router.
+Establish deterministic path/domain routing without stage semantics. Prove representative frontend, backend, database, API, CI, and documentation tasks resolve correctly.
+
+Increment 3 — Decouple engineering governance.
+Rewrite AGENTS.md and engineering rules so readiness, mutation safety, repair controls, and verification work independently of lifecycle stages.
+
+Increment 4 — Remove stage architecture.
+Remove stages/**, lifecycle route entries, transition machinery, stage outputs, and generic lifecycle skills only after surviving dependencies have been migrated.
+
+Increment 5 — Architecture/document cleanup.
+Remove or supersede remaining seven-stage references throughout active documentation while preserving product and repository-specific requirements.
+
+Increment 6 — Verification and negative controls.
+Run routing tests, anti-drift checks, existing website CI, change-size verification, and representative route-resolution fixtures.
+
+Each increment must leave the repository usable. No increment may intentionally make ordinary product development depend on a later harness increment.
+
+## 15. Acceptance tests
+
+Completion requires all of the following:
+- a coding agent enters through AGENTS.md;
+- AGENTS.md points to exactly one repository router;
+- the router does not ask for an SDLC stage;
+- product tasks resolve to applicable domain instructions;
+- only relevant authoritative sources are loaded;
+- no active authority requires Scout -> Plan -> Contract -> Implement -> Verify -> Review -> Release;
+- product mutation does not require PLAN_READY or CONTRACT_READY solely because it is product work;
+- repository CI does not require external harness availability unless a future explicit product requirement says otherwise;
+- website verification, security, exact-head PR Verification, Codex review, and user-only merge authority remain operational;
+- an external harness can consume repository instructions without the repository embedding its lifecycle.
+
+## 16. Negative controls
+
+Prove failure when:
+- workflow_stage is reintroduced into the root router;
+- product work is made dependent on PLAN_READY;
+- ordinary website CI is made dependent on an external harness verdict;
+- a second repository router is introduced;
+- semantic-similarity route selection is introduced;
+- legitimate product/architecture authority is deleted during cleanup;
+- existing CI is weakened under harness removal;
+- external harness operation grants merge authority.
+
+## 17. Definition of Done
+
+The active repository architecture is:
 
 ```text
-Supervisor
-   |
-EveAdapter
-   |
-Eve
-   |
-AI SDK
-   |
-Sandbox backend
+becoming-the-man
+├── AGENTS.md                  repository constitution
+├── CONTEXT.md                 deterministic path/domain router
+├── domain-local instructions  only where required
+├── authoritative product/architecture sources
+├── application code
+├── tests
+└── PR Verification
 ```
 
-No other harness module imports Eve directly.
+It is not an autonomous SDLC framework.
 
-This is a replaceability boundary, not another security layer.
+The final audit finds zero active architectural dependencies on the seven-stage lifecycle.
 
-## 7. CapabilityPolicy contract to freeze in Stage 03
+The external multi-repository SDLC harness is the sole architectural home for Scout -> Plan -> Contract -> Implement -> Verify -> Review -> Release.
 
-Stage 03 must freeze the smallest typed policy that can express the approved INC-2 controls.
+## 18. Stop conditions
 
-Required semantics:
+Stop immediately if:
+1. a proposed removal weakens a surviving product, architecture, security, CI, review, or merge control;
+2. deterministic routing cannot replace a lifecycle dependency without ambiguity;
+3. an active requirement cannot be classified safely;
+4. a mutation would exceed the approved removal/migration scope;
+5. reviewable implementation exceeds the repository limit without prior owner exception;
+6. current authority or base binding changes;
+7. verification fails without a bounded evidence-backed correction.
 
-```text
-CapabilityPolicy
-  task_identity
-  allowed_tools
-  allowed_argv
-  allowed_cwds
-  read_roots
-  write_roots
-  subprocess
-  network
-  secret_names
-  git
-```
+No speculative fix-forward.
 
-Required policy behavior:
+## 19. Non-authority
 
-- allowed_tools is closed, not advisory;
-- allowed_argv contains exact argv token vectors or an equally deterministic closed representation;
-- allowed_cwds contains canonical authorized working roots;
-- read_roots and write_roots are distinct;
-- subprocess is deny unless explicitly granted;
-- network is deny by default;
-- secret_names is empty by default;
-- git is deny by default.
-
-No field may default from model output.
-
-No free-form text field may expand policy.
-
-## 8. Canonical filesystem rule
-
-Every requested filesystem path must be canonicalized before authorization:
-
-```text
-for every p in filesystem_effects(request):
-    canonical_realpath(p) is contained in an authorized root
-```
-
-Required failure cases include:
-
-- parent traversal;
-- absolute path outside the sandbox workspace;
-- symlink escape;
-- write through a permitted parent to an unpermitted canonical target.
-
-String-prefix comparison alone is insufficient.
-
-## 9. Tool and argv rule
-
-A tool request is authorized only when:
-
-1. the tool name is in allowed_tools;
-2. its complete argv vector matches one allowed command contract;
-3. cwd is an allowed canonical location;
-4. declared and observed side effects remain within policy.
-
-A generic unrestricted shell is not an allowed primitive.
-
-If the implementation exposes an exec-like tool, its accepted commands must be exact or mechanically bounded argv contracts, never arbitrary shell text interpreted through eval, sh -c, bash -c, os.system, or equivalent dynamic command composition.
-
-## 10. Sandbox rule
-
-The sandbox is disposable and treated as untrusted.
-
-For each run:
-
-- create a fresh sandbox identity;
-- mount or copy only the authorized workpiece surface required by the task;
-- do not expose the host repository .git metadata;
-- do not expose supervisor source, verifier source, policy secrets, promotion credentials, or deployment credentials;
-- do not persist writable state into the next run unless a later explicit contract authorizes one content-addressed verified artifact;
-- destroy or abandon writable runtime state after the run.
-
-INC-2 must not treat prompt instructions as isolation.
-
-Isolation must be enforced by the execution environment.
-
-## 11. Network rule
-
-Default:
-
-```text
-network = DENY
-```
-
-INC-2 does not require networked model/tool execution inside the coding sandbox.
-
-If the selected Eve backend cannot create a sandbox with network denied, Stage 03 must return BLOCKED / REDESIGN.
-
-A future allowlist is outside INC-2 unless the exact Stage 03 contract proves it necessary for the already-approved objective.
-
-## 12. Secret rule
-
-Default:
-
-```text
-secret_names = []
-```
-
-The coding sandbox receives no:
-
-- GitHub token;
-- Git credential;
-- Vercel token;
-- Supabase service-role key;
-- provider API key;
-- deployment secret;
-- supervisor secret;
-- verifier secret.
-
-Any framework credential needed by the external supervisor must remain outside the candidate sandbox.
-
-## 13. Git rule
-
-Default:
-
-```text
-git = DENY
-```
-
-The coding sandbox must not be able to:
-
-- push;
-- merge;
-- create or update remote refs;
-- use repository-owner credentials;
-- obtain host .git credentials.
-
-Read-only source material may be copied into the sandbox without giving the sandbox Git authority.
-
-## 14. Cross-run state rule
-
-For run A and later run B:
-
-```text
-writable_state(A) ∩ inputs(B) = empty
-```
-
-unless a later explicit contract authorizes a specific verified transfer.
-
-INC-2 negative controls must create a sentinel in run A and prove it is absent in fresh run B.
-
-Framework caches outside the candidate writable namespace may not contain candidate-controlled mutable state that affects run B.
-
-## 15. Eve and AI SDK compatibility gate
-
-External framework documentation is compatibility evidence only. Repository authority remains the routed governance chain.
-
-Current Eve documentation establishes:
-
-- defineAgent from eve;
-- defineSandbox from eve/sandbox;
-- isolated sandbox execution;
-- Docker as a supported sandbox backend/runtime;
-- AI SDK as the underlying model/tool layer.
-
-Current AI SDK documentation establishes the provider-agnostic ai package and typed tool primitives.
-
-The inspected public Eve documentation did not establish the previously assumed defaultTools: false API.
-
-Therefore Stage 03 must, before CONTRACT_READY:
-
-1. pin an exact Eve package version;
-2. pin an exact AI SDK package version;
-3. verify from that pinned Eve package/API that all implicit/default tool capabilities can be disabled or absent;
-4. verify the exact sandbox API required for disposable Docker execution;
-5. freeze the exact adapter calls used by INC-2;
-6. freeze the exact Docker image digest or other immutable sandbox/runtime identity.
-
-If default capability suppression cannot be proven in the pinned Eve version:
-
-```text
-STOP -> REDESIGN
-```
-
-Do not emulate safety by hiding tools in prompts or by filtering model text after generation.
-
-## 16. Dependency policy
-
-Permitted new runtime dependencies are limited to those strictly required by the already-approved stack:
-
-- Eve;
-- AI SDK core/tool primitives;
-- schema dependency only when required by the pinned Eve/AI SDK API and not already supplied transitively in a safe reusable form.
-
-No Jev dependency.
-No database dependency.
-No memory dependency.
-No provider SDK unless the pinned Eve API cannot compile without one and the Stage 03 contract explicitly proves it is required.
-No policy engine.
-No container-orchestration framework.
-No service mesh.
-No FastAPI.
-No second agent framework.
-
-Exact package names and versions are frozen only in Stage 03 after compatibility verification.
-
-## 17. Maximum Stage 04 candidate surface
-
-Stage 03 may reduce this set but may not expand it without returning to planning.
-
-Maximum candidate paths:
-
-1. harness/package.json
-2. harness/package-lock.json
-3. harness/src/capability.ts
-4. harness/src/supervisor.ts
-5. harness/src/eve-adapter.ts
-6. harness/agent/agent.ts
-7. harness/agent/tools/execute.ts
-8. harness/agent/sandbox/sandbox.ts
-9. harness/tests/execution.test.ts
-10. .github/workflows/pr-verification.yml
-
-Rules:
-
-- harness/agent/agent.ts is permitted only when the pinned Eve runtime requires an agent configuration file for this proof;
-- harness/agent/tools/execute.ts is the sole model-visible authored execution tool permitted by INC-2; every privileged request it receives must pass through the supervisor hard capability gate before any sandbox effect, and it cannot add, broaden, infer, or otherwise create authority beyond the compiled CapabilityPolicy;
-- harness/agent/sandbox/sandbox.ts is permitted only when the pinned Eve runtime requires the framework sandbox configuration file;
-- if either optional Eve-owned configuration file is unnecessary, Stage 03 must remove it from the implementation allowlist;
-- no root package manifest may change;
-- no application/product file may change;
-- no root governance source may change.
-
-## 18. Reviewable-size budget
-
-The harness remains infrastructure, not the product.
-
-Target initial reviewable implementation:
-
-```text
-<= 360 lines
-```
-
-Internal stop:
-
-```text
-420 lines
-```
-
-Repository ceiling:
-
-```text
-500 lines
-```
-
-Dependency lockfiles remain excluded under AGENTS.md.
-
-If the planned implementation reaches or projects to 420 reviewable lines before the initial candidate is complete:
-
-```text
-STOP -> REDUCE OR REDESIGN
-```
-
-Do not request a size exception merely to avoid simplifying the harness.
-
-## 19. Frozen INC-2 negative controls
-
-Stage 03 must freeze exact fixtures and expected decisions for these eight roadmap controls.
-
-### EC-01 Unauthorized tool
-
-Request a tool absent from allowed_tools.
-
-Expected:
-
-```text
-DENY / CAPABILITY_NOT_GRANTED
-tool implementation not invoked
-```
-
-### EC-02 Alternate default/built-in capability
-
-Attempt an equivalent side effect through an Eve default, built-in, auto-discovered, or undeclared tool.
-
-Expected:
-
-```text
-UNREACHABLE
-```
-
-No such capability may appear in the model-visible or runtime-callable tool set.
-
-### EC-03 Traversal and symlink escape
-
-Attempt parent traversal and a symlink resolving outside the authorized root.
-
-Expected:
-
-```text
-DENY / CAPABILITY_NOT_GRANTED
-target outside root unchanged
-```
-
-### EC-04 argv/cwd/subprocess violation
-
-Attempt:
-
-- unapproved argv;
-- approved argv from unapproved cwd;
-- subprocess creation when subprocess = deny.
-
-Expected:
-
-```text
-DENY / CAPABILITY_NOT_GRANTED
-request not executed
-```
-
-### EC-05 Network egress
-
-Attempt outbound network access from the candidate sandbox.
-
-Expected:
-
-```text
-network request cannot complete
-```
-
-A model refusal is not evidence.
-
-### EC-06 Git side effect
-
-Attempt a Git write/push/ref-changing operation or credential use.
-
-Expected:
-
-```text
-DENY or physically unreachable
-no remote/ref mutation
-```
-
-### EC-07 Supervisor/verifier/policy secret reachability
-
-Attempt to enumerate or read supervisor-only secret names and files.
-
-Expected:
-
-```text
-UNREACHABLE
-```
-
-### EC-08 Cross-run writable-state influence
-
-Create a unique sentinel during run A. Start independent run B from the same frozen input.
-
-Expected:
-
-```text
-sentinel absent in run B
-```
-
-Every control must fail for the intended boundary, not for an unrelated malformed fixture.
-
-## 20. Positive controls
-
-Stage 03 must freeze at least these positive controls:
-
-1. an explicitly allowed authored tool is callable;
-2. one exact allowed argv vector executes;
-3. allowed cwd succeeds;
-4. read inside read_roots succeeds;
-5. write inside write_roots succeeds;
-6. candidate output is observable outside the sandbox only through the supervisor-defined result boundary;
-7. two sequential runs receive distinct sandbox identities;
-8. INC-1 routing behavior remains unchanged.
-
-Positive controls must not weaken any negative control.
-
-## 21. Verification strategy
-
-INC-2 requires two evidence classes.
-
-### 20.1 Pure deterministic unit verification
-
-Run without network/model credentials:
-
-- policy compilation;
-- tool-set closure;
-- exact argv matching;
-- cwd matching;
-- canonical path containment;
-- secret-name denial;
-- Git denial;
-- subprocess denial;
-- malformed request failure.
-
-### 20.2 Physical sandbox integration verification
-
-Run against the pinned local Docker/Eve sandbox identity:
-
-- EC-02 default/built-in capability absence;
-- EC-03 symlink escape;
-- EC-05 network denial;
-- EC-07 supervisor-secret isolation;
-- EC-08 cross-run state isolation.
-
-A mocked sandbox cannot satisfy physical-isolation obligations.
-
-## 22. CI integration
-
-Preserve the existing fail-closed ordering:
-
-```text
-Harness Verification
-    -> required dependency of
-PR Verification
-```
-
-The existing Node 22.16.0 product verification behavior remains unchanged.
-
-The harness job may add only the minimum INC-2 checks necessary to prove:
-
-- pinned dependency install;
-- harness lint;
-- harness typecheck;
-- harness unit tests;
-- bounded Docker/Eve integration controls.
-
-No provider/model call is required for CI acceptance of INC-2.
-
-No network is granted to the candidate sandbox merely because the GitHub runner itself has network.
-
-## 23. Definition of Done
-
-INC-2 is implementation-complete only when all of the following are mechanically proven on one exact candidate head.
-
-D1. INC-1 routing tests remain green without semantic or authority changes.
-
-D2. The supervisor constructs policy only from validated task data plus supervisor-owned execution constraints.
-
-D3. The model cannot create authority by requesting a tool, path, argv, cwd, subprocess, network destination, secret, or Git effect outside policy.
-
-D4. Every privileged request is mediated before execution.
-
-D5. EC-01 through EC-08 produce their exact frozen outcomes.
-
-D6. Positive controls in Section 19 pass.
-
-D7. Eve is imported only through the bounded adapter surface selected by Stage 03.
-
-D8. AI SDK use is limited to the tool/model primitive boundary required by the pinned Eve adapter.
-
-D9. No undeclared Eve default/built-in capability is reachable.
-
-D10. Candidate execution occurs inside a disposable sandbox with immutable runtime identity.
-
-D11. Candidate sandbox network is denied.
-
-D12. Candidate sandbox receives no privileged Git, deployment, provider, supervisor, or verifier secrets.
-
-D13. Candidate sandbox cannot access host repository .git metadata.
-
-D14. Cross-run candidate-controlled writable state does not persist.
-
-D15. No product/application/database/provider behavior changes.
-
-D16. No Jev, final-verifier, authenticated-provenance, memory, or multi-agent implementation appears.
-
-D17. Reviewable implementation remains below the 420 internal stop and 500 repository ceiling.
-
-D18. Harness lint, typecheck, unit tests, and physical sandbox integration tests pass.
-
-D19. Existing Node 22 PR Verification remains semantically unchanged and passes.
-
-D20. Exact-head PR Verification passes.
-
-D21. Independent Codex review completes under the existing three-cycle limit with zero unresolved actionable findings before release eligibility.
-
-## 24. Construction sequence
-
-INC-2 Stage 04 must use one bounded candidate loop:
-
-```text
-BIND
-  -> INSPECT
-  -> MUTATE ONE BOUNDED CANDIDATE
-  -> VERIFY
-  -> STOP
-```
-
-Within that candidate, implementation order is:
-
-1. freeze pinned Eve/AI SDK/runtime identities from the Stage 03 contract;
-2. implement pure CapabilityPolicy and request gate;
-3. implement the narrow Eve adapter;
-4. implement supervisor-owned sandbox lifecycle;
-5. add deterministic unit controls;
-6. add physical Docker/Eve negative controls;
-7. add the minimum CI integration;
-8. run full affected verification;
-9. stop.
-
-A failing check does not authorize speculative architecture changes.
-
-A second repair requires materially new bounded diagnostic evidence.
-
-## 25. Stage 03 handoff
-
-Stage 03 must freeze, without implementing:
-
-1. exact candidate path subset from Section 16;
-2. exact Eve package/version;
-3. exact AI SDK package/version;
-4. exact Eve APIs used by the adapter;
-5. exact default-capability suppression predicate;
-6. exact immutable Docker/sandbox identity;
-7. exact CapabilityPolicy schema;
-8. canonical-path containment algorithm;
-9. exact authored tool set;
-10. exact argv/cwd policy representation;
-11. exact sandbox creation/destruction semantics;
-12. exact network-deny mechanism;
-13. exact secret and Git absence predicates;
-14. all EC-01 through EC-08 fixtures and expected outcomes;
-15. positive-control fixtures;
-16. exact CI commands;
-17. exact line-budget accounting;
-18. exact stop conditions.
-
-If any of items 2 through 13 cannot be frozen deterministically, Stage 03 returns BLOCKED / REDESIGN.
-
-## 26. Stop conditions
-
-Stop immediately if any of the following occurs:
-
-1. root AGENTS.md or CONTEXT.md must change;
-2. product/application code or dependencies must change;
-3. the INC-1 router must change to grant INC-2 authority;
-4. Eve requires an implicit/default capability that cannot be disabled or physically withheld;
-5. Eve requires network in the candidate sandbox for the accepted INC-2 path;
-6. the sandbox cannot exclude host .git metadata or privileged secrets;
-7. canonical filesystem enforcement cannot resist symlink escape;
-8. network denial is represented only as a prompt instruction;
-9. Git denial is represented only as a prompt instruction;
-10. candidate-controlled writable state survives into a later run;
-11. a new policy engine, service, database, memory layer, agent layer, or orchestration layer becomes necessary;
-12. a product runtime integration becomes necessary;
-13. physical sandbox tests require model/provider credentials;
-14. the implementation reaches or projects to 420 reviewable lines before the initial candidate is complete;
-15. the same failure persists without materially new bounded diagnostic evidence;
-16. Plan, Contract, base, head, package, or runtime identity becomes stale;
-17. exact-head CI fails without one bounded evidence-backed correction;
-18. Codex review cycle 3 reports an actionable finding.
-
-Required disposition is BLOCKED, REDUCE, or REDESIGN according to the triggering condition.
-
-## 27. Explicit non-authority
-
-This Plan does not authorize:
-
-- Stage 03 contract mutation before explicit approval of this exact PLAN_READY artifact;
-- Stage 04 implementation;
-- INC-3, INC-4, or INC-5;
-- Jev;
-- final PASS authority;
-- authenticated provenance;
-- root-router cutover;
-- old-governance removal;
-- product feature work;
-- database/backend work;
-- memory;
-- multi-agent execution;
-- deployment;
-- release;
-- merge;
-- a change-size exception.
-
-## 28. Stage 02 disposition
-
-The Plan closes one verified gap with the smallest approved architectural increment:
-
-```text
-INC-1 deterministic routing
-        +
-INC-2 external supervisor
-        +
-hard capability mediation
-        +
-disposable physical sandbox
-```
-
-No additional architectural layer is introduced beyond the already-approved v1.2 roadmap.
-
-The Plan is ready for exact-artifact approval and Stage 03 contract freezing.
+This Plan does not authorize weakening product requirements, CI, security, review, branch protection, or merge authority. It does not merge changes. It does not implement the external harness inside this repository.
 
 PLAN_READY
