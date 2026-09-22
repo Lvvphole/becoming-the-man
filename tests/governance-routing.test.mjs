@@ -130,6 +130,37 @@ describe("read-only localization bootstrap contract", () => {
     ]);
   });
 
+  test("discovery requires a non-empty caller subject", () => {
+    expect(reason(discover(discoveryRequest({ subject: "" })))).toBe("TASK_ENVELOPE_REQUIRED");
+  });
+
+  test("discovery rejects authority-bearing task-envelope fields", () => {
+    for (const [field, value] of [
+      ["source_sections", {}],
+      ["workpiece_paths", ["src/routes/accessibility.tsx"]],
+      ["selected_evidence_ids", ["ev-1"]],
+      ["authorized_candidate_paths", ["src/routes/accessibility.tsx"]],
+      ["approvals", { approved: true }],
+    ]) {
+      expect(reason(discover({ ...discoveryRequest(), [field]: value }))).toBe("TASK_ENVELOPE_REQUIRED");
+    }
+  });
+
+  test("the discovery contract is exact-field and explicitly non-authoritative", () => {
+    expect(contract.version).toBe("2.1.0");
+    expect(contract.discovery_request.exact_field_set).toBe(true);
+    expect(contract.discovery_request.required_fields).toEqual([
+      "task_domains", "subject", "source_binding",
+    ]);
+    expect(contract.discovery_request.permissions).toEqual({
+      routed_source_section_localization: true,
+      repository_workpiece_localization: true,
+      evidence_access: false,
+      mutation_access: false,
+      route_inference: false,
+    });
+  });
+
   test("a discovery request and discovery result cannot bypass normal envelope validation", () => {
     expect(reason(route(discoveryRequest()))).toBe("TASK_ENVELOPE_REQUIRED");
     expect(reason(route(discover()))).toBe("TASK_ENVELOPE_REQUIRED");
