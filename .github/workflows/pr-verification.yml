@@ -43,3 +43,43 @@ jobs:
         run: npm --prefix harness run typecheck:agent
       - name: Test harness
         run: npm --prefix harness run test
+
+  verify:
+    name: PR Verification
+    needs: harness-verification
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require harness verification
+        run: test "${{ needs.harness-verification.result }}" = "success"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install frozen dependencies
+        run: npm ci
+      - name: Verify Supabase migration and RLS
+        shell: bash
+        run: |
+          bash supabase/tests/site_settings_rls.sh
+          bash supabase/tests/legal_pages_rls.sh
+          python3 -B supabase/tests/community/run_ci.py
+      - name: Enforce bounded change size
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          if [ "${{ github.event.pull_request.number }}" != "" ]; then
+            base_ref="origin/${{ github.base_ref }}"
+          else
+            base_ref="origin/main"
+          fi
+          npm run verify:change-size -- "$base_ref"
