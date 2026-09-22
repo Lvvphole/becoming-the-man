@@ -77,13 +77,34 @@ The record reports state. It does not authorize a repair, route change, or merge
 
 ## 4. Input and Source Gates
 
-A task may load only:
+Ordinary task execution may load only:
 
 1. `AGENTS.md`;
 2. root `CONTEXT.md`;
 3. exact Layer 3 sources in the unique route;
 4. exact workpiece paths declared by the task;
 5. exact non-authoritative evidence explicitly allowed by the route and envelope.
+
+Before a full task envelope exists, root `CONTEXT.md` may admit one bounded read-only localization request containing exactly `task_domains`, `subject`, and `source_binding`.
+
+```text
+G_DISCOVERY_REQUEST :=
+  caller_or_controller_supplied_task_domains
+  AND nonempty_subject
+  AND source_binding = trusted_current_binding
+  AND exactly_one_route_matches_task_domains
+
+G_DISCOVERY_READONLY :=
+  routed_source_localization subset_of selected_route.Layer3
+  AND repository_localization_is_subject_targeted = true
+  AND evidence_access = false
+  AND mutation_access = false
+  AND route_inference = false
+```
+
+A valid discovery request may use locator-only search inside the exact selected Layer 3 bundle and subject-targeted repository tree/metadata/text search only to identify exact section selectors and workpiece paths. It may not inspect `docs/evidence/**`, run tests/builds, mutate repository or external state, create requirements or permissions, grant waivers, or create merge authority.
+
+Discovery observations are non-authoritative. A Scout Report, when produced, is evidence only. A proposed task envelope is a separate artifact and must pass normal route validation before ordinary source loading or workpiece inspection.
 
 ```text
 G_NO_DISCOVERY_WILDCARDS :=
@@ -148,6 +169,8 @@ G_PRE_CODE_READY :=
 
 If `G_PRE_CODE_READY = false`, protected mutation is unauthorized.
 
+A `DISCOVERY_ALLOWED` result is localization authority only. It does not satisfy `G_PC_03_ROUTE_SELECTED`, `G_PC_05_REQUIRED_AUTHORITIES_READ`, `G_PC_06_GAP_VERIFIED`, or any other Pre-Code predicate, and therefore cannot authorize protected mutation.
+
 A plan, contract, or skill may be used when explicitly requested or independently required by routed authority. No repository-global lifecycle makes such an artifact a prerequisite for ordinary work.
 
 ## 7. Mutation Gate
@@ -203,7 +226,7 @@ A second repair attempt requires materially new diagnostic evidence identifying 
 
 Repository work has no mandatory lifecycle stage, predecessor-stage artifact, or automatic stage transition.
 
-Admission is task-local and requires the unique route, exact sources, verified gap, exact scope, deterministic verifier or BLOCKED condition, named stop condition, and the active change-size gate. External execution state may supply task facts, but it cannot create repository authority, waive routed constraints, or grant merge authority.
+Admission is task-local and requires the unique route, exact sources, verified gap, exact scope, deterministic verifier or BLOCKED condition, named stop condition, and the active change-size gate. External execution state may supply task facts, but it cannot create repository authority, waive routed constraints, or grant merge authority. Read-only localization may precede admission only to construct exact selectors; its report and discovery result remain non-authoritative and cannot substitute for admission.
 
 Verification and review remain independent completion controls defined by `AGENTS.md` and the active architecture amendments.
 
