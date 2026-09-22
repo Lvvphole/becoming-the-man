@@ -1,1978 +1,847 @@
-# Implementation Contract - Deterministic ICM Governance Routing
+CONTRACT_READY
 
-Status: CONTRACT_READY
-Lifecycle stage: 03_contract
-Target implementation stage: 04_implement
-Migration scope: Zero-Trust Repository Harness v1.2 / INC-2 execution boundary only
+# Increment 3 Verification Boundary — Implementation Freeze Contract
 
-## 1. Frozen authoring binding
+## 1. Disposition
 
-This contract is subordinate to root `AGENTS.md`, root `CONTEXT.md`, `stages/03_contract/CONTEXT.md`, and the routed Layer 3 references.
+This contract freezes the approved Stage-02 design at plan commit
+`5a2093a9d6c97f08cd253d5d0416b95c72a21507`.
 
-Approved INC-2 Plan:
-- path: `stages/02_plan/output/implementation-plan.md`
-- disposition: `PLAN_READY`
-- SHA-256: `ea5e43744d9825e03adba9917566c8ac017ed40dc5d468b2dad3530dae10e27e`
-- Git blob: `d3e203120d4231c72d524e6a1cd8a6f3f173abeb`
-- approval: explicit user approval after the final bounded Plan correction
-- approved Plan head: `4b51a8a84b50ed64ce9a0a59742ef4f3354004f2`
-- planning base: `93a2edc3f8729f30f6772ce8a8df7a955c5c2fff`
-- planning PR: `53`
+Approved Plan content SHA-256:
 
-The one-time Stage 02 bootstrap exception applied only to creating the INC-2 Plan before a PR number existed. It grants no Stage 03 or Stage 04 exception.
+`3225ec9f309aa5f1a7caeae88dee25c34aad48fa527fd221b6713923993d919b`
 
-Stage 03 authoring state:
-- repository: `Lvvphole/becoming-the-man`
-- authoring branch: `harness-v1-2-inc2-plan`
-- pre-contract head: `4b51a8a84b50ed64ce9a0a59742ef4f3354004f2`
-- permitted mutation: `stages/03_contract/output/implementation-contract.md` only
-- selected evidence IDs: empty
+Implementation base remains separately bound to:
 
-Routed Layer 3 inputs:
-- `references/engineering/engineering-rules.md`, full document
-- `references/architecture/CONTEXT.md`, full document
+`27228b8a81e3cd14b96b2d08bfc578ad12a2e317`
 
-The literal selector `"*"` means full-document access only for a source whose route declares full-section access. It is not a path wildcard and must never be interpreted as file discovery.
+This is a dual binding. The Plan identity and implementation-base identity are never merged into one field.
 
-Sections 2 through 12 below preserve the active C1-C7 governance baseline from the pre-contract head unchanged. Section 13 replaces the completed INC-1 migration-specific contract with exactly one INC-2 execution-boundary contract.
+`CONTRACT_READY` means the INC-3 mechanisms are frozen for later Build admission. It does **not** by itself admit Stage 04. A separate Build-Agent admission record must satisfy Section 4 and the repository Pre-Code Readiness Gate before any protected mutation.
 
-This contract defines the active C1 through C7 baseline plus exactly one migration-specific INC-2 contract. It does not authorize implementation by itself. Stage 04 must rebind to the post-contract PR head, read the Stage 04 contract and routed authorities, and satisfy `G_PRE_CODE_READY` before any protected mutation.
+## 2. Five-increment boundary
 
-## 2. Global invariants
+The five approved increments remain the authority boundary.
 
-The following invariants apply to every contract in this document.
-
-1. Root `AGENTS.md` is the single repository execution constitution.
-2. Root `CONTEXT.md` is the single task/stage router.
-3. The route evaluator must consume caller-supplied or validated-prior-stage selectors. It must not derive selectors from free-form prose.
-4. Every executable task resolves to exactly one route. Zero matches and multiple matches are terminal `BLOCKED` states.
-5. Evidence is Layer 4 proof only. Evidence cannot create a requirement, permission, waiver, transition authority, or merge authority.
-6. Missing required data fails closed. No default may expand scope or select a route.
-7. All repository paths are exact, repository-relative paths. Absolute paths, parent traversal, and wildcard path discovery are forbidden.
-8. Stage mutations are confined to the exact authorized candidate path set.
-9. Current-state evidence must be cryptographically or mechanically bound to the state it claims to prove.
-10. The active reviewable implementation ceiling is 500 lines unless the exact owner-authorized exception defined by `AGENTS.md` is valid.
-11. Merge is never automatic.
-12. No self-report by an implementation agent is acceptance evidence.
-
-## 3. C1 - Route-Table Contract
-
-### 3.1 Canonical location and authority
-
-The canonical route table exists only inside root `CONTEXT.md`. Any machine-readable derivative is subordinate and must be reproducibly derived from that canonical table.
-
-There must be exactly one route matrix. A second route matrix is `ROUTING_TABLE_INVALID`.
-
-Every route row represents one complete, deterministic route. Cross-domain work is represented by one route row whose selector contains the exact complete task-domain set. The evaluator must not create a route by dynamically adding or dropping domains.
-
-### 3.2 Required matrix columns
-
-Every route row contains exactly these columns:
-
-| Column | Type | Contract |
+| Increment | State | Contract authority |
 |---|---|---|
-| `route_id` | string | Stable unique route identity. |
-| `selectors` | object | Exact task-envelope selector values used for route matching. |
-| `predicate` | object | Closed predicate declaration; no executable expression or prose interpretation. |
-| `required_layer3_bundle` | array[string] | Exact Layer 3 source IDs required by this route. |
-| `allowed_evidence_ids` | array[string] | Exact evidence IDs allowed by the route. Empty means no evidence may be loaded. |
-| `target_stage` | string | Exactly one lifecycle stage ID. |
-| `transition` | object | Exact predecessor/successor and required transition facts. |
+| 1. Routing kernel | Present | PRESERVE. No router or routing-semantics mutation. |
+| 2. Execution boundary | Present | PRESERVE. No new tool/grant; no capability, sandbox, network, Git, or filesystem weakening. |
+| 3. Verification boundary | Absent at implementation base | ONLY AUTHORIZED IMPLEMENTATION WORK. |
+| 4. Jev restriction layer | Absent | UNAUTHORIZED. |
+| 5. Migration/reduction | Not performed | UNAUTHORIZED. |
 
-The route matrix must reject duplicate `route_id` values.
+Increment 3 consists only of: external verifier, independent oracle, exact candidate binding, and evidence/provenance.
 
-### 3.3 Route-table JSON Schema
+## 3. Frozen preserved identities
 
-The canonical matrix payload must conform to this Draft 2020-12 schema.
+The following implementation-base blobs are preservation inputs and are not candidate mutations:
 
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:btmsct:governance:route-table:v1",
-  "title": "BTMSCT Governance Route Table",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["version", "routes", "source_registry"],
-  "properties": {
-    "version": {
-      "const": "1.0.0"
-    },
-    "routes": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "#/$defs/route"
-      }
-    },
-    "source_registry": {
-      "type": "object",
-      "minProperties": 1,
-      "propertyNames": {
-        "pattern": "^[a-z][a-z0-9_]*$"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/source"
-      }
-    }
-  },
-  "$defs": {
-    "stageId": {
-      "enum": [
-        "01_scout",
-        "02_plan",
-        "03_contract",
-        "04_implement",
-        "05_verify",
-        "06_review",
-        "07_release"
-      ]
-    },
-    "identifier": {
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9_.:-]*$"
-    },
-    "factIdentifier": {
-      "type": "string",
-      "pattern": "^[A-Za-z][A-Za-z0-9_.:-]*$"
-    },
-    "route": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "route_id",
-        "selectors",
-        "predicate",
-        "required_layer3_bundle",
-        "allowed_evidence_ids",
-        "target_stage",
-        "transition"
-      ],
-      "properties": {
-        "route_id": {
-          "type": "string",
-          "pattern": "^route:[a-z0-9_.:-]+$"
-        },
-        "selectors": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["workflow_stage", "task_domains"],
-          "properties": {
-            "workflow_stage": {
-              "$ref": "#/$defs/stageId"
-            },
-            "task_domains": {
-              "type": "array",
-              "minItems": 1,
-              "uniqueItems": true,
-              "items": {
-                "$ref": "#/$defs/identifier"
-              }
-            }
-          }
-        },
-        "predicate": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "operator",
-            "required_envelope_fields",
-            "required_approval_facts"
-          ],
-          "properties": {
-            "operator": {
-              "const": "ALL_EXACT"
-            },
-            "required_envelope_fields": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "$ref": "#/$defs/identifier"
-              }
-            },
-            "required_approval_facts": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "$ref": "#/$defs/identifier"
-              }
-            }
-          }
-        },
-        "required_layer3_bundle": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "$ref": "#/$defs/identifier"
-          }
-        },
-        "allowed_evidence_ids": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "$ref": "#/$defs/identifier"
-          }
-        },
-        "target_stage": {
-          "$ref": "#/$defs/stageId"
-        },
-        "transition": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "from_stage",
-            "to_stage",
-            "required_facts",
-            "automatic"
-          ],
-          "properties": {
-            "from_stage": {
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/stageId"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "to_stage": {
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/stageId"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "required_facts": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "$ref": "#/$defs/factIdentifier"
-              }
-            },
-            "automatic": {
-              "type": "boolean"
-            }
-          }
-        }
-      }
-    },
-    "source": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "kind",
-        "location",
-        "path",
-        "section_policy"
-      ],
-      "properties": {
-        "kind": {
-          "const": "layer3"
-        },
-        "location": {
-          "enum": [
-            "repository",
-            "task_context"
-          ]
-        },
-        "path": {
-          "oneOf": [
-            {
-              "type": "string",
-              "minLength": 1
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "section_policy": {
-          "enum": [
-            "full",
-            "explicit_selector_required"
-          ]
-        }
-      }
-    }
-  }
+```text
+AGENTS.md                              b3319d00d7fb489c7164f3a9af5577df710ce33e
+CONTEXT.md                             2dded90579c2ad7b491ab0072a44b030f94750c6
+harness/src/routing.ts                 4d4321abb4e131a9359755c647ad8c76313451a8
+harness/src/capability.ts              fd4a31b7c07336c1538372b034b90e5d25f31a12
+harness/src/supervisor.ts              da4a0af0ab4e32631ef0a22a4a1b8f7ad018e7de
+harness/src/eve-adapter.ts             6e5468292f9ebc842d0e5b4b2d96d2429fa4cb22
+harness/agent/tools/execute.ts          6b39bd4816fe8d1e145f4f2fb28e757252eb263c
+harness/tests/routing.test.ts           7cb4b7217781ce87aee50368d8faa946a3eb629b
+harness/tests/execution.test.ts         a5a82d3077091f0e6a33d000e259fb25571fe4ce
+.github/workflows/pr-verification.yml   d735549a844c2bd0a9c482ca1da5f85088b90d89
+package.json                            9136c40dca79568dfeabd1b6d8cbc181c62db868
+harness/package.json                    398baf3e9a59d0521452fc7708c3ab7d6a4e5e82
+package-lock.json                       8d6e653c5e12faef848ffe505f3fb9c7b02eeaff
+harness/package-lock.json               1917ea384dd49ec0f02fdca38e39dcf1d1fff06e
+scripts/check-change-size.sh            2745038da993d1ea22cbb634498d7be400b406a5
+```
+
+Current `harness/src/supervisor.ts` is 3,332 UTF-8 bytes and 65 lines at the implementation base.
+
+Any required semantic change to the preserved INC-1 or INC-2 surfaces is terminal:
+`BLOCKED_INCREMENT_BOUNDARY`.
+
+## 4. Build-Agent admission boundary
+
+This contract does not invent or replace the Build Agent source-binding schema.
+
+Before Stage 04, the Build Agent must produce the canonical six-field binding:
+
+```text
+BuildSourceBinding := {
+  commit,
+  staged_diff_sha256,
+  unstaged_diff_sha256,
+  untracked_manifest_sha256,
+  dirty_submodule_manifest_sha256,
+  excluded_plan_path
 }
 ```
 
-### 3.3.1 Redesign Path A - transition fact grammar
-
-C1 transition fact tokens use this dedicated grammar:
+Frozen values/rules:
 
 ```text
-^[A-Za-z][A-Za-z0-9_.:-]*$
+commit = 27228b8a81e3cd14b96b2d08bfc578ad12a2e317
+excluded_plan_path = stages/02_plan/output/implementation-plan.md
 ```
 
-This grammar applies only to `transition.required_facts`. The lowercase-only generic C1 `identifier` grammar remains unchanged for task domains, source IDs, evidence IDs, envelope-field IDs, and approval-fact IDs.
+The remaining four digest values are computed mechanically in the actual Build workspace by the canonical Build Agent source-binding procedure. GitHub state is not substituted for those workspace measurements.
 
-Mechanical gate identifiers are valid canonical transition fact tokens. For example:
+The Build admission record must separately bind:
 
 ```text
-G_PRE_CODE_READY
+approved_plan_commit = 5a2093a9d6c97f08cd253d5d0416b95c72a21507
+approved_plan_sha256 = 3225ec9f309aa5f1a7caeae88dee25c34aad48fa527fd221b6713923993d919b
+implementation_contract_commit = <exact contract commit after this mutation>
+implementation_contract_sha256 = <byte-exact SHA-256 after this mutation>
+human_plan_approval = true
 ```
 
-is valid under `factIdentifier` and may appear in root `CONTEXT.md` transition `required_facts`.
+Any mismatch returns `BLOCKED_SOURCE_BINDING_STALE`.
 
-The amendment changes token syntax only. It does not change route selection, transition truth conditions, automatic-transition semantics, or the authority of root `CONTEXT.md`.
+## 5. Exact candidate-path allowlist
 
-### 3.4 Closed route predicate
-
-For envelope `E` and route row `r`, the only permitted route predicate is:
+The complete INC-3 implementation surface is:
 
 ```text
-MATCH(E,r) :=
-  E.workflow_stage = r.selectors.workflow_stage
-  AND set(E.task_domains) = set(r.selectors.task_domains)
-  AND every(r.predicate.required_envelope_fields is present and non-null in E)
-  AND every(r.predicate.required_approval_facts is strictly true in E.approvals)
-  AND every(r.required_layer3_bundle source resolves exactly once)
-  AND every(E.selected_evidence_ids is a member of r.allowed_evidence_ids)
+harness/src/verifier.ts
+harness/verifier/profile.json
+harness/verifier/oracle-manifest.json
+harness/src/supervisor.ts
+harness/tests/verifier.test.ts
+.github/workflows/pr-verification.yml
 ```
 
-No free-form expression, model score, semantic similarity, inferred intent, fallback route, or "closest route" is permitted.
+No other implementation path is authorized.
+
+Additional path rules:
+
+- `harness/src/supervisor.ts`: only envelope-consumer integration; target <=25 changed lines, hard stop >40.
+- `.github/workflows/pr-verification.yml`: exactly add
+  `harness/src/verifier.ts` and `harness/tests/verifier.test.ts` to the existing Harness Verification ESLint path list. No other workflow semantic change.
+- All four new files
+  `verifier.ts`, `profile.json`, `oracle-manifest.json`, and `verifier.test.ts`
+  must be introduced in the first implementation slice. Later review repair may not create additional files.
+
+Any seventh implementation path returns `BLOCKED_UNAUTHORIZED_PATH`.
+
+## 6. Reviewable-line definition and budgets
+
+Reviewable implementation lines are exactly the repository-governed additions plus deletions from merge base to final PR head:
+
+- counted: source, tests, scripts, SQL, configuration, schemas, workflow definitions;
+- excluded: Markdown/docs, dependency lockfiles, explicitly generated framework/build artifacts.
+
+Frozen limits:
 
 ```text
-M(E) = { r | MATCH(E,r) = TRUE }
-G_ROUTE_UNIQUE(E) := |M(E)| = 1
+whole_PR_target <= 400
+whole_PR_hard_ceiling = 500
+supervisor_target_delta <= 25
+supervisor_hard_stop = 40
+workflow_target_delta = 1 logical line-list edit
+workflow_hard_stop = 10 changed lines
 ```
 
-If `|M(E)| = 0`, return `ROUTE_ZERO_MATCH`.
-If `|M(E)| > 1`, return `ROUTE_MULTI_MATCH`.
+If projected whole-PR reviewable lines reach 400, stop and re-measure before another mutation.
+If they exceed 500, return `BLOCKED_CHANGE_SIZE`. This contract grants no size exception.
 
-The successful route object must expose exactly one `route_id`, one `target_stage`, one resolved Layer 3 bundle, one allowed evidence-ID set, and one transition contract.
+## 7. Canonical serialization
 
-## 4. C2 - Task-Envelope Contract
+Every structured INC-3 identity uses:
 
-### 4.1 Authority rule
+```text
+hash = SHA-256
+text_encoding = UTF-8
+digest_encoding = lowercase hexadecimal
+object_keys = lexicographically sorted
+array_order = declared order
+insignificant_whitespace = none
+trailing_newline = forbidden
+path_separator = "/"
+unicode_path_normalization = NFC
+```
 
-The task envelope is supplied by the caller or copied without semantic alteration from a validated prior-stage output.
+Rejected paths include: absolute paths, `.`, `..`, NUL, backslash aliases, and duplicate normalized paths.
 
-The executing agent may validate envelope data. It may not:
-- invent a missing selector;
-- infer a task domain;
-- add or remove a task domain;
-- infer a source section;
-- broaden a path;
-- add an evidence ID;
-- convert an approval from false or absent to true;
-- rewrite a source binding to make it current.
+Stage 04 tests must include literal canonicalization fixtures with exact input bytes and expected SHA-256.
 
-A missing required field returns `TASK_ENVELOPE_REQUIRED` or `MISSING_SELECTOR`, according to whether the envelope itself is absent/incomplete or a required route selector is absent.
+Mismatch returns `BLOCKED_CANONICALIZATION_MISMATCH`.
 
-### 4.2 Task-envelope Draft 2020-12 JSON Schema
+## 8. Candidate manifest and immutable verification snapshot
 
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:btmsct:governance:task-envelope:v1",
-  "title": "BTMSCT Governance Task Envelope",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "workflow_stage",
-    "task_domains",
-    "source_sections",
-    "workpiece_paths",
-    "selected_evidence_ids",
-    "prior_outputs",
-    "authorized_candidate_paths",
-    "approvals",
-    "source_binding"
-  ],
-  "properties": {
-    "workflow_stage": {
-      "$ref": "#/$defs/stageId"
-    },
-    "task_domains": {
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true,
-      "items": {
-        "$ref": "#/$defs/identifier"
-      }
-    },
-    "source_sections": {
-      "type": "object",
-      "propertyNames": {
-        "pattern": "^[a-z][a-z0-9_]*$"
-      },
-      "additionalProperties": {
-        "type": "array",
-        "minItems": 1,
-        "uniqueItems": true,
-        "items": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "workpiece_paths": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "$ref": "#/$defs/repoPath"
-      }
-    },
-    "selected_evidence_ids": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "$ref": "#/$defs/identifier"
-      }
-    },
-    "prior_outputs": {
-      "type": "object",
-      "propertyNames": {
-        "pattern": "^[a-z][a-z0-9_]*$"
-      },
-      "patternProperties": {
-        "^[a-z][a-z0-9_]*$": {
-          "oneOf": [
-            {
-              "$ref": "#/$defs/artifactRef"
-            },
-            {
-              "$ref": "#/$defs/blockedRef"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "authorized_candidate_paths": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "$ref": "#/$defs/repoPath"
-      }
-    },
-    "approvals": {
-      "type": "object",
-      "propertyNames": {
-        "pattern": "^[a-z][a-z0-9_]*$"
-      },
-      "patternProperties": {
-        "^[a-z][a-z0-9_]*$": {
-          "$ref": "#/$defs/approval"
-        }
-      },
-      "additionalProperties": false
-    },
-    "source_binding": {
-      "$ref": "#/$defs/routeBinding"
-    }
-  },
-  "$defs": {
-    "stageId": {
-      "enum": [
-        "01_scout",
-        "02_plan",
-        "03_contract",
-        "04_implement",
-        "05_verify",
-        "06_review",
-        "07_release"
-      ]
-    },
-    "identifier": {
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9_.:-]*$"
-    },
-    "repoPath": {
-      "type": "string",
-      "minLength": 1,
-      "pattern": "^[A-Za-z0-9._/-]+$",
-      "not": {
-        "pattern": "(^|/)\\.\\.(/|$)"
-      }
-    },
-    "sha1": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{40}$"
-    },
-    "sha256": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
-    },
-    "artifactRef": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "path",
-        "disposition",
-        "sha256"
-      ],
-      "properties": {
-        "path": {
-          "$ref": "#/$defs/repoPath"
-        },
-        "disposition": {
-          "type": "string",
-          "minLength": 1
-        },
-        "sha256": {
-          "$ref": "#/$defs/sha256"
-        },
-        "approval": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "blockedRef": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "gate_id",
-        "reason_code"
-      ],
-      "properties": {
-        "gate_id": {
-          "type": "string",
-          "pattern": "^G_[A-Z0-9_]+$"
-        },
-        "reason_code": {
-          "type": "string",
-          "pattern": "^[A-Z][A-Z0-9_]*$"
-        }
-      }
-    },
-    "approval": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "granted",
-        "authorization"
-      ],
-      "properties": {
-        "granted": {
-          "type": "boolean"
-        },
-        "authorization": {
-          "type": "string",
-          "minLength": 1
-        },
-        "artifact": {
-          "$ref": "#/$defs/repoPath"
-        },
-        "artifact_sha256": {
-          "$ref": "#/$defs/sha256"
-        }
-      }
-    },
-    "routeBinding": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "pr",
-        "base",
-        "current_head"
-      ],
-      "properties": {
-        "pr": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "base": {
-          "$ref": "#/$defs/sha1"
-        },
-        "current_head": {
-          "$ref": "#/$defs/sha1"
-        }
-      }
-    }
-  }
+Frozen schema:
+
+```text
+CandidateManifest := {
+  base_commit_oid,
+  entries: [{
+    path,
+    kind: "file",
+    mode,
+    byte_length,
+    sha256
+  }]
 }
 ```
 
-### 4.3 Task-envelope semantic gates
+Rules:
 
-The schema is necessary but not sufficient. The evaluator must also enforce:
+1. Membership equals the complete changed-path set from implementation base to candidate, excluding the approved Plan artifact only.
+2. Every changed implementation path must be in Section 5.
+3. Entries are canonical-path sorted.
+4. Only regular files with supported Git modes `100644` or `100755` are admitted.
+5. Symlinks, hard-link ambiguity, sockets, devices, FIFOs, duplicate normalized paths, and unsupported modes block.
+6. `candidate_digest = SHA256(canonical CandidateManifest bytes)`.
+7. Verifier creates a new verifier-owned workspace for the run.
+8. Trusted ingress copies candidate bytes into the verifier-owned repository materialization.
+9. Every copied file is re-measured for byte length and SHA-256.
+10. The complete candidate digest is recomputed from the verifier-owned materialization.
+11. Any mismatch returns `BLOCKED_CANDIDATE_SNAPSHOT_MISMATCH`.
+12. Verification commands never execute against the mutable authoring workspace.
+13. Unrelated dirty-worktree changes are not ignored; they make membership exceed the allowlist and therefore block.
 
-1. `workflow_stage` matches exactly one route row.
-2. `task_domains` is compared as an exact set against the route selector.
-3. Every repository path is relative, contains no parent traversal, and contains no wildcard characters.
-4. `workpiece_paths` grants read/workpiece access only; it does not grant mutation authority.
-5. A mutation is legal only when its path is in `authorized_candidate_paths` and the active stage permits that mutation class.
-6. A source with `section_policy = "full"` may use exactly `["*"]` as a full-document selector.
-7. The literal `"*"` is forbidden as a repository path and forbidden for `explicit_selector_required` sources.
-8. Every selected evidence ID must be explicitly allowed by the selected route and resolvable through C5.
-9. Every transition approval fact must be strictly `true`; truthy strings are invalid.
-10. Source binding mismatch returns `SOURCE_BINDING_STALE`.
+## 9. Verifier-owned repository materialization
 
-## 5. C3 - Stage-Contract Shape
-
-### 5.1 Canonical Markdown interface
-
-Every stage file `stages/NN_name/CONTEXT.md` must use this interface:
-
-1. H1 title identifying the stage number and name.
-2. First fenced `yaml` block containing the complete machine-readable stage header.
-3. `## Inputs`
-4. `## Allowed Layer 3 References`
-5. `## Allowed Layer 4 Evidence and Working Inputs`
-6. `## Permitted Mutations`
-7. `## Forbidden Mutations`
-8. `## Verifier`
-9. `## Transition`
-10. `## BLOCKED Conditions`
-
-The first fenced YAML block is the only machine-readable stage header. No second stage header may exist.
-
-### 5.2 Required stage-header keys
-
-The stage header contains exactly these keys:
+The verifier workspace has three disjoint roots:
 
 ```text
-stage_id
-job
-required_inputs
-allowed_layer3
-allowed_layer4
-permitted_mutations
-forbidden_mutations
-required_verifier
-success_disposition
-blocked_disposition
-primary_output
-next_stage
-human_gate
+/run/<nonce>/repo       writable command workspace
+/run/<nonce>/authority  read-only verifier/profile/oracle/toolchain material
+/run/<nonce>/evidence   verifier-only evidence/signing output
 ```
 
-No duplicate top-level key is permitted.
+Properties:
 
-### 5.3 Stage-header value rules
+- candidate/model receives no path to `authority` or `evidence`;
+- no candidate writable mount aliases either root;
+- `repo` is created from the trusted implementation base and then receives only authorized candidate bytes;
+- any verifier-owned Git metadata exists only inside `repo`, is created from trusted base state, and is never sourced from candidate bytes;
+- Git hooks are disabled;
+- candidate workspace is never shared writable with verifier;
+- environment is allowlisted;
+- verifier workspace is destroyed after evidence finalization.
 
-- `stage_id` must equal the stage directory identity.
-- `required_inputs`, `allowed_layer3`, `allowed_layer4`, `permitted_mutations`, and `forbidden_mutations` are explicit arrays.
-- A path entry must be exact or be a named route field whose value is itself an exact allowlist. File-discovery globs are forbidden.
-- `required_verifier` is a stable verifier ID, never prose such as "appropriate tests".
-- `primary_output` is one exact repository-relative path.
-- `next_stage` is one stage ID or `none`.
-- `human_gate` is an explicit fact name or `none`.
-- `blocked_disposition` is exactly `BLOCKED`.
-- A stage contract cannot grant merge authority.
+A shared writable alias returns `BLOCKED_VERIFIER_WORKSPACE_ALIAS`.
 
-### 5.4 Frozen lifecycle interface
+## 10. Minimal toolchain identity
 
-| Stage | Primary output | Next stage | Mandatory transition rule |
-|---|---|---|---|
-| `01_scout` | `stages/01_scout/output/scout-report.md` | `02_plan` | Automatic only when Scout handoff is valid and the original request pre-authorized Plan. |
-| `02_plan` | `stages/02_plan/output/implementation-plan.md` | `03_contract` | Requires `PLAN_READY`, exact plan binding, and explicit user approval. |
-| `03_contract` | `stages/03_contract/output/implementation-contract.md` | `04_implement` | Requires contract completeness, current approved Plan binding, and `G_PRE_CODE_READY` before the first implementation mutation. |
-| `04_implement` | `stages/04_implement/output/candidate-manifest.md` | `05_verify` | Requires candidate manifest validity, changed-path confinement, and clear stop condition. |
-| `05_verify` | `stages/05_verify/output/verification-record.md` | `06_review` | Requires verification disposition `PASS`, complete verifier set, and exact-state binding. |
-| `06_review` | `stages/06_review/output/review-record.md` | `07_release` | Requires exact-head CI PASS, zero unresolved actionable findings, and review-cycle limit not exceeded. |
-| `07_release` | `stages/07_release/output/release-record.md` | `none` | Creates release eligibility only. Merge requires a separate explicit user instruction. |
+The toolchain trust set is intentionally bounded.
 
-### 5.5 Universal BLOCKED conditions
-
-Every stage returns a C4-conformant BLOCKED record when any of these is true:
-
-- required input missing;
-- route non-unique;
-- source missing or stale;
-- unlisted input loaded;
-- unauthorized mutation requested;
-- stage mutation class mismatches the active stage;
-- evidence is promoted to authority;
-- transition precondition false;
-- source binding stale;
-- required verifier undefined;
-- stage contract malformed;
-- scope expansion required.
-
-A stage must stop after emitting BLOCKED. It may not fix forward in the same stage unless a higher authority explicitly provides a new valid envelope or authorization.
-
-## 6. C4 - BLOCKED JSON Schema
-
-Every terminal governance failure record must conform to this Draft 2020-12 schema.
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:btmsct:governance:blocked-record:v1",
-  "title": "BTMSCT Governance BLOCKED Record",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "status",
-    "reason_code",
-    "gate_id",
-    "stage_id",
-    "route_candidates",
-    "missing_inputs",
-    "conflicts",
-    "source_binding",
-    "resolution_required"
-  ],
-  "properties": {
-    "status": {
-      "const": "BLOCKED"
-    },
-    "reason_code": {
-      "enum": [
-        "ROUTING_TABLE_INVALID",
-        "ROUTE_ZERO_MATCH",
-        "ROUTE_MULTI_MATCH",
-        "TASK_ENVELOPE_REQUIRED",
-        "STAGE_MUTATION_MISMATCH",
-        "MISSING_SELECTOR",
-        "MISSING_SOURCE",
-        "SOURCE_BINDING_STALE",
-        "WILDCARD_INPUT",
-        "EVIDENCE_INDEX_MISSING",
-        "EVIDENCE_ID_UNKNOWN",
-        "EVIDENCE_BINDING_STALE",
-        "EVIDENCE_AUTHORITY_FORBIDDEN",
-        "UNLISTED_INPUT",
-        "TRANSITION_PRECONDITION_FALSE",
-        "REVIEW_CYCLE_EXCEEDED",
-        "CHANGE_SIZE_DRIFT",
-        "STAGE_CONTRACT_INVALID",
-        "CONTRACT_INCOMPLETE",
-        "CONTRACT_SCOPE_EXPANSION",
-        "VERIFIER_UNDEFINED"
-      ]
-    },
-    "gate_id": {
-      "type": "string",
-      "pattern": "^G_[A-Z0-9_]+$"
-    },
-    "stage_id": {
-      "enum": [
-        "UNKNOWN",
-        "01_scout",
-        "02_plan",
-        "03_contract",
-        "04_implement",
-        "05_verify",
-        "06_review",
-        "07_release"
-      ]
-    },
-    "route_candidates": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "pattern": "^route:[a-z0-9_.:-]+$"
-      }
-    },
-    "missing_inputs": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
-    },
-    "conflicts": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
-    },
-    "source_binding": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "pr",
-        "base",
-        "current_head"
-      ],
-      "properties": {
-        "pr": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "base": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{40}$"
-        },
-        "current_head": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{40}$"
-        }
-      }
-    },
-    "resolution_required": {
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
-    }
-  }
+```text
+ToolchainIdentity := {
+  node: { realpath, sha256 },
+  npm_cli: { realpath, sha256 },
+  bash: { realpath, sha256 },
+  git: { realpath, sha256 }
 }
 ```
 
-C4 semantic rules:
+No host-wide package, OS, PATH, or runner manifest is part of the INC-3 TCB.
 
-1. A BLOCKED record is terminal for the current envelope.
-2. `route_candidates` contains every mechanically matching route ID and no inferred candidate.
-3. `missing_inputs` contains field names only when they are actually absent or invalid.
-4. `conflicts` states observed conflicts; it cannot prescribe a silent resolution.
-5. `resolution_required` states what external fact, artifact, authorization, or redesign is needed to re-enter.
-6. A warning or exception must never be represented as a successful route when a required gate is false.
+Build admission computes these four realpaths and file SHA-256 values in the trusted execution environment and supplies them as expected identities. The verifier re-measures the four files before command execution.
 
-## 7. C5 - Evidence-Index Contract
+Any mismatch returns `BLOCKED_VERIFIER_IDENTITY_MISMATCH`.
 
-### 7.1 Authority boundary
+Host environment changes outside this four-file set that invalidate the run are represented by `BLOCKED_NEW_RUN_REQUIRED`, not by expanding the toolchain manifest.
 
-The canonical evidence index path is `docs/evidence/index.json`.
+## 11. Dependency-acquisition phase
 
-The index is a Layer 4 lookup manifest only. The file and every entry are non-authoritative.
+`install_locked` is **not** a verifier verdict command.
 
-An evidence entry can prove or falsify a current-state claim. It cannot define:
-- requirements;
-- product behavior;
-- permissions;
-- waivers;
-- route choice;
-- transition authority;
-- merge authority.
+It is a verifier-workspace setup phase that occurs before the network-denied oracle/check phase.
 
-### 7.2 Evidence-index Draft 2020-12 JSON Schema
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:btmsct:governance:evidence-index:v1",
-  "title": "BTMSCT Evidence Index",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "version",
-    "normative",
-    "entries"
-  ],
-  "properties": {
-    "version": {
-      "const": "1.0.0"
-    },
-    "normative": {
-      "const": false
-    },
-    "entries": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/evidence"
-      }
-    }
-  },
-  "$defs": {
-    "stageId": {
-      "enum": [
-        "01_scout",
-        "02_plan",
-        "03_contract",
-        "04_implement",
-        "05_verify",
-        "06_review",
-        "07_release"
-      ]
-    },
-    "identifier": {
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9_.:-]*$"
-    },
-    "repoPath": {
-      "type": "string",
-      "minLength": 1,
-      "pattern": "^[A-Za-z0-9._/-]+$",
-      "not": {
-        "pattern": "(^|/)\\.\\.(/|$)"
-      }
-    },
-    "evidence": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "id",
-        "path",
-        "kind",
-        "authoritative",
-        "role",
-        "applicable_stages",
-        "task_domains",
-        "freshness",
-        "binding"
-      ],
-      "properties": {
-        "id": {
-          "$ref": "#/$defs/identifier"
-        },
-        "path": {
-          "$ref": "#/$defs/repoPath"
-        },
-        "kind": {
-          "enum": [
-            "proof",
-            "raw_log",
-            "verification_record",
-            "review_record",
-            "release_record",
-            "historical_proof"
-          ]
-        },
-        "authoritative": {
-          "const": false
-        },
-        "role": {
-          "const": "proof"
-        },
-        "applicable_stages": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "$ref": "#/$defs/stageId"
-          }
-        },
-        "task_domains": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "$ref": "#/$defs/identifier"
-          }
-        },
-        "freshness": {
-          "enum": [
-            "current",
-            "historical"
-          ]
-        },
-        "binding": {
-          "$ref": "#/$defs/binding"
-        }
-      }
-    },
-    "binding": {
-      "oneOf": [
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "enum": [
-                "commit_sha",
-                "pr_head_sha"
-              ]
-            },
-            "value": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{40}$"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "const": "artifact_sha256"
-            },
-            "value": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{64}$"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "const": "run_id"
-            },
-            "value": {
-              "type": "string",
-              "pattern": "^[0-9]+$"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "const": "schema_version"
-            },
-            "value": {
-              "type": "string",
-              "minLength": 1
-            }
-          }
-        }
-      ]
-    }
-  }
-}
-```
-
-### 7.3 Evidence-index semantic gates
-
-1. Evidence IDs are globally unique.
-2. Evidence paths are globally unique unless two IDs intentionally bind different immutable records at the same path; absent explicit contract authorization, duplicate paths are `EVIDENCE_INDEX_MISSING`/index invalidity.
-3. `freshness = "current"` is valid only when the binding equals the state required by the active stage.
-4. `freshness = "historical"` can be inspected only when explicitly routed and can never satisfy a current-state gate.
-5. If a selected evidence ID is absent, return `EVIDENCE_ID_UNKNOWN`.
-6. If its binding does not match the required current state, return `EVIDENCE_BINDING_STALE`.
-7. If evidence is used as requirement, permission, waiver, or transition authority, return `EVIDENCE_AUTHORITY_FORBIDDEN`.
-8. The index may select evidence. It may never select authority.
-
-## 8. C6 - Architecture-Manifest Contract
-
-### 8.1 Canonical location
-
-The architecture router/manifest is `references/architecture/CONTEXT.md`.
-
-It is subordinate to `AGENTS.md` and root `CONTEXT.md`. It is the only active architecture-source manifest.
-
-No agent may discover a newer amendment by listing `docs/`, comparing timestamps, or inferring version order from filenames.
-
-### 8.2 Frozen source order and supersession
-
-The active architecture source order is exactly:
-
-1. `docs/Website_System_Architecture_v1.0_LOCKED.md`
-2. `docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md`
-3. `docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md`
-
-Supersession rules are exactly:
-
-- v1.1 amends v1.0 only within Website System Architecture Section 18 and repository implementation controls.
-- Outside that boundary, v1.0 remains the active architecture source.
-- v1.2 amends v1.1 only for A18-03, A18-04, and A18-05 through A18-03A, A18-04A, and A18-05A.
-- v1.1 A18-01 and A18-02 remain active.
-- All v1.0 and v1.1 requirements not explicitly amended by v1.2 remain active.
-- The active reviewable implementation limit is 500.
-- Any conflict not resolved by these explicit supersession boundaries is BLOCKED.
-
-### 8.3 Required machine-readable manifest block
-
-When Stage 04 makes the architecture manifest mechanically verifiable, its canonical data block must conform to:
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:btmsct:governance:architecture-manifest:v1",
-  "title": "BTMSCT Architecture Manifest",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "version",
-    "active_sources",
-    "supersession",
-    "active_reviewable_loc_limit"
-  ],
-  "properties": {
-    "version": {
-      "const": "1.0.0"
-    },
-    "active_sources": {
-      "const": [
-        "docs/Website_System_Architecture_v1.0_LOCKED.md",
-        "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md",
-        "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md"
-      ]
-    },
-    "supersession": {
-      "const": [
-        {
-          "from": "v1.0",
-          "to": "v1.1",
-          "scope": [
-            "Website System Architecture Section 18",
-            "repository implementation controls"
-          ],
-          "preserved": "all v1.0 requirements outside the declared scope"
-        },
-        {
-          "from": "v1.1",
-          "to": "v1.2",
-          "scope": [
-            "A18-03",
-            "A18-04",
-            "A18-05"
-          ],
-          "replacements": [
-            "A18-03A",
-            "A18-04A",
-            "A18-05A"
-          ],
-          "preserved": [
-            "A18-01",
-            "A18-02",
-            "all other v1.1 requirements not explicitly amended"
-          ]
-        }
-      ]
-    },
-    "active_reviewable_loc_limit": {
-      "const": 500
-    }
-  }
-}
-```
-
-The manifest data is a deterministic representation of the routed architecture contract. It does not become a higher authority than the architecture sources or `AGENTS.md`.
-
-## 9. C7 - Source-Binding Contract
-
-### 9.1 Purpose
-
-Source binding prevents stale governance, stale prior-stage artifacts, and stale verification state from being silently reused after repository mutation.
-
-Git object identity and SHA-256 content identity are distinct identity classes. They must never be compared as if they were interchangeable.
-
-### 9.2 Source-binding Draft 2020-12 JSON Schema
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:btmsct:governance:source-binding:v1",
-  "title": "BTMSCT Source Binding",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "pr",
-    "base",
-    "current_head",
-    "repository_sources",
-    "prior_artifacts"
-  ],
-  "properties": {
-    "pr": {
-      "type": "integer",
-      "minimum": 1
-    },
-    "base": {
-      "$ref": "#/$defs/gitOid"
-    },
-    "current_head": {
-      "$ref": "#/$defs/gitOid"
-    },
-    "repository_sources": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "$ref": "#/$defs/repositorySource"
-      }
-    },
-    "prior_artifacts": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "$ref": "#/$defs/priorArtifact"
-      }
-    }
-  },
-  "$defs": {
-    "repoPath": {
-      "type": "string",
-      "minLength": 1,
-      "pattern": "^[A-Za-z0-9._/-]+$",
-      "not": {
-        "pattern": "(^|/)\\.\\.(/|$)"
-      }
-    },
-    "gitOid": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{40}$"
-    },
-    "sha256": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
-    },
-    "repositorySource": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "path",
-        "commit",
-        "git_blob_oid"
-      ],
-      "properties": {
-        "path": {
-          "$ref": "#/$defs/repoPath"
-        },
-        "commit": {
-          "$ref": "#/$defs/gitOid"
-        },
-        "git_blob_oid": {
-          "$ref": "#/$defs/gitOid"
-        },
-        "content_sha256": {
-          "$ref": "#/$defs/sha256"
-        }
-      }
-    },
-    "priorArtifact": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "path",
-        "sha256"
-      ],
-      "properties": {
-        "path": {
-          "$ref": "#/$defs/repoPath"
-        },
-        "sha256": {
-          "$ref": "#/$defs/sha256"
-        },
-        "disposition": {
-          "type": "string",
-          "minLength": 1
-        },
-        "approval": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    }
-  }
-}
-```
-
-### 9.3 Validation rules
-
-For every transition that requires source binding:
-
-1. Verify `base` equals the intended merge-base authority binding.
-2. Verify `current_head` equals the repository head being admitted to the next stage.
-3. For each `repository_sources` entry, read the exact `path` at the declared `commit` and require the observed Git blob OID to equal `git_blob_oid`.
-4. When `content_sha256` is present, hash the exact file bytes and require equality.
-5. For each `prior_artifacts` entry, hash the exact artifact bytes and require equality with `sha256`.
-6. A prior artifact disposition or approval is descriptive only unless the active transition contract explicitly requires that fact.
-7. Any mismatch returns `SOURCE_BINDING_STALE`.
-8. No agent may rewrite a stale binding to the observed value and continue. A new valid envelope or transition record is required.
-9. The implementation contract does not embed its own content hash. The post-write Contract artifact identity must be captured externally after the file exists, avoiding self-hash circularity.
-
-## 10. Cross-contract consistency requirements
-
-C1 through C7 are valid only when all of these relations hold:
-
-1. C1 route `target_stage` must equal C2 `workflow_stage` for the selected route.
-2. C1 `required_layer3_bundle` source IDs must exist in the canonical source registry.
-3. C1 `allowed_evidence_ids` is the upper bound for C2 `selected_evidence_ids`.
-4. C2 workpiece paths grant inspection only; C3 stage mutations plus C2 `authorized_candidate_paths` jointly determine write authority.
-5. Every C3 BLOCKED condition produces a C4-conformant record.
-6. Every C5 evidence entry has `authoritative = false` and `role = "proof"`.
-7. C6 architecture order is the architecture source order used by C1 routes that require the architecture bundle.
-8. C7 binding must be current before a transition that declares source-currentness.
-9. No C5 evidence field may satisfy C1/C3 authority or approval requirements.
-10. No route or stage may grant automatic merge authority.
-
-## 11. Stage 04 implementation boundary
-
-This contract authorizes no Stage 04 mutation by itself.
-
-A Stage 04 envelope must independently and explicitly declare:
-- `workflow_stage = "04_implement"`;
-- exactly one route ID under C1;
-- exact task domains;
-- exact workpiece paths;
-- exact authorized candidate paths;
-- exact prior-output binding to this contract artifact;
-- exact source binding to the then-current PR head;
-- all required approvals and transition facts.
-
-Before its first code, test, schema, migration, build, workflow, or verifier mutation, Stage 04 must re-read:
-1. root `AGENTS.md`;
-2. root `CONTEXT.md`;
-3. `stages/04_implement/CONTEXT.md`;
-4. `references/engineering/engineering-rules.md`;
-5. every Layer 3 source selected by the unique route;
-6. this implementation contract.
-
-It must then evaluate all `G_PC_*` predicates. If any predicate is false, it must emit C4 BLOCKED and stop.
-
-## 12. Contract-completeness oracle
-
-The Stage 03 `contract-completeness` verifier must establish all of the following without modifying repository state:
-
-- sections C1 through C7 each exist exactly once;
-- C1 defines the route matrix columns, closed route predicate, route uniqueness rule, and route-table schema;
-- C2 defines the complete caller/prior-output envelope schema and prohibits model-inferred selectors;
-- C3 defines the canonical Markdown stage interface, required machine header, seven lifecycle outputs, transitions, mutation boundaries, and BLOCKED conditions;
-- C4 is a Draft 2020-12 schema containing all nine required BLOCKED fields with `additionalProperties = false`;
-- C5 is a Draft 2020-12 schema with `normative = false`, per-entry `authoritative = false`, proof-only role, freshness, and state binding;
-- C6 freezes source order `v1.0 -> v1.1 -> v1.2`, explicit supersession boundaries, and the active 500-line limit;
-- C7 defines PR/base/head lineage, Git blob identity, optional content SHA-256 identity, prior-artifact SHA-256 identity, and stale-binding failure;
-- all JSON examples use ASCII double-quote characters;
-- no unresolved drafting marker, missing-content ellipsis, executable implementation, or file-discovery wildcard is present;
-- the Stage 03 mutation commit changes only `stages/03_contract/output/implementation-contract.md`.
-
-A failed condition returns C4 BLOCKED with `reason_code = "CONTRACT_INCOMPLETE"`, `"CONTRACT_SCOPE_EXPANSION"`, or the more specific applicable reason code.
-
-## 13. Zero-Trust Repository Harness v1.2 - INC-2 Execution Boundary Contract
-
-### 13.1 Objective and non-authority
-
-INC-2 adds only the execution boundary needed after the merged INC-1 deterministic router:
+Exact ordered invocations:
 
 ```text
-validated INC-1 task
-        |
-        v
-external supervisor
-        |
-        v
-hard capability mediation
-        |
-        v
-bounded Eve adapter
-        |
-        v
-disposable Docker sandbox
+[node.realpath, npm_cli.realpath, "ci"]
+[node.realpath, npm_cli.realpath, "ci", "--prefix", "harness"]
 ```
 
-The external supervisor is trusted. The model, model-authored tool inputs, candidate files, candidate code, candidate tests, and sandbox are untrusted.
+cwd: verifier-owned `repo`.
 
-INC-2 does not create final PASS authority. It does not implement Jev, the INC-3 external mechanical verifier, authenticated provenance, memory, databases, provider integrations, multi-agent routing, product behavior, deployment, release, or merge.
-
-Root `CONTEXT.md` remains active repository routing authority. INC-1 routing semantics are not modified by INC-2.
-
-### 13.2 Exact Stage 04 mutation allowlist
-
-The complete INC-2 candidate path set is exactly:
-
-1. `harness/package.json`
-2. `harness/package-lock.json`
-3. `harness/src/capability.ts`
-4. `harness/src/supervisor.ts`
-5. `harness/src/eve-adapter.ts`
-6. `harness/agent/agent.ts`
-7. `harness/agent/tools/execute.ts`
-8. `harness/agent/sandbox/sandbox.ts`
-9. `harness/tests/execution.test.ts`
-10. `.github/workflows/pr-verification.yml`
-
-The Plan condition for `harness/agent/sandbox/sandbox.ts` is now satisfied. Pinned Eve 0.63.0 binds a specific runtime sandbox backend through the public authored sandbox module discovered at `agent/sandbox/sandbox.ts`; without that module, the real Eve session may use Eve's default backend instead of the INC-2 locked backend.
-
-The authored sandbox module is configuration glue only. It must import the bounded adapter and export the adapter-created sandbox definition; it must not import Eve directly, add policy, or create a second backend.
-
-No eleventh candidate path is authorized.
-
-Forbidden INC-2 mutations include root `AGENTS.md`, root `CONTEXT.md`, `CLAUDE.md`, any stage `CONTEXT.md`, engineering rules, the architecture manifest, root package manifests, `harness/tsconfig.json`, INC-1 routing code/tests/fixture, product/application/database/provider files, product or architecture specifications, and Stage 05/06/07 records.
-
-A required mutation outside this ten-path allowlist is `BLOCKED / CONTRACT_SCOPE_EXPANSION`.
-
-### 13.3 Frozen framework, dependency, and runtime identities
-
-INC-2 freezes these exact identities:
+Frozen network policy for this phase:
 
 ```text
-eve package:
-  version = 0.63.0
-  upstream tag commit = d004e6d47e9d25d0380c24b5a47b65a18f8b2784
-
-AI SDK package:
-  name = ai
-  version = 7.0.105
-
-schema package:
-  name = zod
-  version = 4.5.4
-
-sandbox OCI image:
-  ghcr.io/vercel/eve@sha256:cb73db82b5f7668b4eac357c1bfa54525794f608bb3bf5db20799bfe6fc6565e
-
-harness runtime:
-  Node major = 24
+egress_allow = ["registry.npmjs.org:443"]
+all_other_network = DENY
 ```
 
-The OCI digest is the immutable multi-platform index published by the successful Eve 0.63.0 release workflow. The physical INC-2 CI control runs on Linux/amd64 and must fail rather than silently substitute another image or architecture.
+This allowlist is supported by the bound root and harness lockfiles, whose resolved package hosts are exactly `registry.npmjs.org`.
 
-The only new harness runtime dependencies permitted are `eve@0.63.0`, `ai@7.0.105`, and `zod@4.5.4`. Existing TypeScript/Vitest dependencies remain pinned as already present.
-
-No provider SDK, Jev package, database client, memory package, policy engine, container-orchestration framework, service mesh, FastAPI package, or second agent framework is authorized.
-
-Any required dependency beyond this closed set is `BLOCKED / CONTRACT_SCOPE_EXPANSION`.
-
-### 13.4 Bounded Eve adapter and compiled capability surface
-
-Only `harness/src/eve-adapter.ts` may import from the `eve` package or its public subpaths.
-
-The adapter may expose only the public Eve primitives required by INC-2:
-
-- `defineAgent`;
-- `defineTool`;
-- `docker`;
-- `Client` from `eve/client`;
-- the minimum public session and sandbox types needed by the supervisor boundary.
-
-Imports from Eve internal source paths are forbidden.
-
-The authored root agent must set:
+Limits per invocation:
 
 ```text
-defaultTools = false
-tool = false
-model = "openai/gpt-5.6-luna-fast"
+timeout_ms = 180000
+max_stdout_bytes = 1048576
+max_stderr_bytes = 1048576
+max_workspace_bytes = 2147483648
 ```
 
-The model value is compile-time configuration only for INC-2 verification. CI must not make a model/provider call and must not require model credentials.
+After both installs complete, all verifier command/oracle execution runs with `DENY_ALL` network.
 
-INC-2 authors no connections, subagents, skills, schedules, hooks, custom channels, or memory.
+Ambient public network is never authorized.
 
-The authored `harness/agent/sandbox/sandbox.ts` module must export the sandbox definition object produced by the bounded adapter. Pinned Eve 0.63.0 accepts that structural public definition directly; INC-2 must not import the aggregate `eve/sandbox` entry point solely to call the identity-style `defineSandbox` helper. The definition must select the same locked Docker backend described in Section 13.10. The authored module contains no independent image, network, environment, policy, or lifecycle values.
+## 12. Trusted verification commands
 
-The complete model-visible static tool surface must be exactly:
+The baseline verdict commands are:
+
+### V-CMD-01 verify_change_size
 
 ```text
-["execute"]
+id = "verify_change_size"
+argv = [bash.realpath, "scripts/check-change-size.sh", implementation_base_oid]
+cwd = repo
+network = DENY_ALL
+timeout_ms = 30000
+max_stdout_bytes = 262144
+max_stderr_bytes = 262144
+max_workspace_bytes = 2147483648
 ```
 
-The mechanical closure oracle is `eve info --json` against the harness package. Its reported `tools` array must equal exactly `["execute"]`. A second static tool, dynamic tool, connection-derived tool, agent-delegation tool, or optional default tool is EC-02 failure.
+Before V-CMD-01, the verifier-owned Git materialization must represent the candidate at `HEAD` with fixed verifier-only author/committer identity and hooks disabled. The implementation base remains reachable locally. No remote access is allowed.
 
-### 13.5 CapabilityPolicy and session-bound authority envelope
-
-The external supervisor compiles one immutable policy and closed grant catalog before the Eve turn begins.
-
-Normative policy shape:
+### V-CMD-02 verify_code
 
 ```text
-CapabilityPolicy := {
-  task_identity: non-empty supervisor-owned string,
-  allowed_tools: exactly ["execute"],
-  allowed_argv: unique array of non-empty exact argv token vectors,
-  allowed_cwds: unique array of canonical absolute sandbox paths,
-  read_roots: unique array of canonical absolute sandbox paths,
-  write_roots: unique array of canonical absolute sandbox paths,
-  subprocess: "deny" | "exact",
-  network: exactly "deny",
-  secret_names: exactly [],
-  git: exactly "deny"
-}
+id = "verify_code"
+argv = [node.realpath, npm_cli.realpath, "run", "verify"]
+cwd = repo
+network = DENY_ALL
+timeout_ms = 300000
+max_stdout_bytes = 2097152
+max_stderr_bytes = 2097152
+max_workspace_bytes = 2147483648
 ```
 
-The supervisor then uses Eve's public client surface to create a fresh Eve session before the first model turn and obtains that exact durable `session_id`.
-
-The authority transport is one signed, session-bound envelope:
+### V-CMD-03 harness_typecheck
 
 ```text
-CapabilityEnvelope := {
+id = "harness_typecheck"
+argv = [node.realpath, npm_cli.realpath, "--prefix", "harness", "run", "typecheck"]
+cwd = repo
+network = DENY_ALL
+timeout_ms = 120000
+max_stdout_bytes = 524288
+max_stderr_bytes = 524288
+max_workspace_bytes = 2147483648
+```
+
+### V-CMD-04 harness_test
+
+```text
+id = "harness_test"
+argv = [node.realpath, npm_cli.realpath, "--prefix", "harness", "run", "test"]
+cwd = repo
+network = DENY_ALL
+timeout_ms = 180000
+max_stdout_bytes = 2097152
+max_stderr_bytes = 2097152
+max_workspace_bytes = 2147483648
+```
+
+Selected checks are the closed union of baseline V-CMD-01/V-CMD-02 and mechanically applicable trusted harness checks V-CMD-03/V-CMD-04 plus any already-trusted task-required command IDs.
+
+Candidate/model input cannot supply or modify argv.
+
+Unknown required ID returns `BLOCKED_PROFILE_INCOMPLETE`.
+
+## 13. Independent hidden oracle
+
+Frozen oracle-manifest schema:
+
+```text
+OracleManifest := {
   version: 1,
-  session_id: exact Eve session id,
-  policy: CapabilityPolicy,
-  grants: unique closed CapabilityGrant array
-}
-
-CapabilityAuthorization :=
-  base64url(exact UTF-8 JSON envelope bytes)
-  + "."
-  + base64url(Ed25519 signature over the first segment's UTF-8 bytes)
-```
-
-The private Ed25519 signing key exists only in the external supervisor process. It is never committed, passed to Eve, exposed to the model, or copied into the candidate sandbox.
-
-The trusted Eve runtime receives only the corresponding public verifier key through supervisor-owned runtime configuration. The candidate sandbox receives neither private nor public supervisor key material.
-
-This signature is a runtime capability-authenticity mechanism only. It is not INC-3 provenance, release attestation, artifact signing, or final PASS authority.
-
-Authority-bearing policy and grant values come only from the already-admitted compact task plus supervisor-owned execution constraints. They never come from model output, the free-form task goal, candidate files, candidate tests, or sandbox state.
-
-No process-global authorization map, database, memory layer, external policy service, or mutable cross-process session registry is permitted.
-
-For INC-2:
-
-```text
-EffectiveCapabilities subset_of signed CapabilityEnvelope
-SandboxReachability subset_of signed CapabilityEnvelope
-```
-
-The envelope is immutable after signing. No tool call may add a path, argv vector, cwd, tool, secret, network permission, Git permission, or subprocess permission.
-
-### 13.6 Model-visible execute-tool contract
-
-`harness/agent/tools/execute.ts` is the sole model-visible authored tool.
-
-The model-visible request is:
-
-```text
-ExecuteInput := {
-  capability_id: non-empty string,
-  authorization: non-empty session-bound CapabilityAuthorization,
-  content?: string
+  oracle_entries: [{
+    oracle_id,
+    artifact_path,
+    artifact_sha256,
+    invocation_id
+  }]
 }
 ```
 
-The supervisor may make the signed authorization available to the model as opaque bearer capability data for that exact Eve session. Possession permits only selection among grants already authenticated inside that envelope; the model cannot mint or broaden authority.
+The actual oracle fixture/executable bytes live under verifier-owned `authority`, not under `repo`.
 
-The supervisor compiles a closed catalog before model use:
+Every oracle artifact is SHA-256 checked against the manifest immediately before invocation.
+
+Oracle execution uses:
+- network `DENY_ALL`;
+- the same bounded Node toolchain identity where Node execution is required;
+- the same timeout/output/workspace ceilings as the verifier test command unless a smaller literal limit is frozen in the manifest.
+
+Candidate/model cannot nominate oracle IDs, paths, bytes, or invocation.
+
+Required INC-2 preservation control:
 
 ```text
-CapabilityGrant :=
-  ReadText  { id, exact_path }
-  WriteText { id, exact_path }
-  Run       { id, exact_argv, exact_cwd }
+execute(read oracle-manifest/verifier-authority/verifier-evidence path)
+=> DENY before bytes
 ```
 
-A write grant may accept model-authored `content`; content is data, not authority. Read and run grants reject `content`.
+This must be proven using existing INC-2 grants and containment. If it requires any INC-2 semantic or grant change, return `BLOCKED_INCREMENT_BOUNDARY`.
 
-The authored tool must:
+## 14. Evidence-signing contract
 
-1. read the active Eve identity from `ctx.session.id`;
-2. verify the Ed25519 signature using only the configured supervisor public key;
-3. require `envelope.version == 1`;
-4. require `envelope.session_id == ctx.session.id`;
-5. validate the envelope's closed policy/grant shape;
-6. resolve only `input.capability_id` from the verified envelope;
-7. obtain the active Eve-owned sandbox with `ctx.getSandbox()`;
-8. invoke the hard request gate before any privileged sandbox effect.
-
-An invalid signature, wrong session, malformed envelope, unknown capability ID, malformed input, or grant/payload mismatch returns:
+Algorithm is frozen to existing platform cryptography:
 
 ```text
-DENY / CAPABILITY_NOT_GRANTED
+algorithm = Ed25519
+implementation = node:crypto
+new_dependency = false
+signature_encoding = canonical base64url without padding
+public_key_encoding = DER SPKI
+public_key_identity = SHA256(DER SPKI bytes), lowercase hex
+private_key_persistence = NONE
 ```
 
-No unverified envelope field may influence a filesystem or process effect.
+The verifier process creates one run-scoped Ed25519 keypair after admission and before verification.
 
-`CAPABILITY_NOT_GRANTED` remains an INC-2-local execution diagnostic. It is not added to C4 `reason_code`. When a required INC-2 verifier predicate is false at the repository-governance boundary, Stage 04 emits C4 `TRANSITION_PRECONDITION_FALSE` and records the exact EC identifier and local diagnostic in `conflicts`.
+The supervisor supplies:
+- `run_nonce`;
+- expected public-key identity after trusted verifier-key establishment;
+- expected verifier/profile/oracle/toolchain identities.
 
-### 13.7 Hard request gate
+The supervisor is not the signer.
 
-For a signature-verified envelope `e`, resolved grant `g`, and request `r`:
+The signed object is one canonical object that already contains `run_nonce`. No nonce concatenation rule exists outside canonical serialization.
 
 ```text
-G_REQUEST_ALLOWED(r, e, g) :=
-  envelope_verified(e)
-  AND session_bound(e, current_eve_session)
-  AND tool_allowed(e.policy, r)
-  AND grant_exists(e.grants, r.capability_id)
-  AND grant_payload_matches(r, g)
-  AND cwd_allowed(e.policy, g)
-  AND filesystem_effects_allowed(e.policy, g)
-  AND subprocess_effects_allowed(e.policy, g)
-  AND network_effects_allowed(e.policy)
-  AND secret_effects_allowed(e.policy)
-  AND git_effects_allowed(e.policy, g)
+SignedEvidencePayload := canonical(HarnessLocalEvidence)
+signature := Ed25519.sign(SignedEvidencePayload)
 ```
 
-Required semantics:
+The private key never enters candidate/model state and is not persisted. Process termination ends its lifetime.
 
-- `tool_allowed` is true only for `execute`;
-- read/write operate only on the grant's exact path after canonical containment succeeds;
-- run operates only on the grant's exact argv vector and exact canonical cwd;
-- `subprocess = "deny"` forbids all run grants;
-- `subprocess = "exact"` permits only one-shot `sandbox.run` for a matching run grant;
-- `sandbox.spawn` is never exposed by INC-2;
-- `network = "deny"` cannot be weakened by a grant;
-- `secret_names = []` means no secret-bearing capability exists;
-- `git = "deny"` overrides an otherwise exact allowed Git argv grant;
-- any false predicate returns `DENY / CAPABILITY_NOT_GRANTED` before the requested effect.
+This signature is increment-3 provenance only. It is not release signing, Jev, repository PASS, or publication authority.
 
-No permissive fallback exists.
-
-### 13.8 Canonical filesystem mediation
-
-Model-visible paths are never executed directly.
-
-For every read/write grant, the supervisor freezes an exact repository-relative candidate path and maps it under `/workspace`.
-
-Before the requested file effect:
-
-1. reject an empty path, absolute path, NUL, wildcard syntax, backslash, or any `..` segment;
-2. anchor the path at `/workspace`;
-3. resolve the canonical target inside the sandbox using a fixed non-model-visible `realpath` probe;
-4. for reads, require existing-target canonicalization;
-5. for writes, canonicalize the target including a non-existing leaf while resolving all existing symlink components;
-6. require the canonical target to equal an authorized canonical root or be its descendant by path segment;
-7. only then perform the requested read or write.
-
-The fixed canonicalization probe is an internal mediation operation. It is not a model-visible command grant and cannot mutate candidate state.
-
-String-prefix containment without canonicalization is forbidden.
-
-A symlink resolving outside an authorized root is `DENY / CAPABILITY_NOT_GRANTED`.
-
-### 13.9 Exact argv and cwd execution
-
-A run grant contains one exact argv token vector and one exact canonical cwd.
-
-Authorization requires byte-for-byte argv equality with the signed envelope policy and grant.
-
-Immediately before an authorized run effect, the tool must resolve the grant's cwd inside the active sandbox with a fixed non-model-visible:
+## 15. Harness-local evidence schema
 
 ```text
-realpath -- <quoted exact cwd>
-```
-
-The run is permitted only when:
-
-```text
-realpath(exact_cwd) == exact_cwd
-```
-
-Any missing cwd, symlinked cwd, or canonical mismatch is `DENY / CAPABILITY_NOT_GRANTED`.
-
-Only after that equality check may the adapter serialize the frozen argv vector for Eve's public `sandbox.run({ command })` API using one fixed POSIX single-quote encoder.
-
-The generated command has this form:
-
-```text
-cd -- <quoted canonical cwd> && exec <quoted argv[0]> <quoted argv[1]> ...
-```
-
-The model cannot supply or edit argv or cwd directly and cannot supply shell syntax.
-
-If the first executable token resolves to `git`, the request is denied even when that exact Git argv and cwd are otherwise present in the signed allowed sets. EC-06 must exercise this ordering so removal of the Git-specific predicate makes the test fail.
-
-An exact authorized subprocess may alter its disposable container. That container is the physical effect boundary. INC-2 does not claim syscall-level per-path mediation inside an already-authorized subprocess.
-
-### 13.10 Eve session and disposable Docker lifecycle
-
-The external supervisor owns logical run admission. Before the model turn, it creates a fresh Eve session through the public `Client.sessions.create()` surface, binds the signed envelope to that exact `session_id`, and never reuses that authorization in another session.
-
-The supervisor lifecycle is scoped. The same public `ClientSession` handle that yielded the authorized `session_id` must remain owned by the supervisor until the run ends, and terminal cleanup must execute `session.reset()` in a cleanup-protected `finally` path. Cleanup must occur when the supervised operation succeeds or throws. The caller must not receive a durable session handle that can outlive that scope.
-
-Eve owns the physical session sandbox handle. The bounded adapter freezes the sandbox backend to:
-
-```text
-image =
-  ghcr.io/vercel/eve@sha256:cb73db82b5f7668b4eac357c1bfa54525794f608bb3bf5db20799bfe6fc6565e
-
-networkPolicy = "deny-all"
-pullPolicy = "always"
-env = {}
-```
-
-The production Eve runtime must discover `harness/agent/sandbox/sandbox.ts`, whose only job is to export the adapter-created structural sandbox definition `{ backend: createSandboxBackend }` for that locked backend. The real model-visible `execute` tool and `ctx.getSandbox()` must therefore operate on the same locked backend that physical verification exercises.
-
-The authored tool reaches the sandbox only through the public `ctx.getSandbox()` accessor for the same Eve session whose ID is authenticated in the capability envelope.
-
-No host repository path is mounted into the container. Initial candidate files may enter only through explicitly authorized supervisor-mediated write capabilities. Host `.git` metadata is never copied.
-
-A supervisor run ends by terminally resetting its Eve session; a later independent run must create a different Eve session and obtain a distinct sandbox identity. INC-2 must not rely on a process-global binding map whose cleanup can leak authority or containers.
-
-Physical verification may create locked backend handles directly to prove backend deletion and effective network state, but that helper supplements rather than substitutes for proof that the compiled Eve runtime is bound to the authored locked sandbox definition.
-
-### 13.11 Network, secret, and Git isolation
-
-Network denial is physical:
-
-```text
-docker networkPolicy = "deny-all"
-```
-
-A prompt instruction or model refusal is not evidence.
-
-The external supervisor holds the Ed25519 private key outside Eve. The Eve runtime receives only the corresponding public verifier key. The candidate sandbox receives neither key and no GitHub, Git, Vercel, Supabase, provider, deployment, supervisor, or verifier secret.
-
-A supervisor-only sentinel environment variable present in the host process must be absent from the candidate container.
-
-Git authority is denied by all three controls:
-
-1. `git = "deny"` in the signed `CapabilityPolicy`;
-2. the Git-specific predicate rejects an otherwise exact allowed Git argv grant;
-3. no host `.git` metadata or Git credential is copied into the sandbox.
-
-Network, secret, Git, or signature verification cannot be weakened by model input.
-
-### 13.12 Frozen INC-2 negative-control oracle
-
-The Stage 04 candidate may implement these controls but may not redefine their required outcomes.
-
-| ID | Exact defect | Required outcome |
-|---|---|---|
-| EC-01 | tampered authorization, wrong Eve session binding, or unknown grant | `DENY / CAPABILITY_NOT_GRANTED`; requested implementation not invoked |
-| EC-02 | inspect compiled Eve surface with defaults disabled and no connections/subagents | exact model-visible tools = `["execute"]`; alternate default/built-in capability unreachable |
-| EC-03 | direct traversal plus symlink from authorized workspace path to an outside target | `DENY / CAPABILITY_NOT_GRANTED`; outside target unchanged |
-| EC-04 | unapproved argv, exact argv with a symlinked/wrong canonical cwd, and run while `subprocess = "deny"` | each `DENY / CAPABILITY_NOT_GRANTED`; requested process not executed |
-| EC-05 | inspect the effective Docker network attachments of the locked physical sandbox from the host side | no egress-capable Docker network is attached; the assertion must not depend on `curl`, DNS, TLS, or an external site |
-| EC-06 | sign a policy that otherwise exactly allows `["git","status"]` at the authorized cwd | `DENY / CAPABILITY_NOT_GRANTED` specifically because `git = "deny"`; no ref/remote mutation |
-| EC-07 | host contains supervisor-private-key/secret sentinel; sandbox enumerates environment/workspace | private key, sentinel, and supervisor-only files unreachable |
-| EC-08 | run A writes fixed sentinel, its physical sandbox is deleted, run B starts from the same frozen inputs under a new Eve session | run B has different session/sandbox identity and sentinel is absent |
-
-EC-03, EC-05, EC-07, and EC-08 require a real Docker daemon and the frozen OCI image. A mocked sandbox cannot satisfy those controls.
-
-Each negative control must fail for its intended predicate, not because an earlier unrelated fixture is malformed.
-
-The P2 binding-cleanup defect class from review `4063718972` is removed structurally: INC-2 production code must contain no process-global session-binding map and no bind-after-container-create lifecycle.
-
-### 13.13 Frozen positive controls
-
-The candidate must also prove:
-
-1. `eve info --json` exposes exactly one model-visible tool named `execute`;
-2. the compiled Eve application binds its root sandbox source to authored `agent/sandbox/sandbox.ts`, and that module delegates backend creation to the bounded adapter;
-3. an external-supervisor authorization signed for Eve session A verifies for A and not session B;
-4. a known capability ID resolves to its exact grant only after signature/session verification;
-5. an exact authorized non-Git run grant executes successfully;
-6. an authorized non-symlink canonical cwd succeeds;
-7. direct read inside `read_roots` succeeds;
-8. direct write inside `write_roots` succeeds;
-9. candidate output leaves the sandbox only as the structured tool result;
-10. a supervisor-scoped Eve session is terminally reset on both success and thrown-operation cleanup paths;
-11. two independent runs receive distinct Eve session/sandbox identities;
-12. all existing INC-1 routing tests remain unchanged and green.
-
-A positive control cannot weaken a negative control.
-
-### 13.14 Supervisor and adapter result boundary
-
-The supervisor-facing result boundary remains:
-
-```text
-ReadResult  := { kind: "read", content: string }
-WriteResult := { kind: "write", bytes_written: non-negative integer }
-RunResult   := {
-  kind: "run",
-  exit_code: integer,
-  stdout: string,
-  stderr: string
-}
-DeniedResult := {
-  kind: "deny",
-  diagnostic: "CAPABILITY_NOT_GRANTED"
+HarnessLocalEvidence := {
+  schema_version: 1,
+  verdict_kind: "harness_local_verdict",
+  run_nonce,
+  implementation_base_oid,
+  candidate_digest,
+  verifier_source_sha256,
+  verifier_profile_sha256,
+  oracle_manifest_sha256,
+  toolchain_identity_sha256,
+  preserved_inc1_identity_sha256,
+  preserved_inc2_identity_sha256,
+  selected_command_ids,
+  command_records: [{
+    command_id,
+    executable_sha256,
+    argv,
+    cwd,
+    exit_code,
+    stdout_byte_length,
+    stdout_sha256,
+    stderr_byte_length,
+    stderr_sha256,
+    reason_code
+  }],
+  oracle_result_digests,
+  replay_projection_sha256,
+  verdict: PASS | FAIL | BLOCKED,
+  reason_code
 }
 ```
 
-No result contains the sandbox handle, Docker daemon handle, private signing key, host filesystem path, policy mutation handle, host environment, credential, or mutable authority object.
+Supervisor acceptance order is frozen:
 
-The Eve adapter is replaceability glue only. It does not decide policy or mint capability authority.
+1. expected public-key identity equals observed key identity;
+2. detached signature verifies over literal canonical payload bytes;
+3. payload `run_nonce` equals active run;
+4. implementation base and candidate digest equal active values;
+5. verifier/profile/oracle/toolchain identities equal expected values;
+6. preserved INC-1/2 identities equal upstream opaque digests;
+7. selected command IDs exactly equal the required closed set;
+8. verdict/reason-code pair is valid.
 
-### 13.15 Verification and CI contract
+Failure returns `BLOCKED_EVIDENCE_AUTHENTICATION`.
 
-INC-2 verification has two classes.
+Supervisor may record the verified verdict but may not rewrite the payload.
 
-Pure deterministic verification covers:
+## 16. Stable verdict and reason codes
 
-- policy construction and immutability;
-- Ed25519 sign/verify round trip;
-- signature tamper denial;
-- wrong-session denial;
-- closed capability catalog;
-- unknown grant denial;
-- exact argv matching;
-- Git-specific denial after an otherwise exact Git allow;
-- cwd matching;
-- lexical path rejection;
-- canonical containment decision;
-- subprocess denial;
-- malformed execute input.
-
-Physical integration verification covers:
-
-- exact Eve compiled tool surface;
-- compiled binding to authored `agent/sandbox/sandbox.ts`;
-- locked Docker backend/image on the real Eve sandbox path;
-- symlinked-cwd denial before process execution;
-- file symlink escape denial;
-- effective Docker network isolation inspected from the host side without external reachability dependencies;
-- supervisor-private-key/secret isolation;
-- cleanup-protected Eve session reset;
-- cross-run state isolation;
-- fresh physical sandbox identity.
-
-The harness package scripts retain:
+Top-level verdict vocabulary is exactly:
 
 ```text
-typecheck -> tsc --noEmit
-test      -> vitest run
+PASS
+FAIL
+BLOCKED
 ```
 
-The harness package additionally defines an exact agent-file TypeScript check because `harness/tsconfig.json` remains outside the authorized mutation set:
+The type is always `harness_local_verdict`.
+
+Frozen reason codes:
 
 ```text
-typecheck:agent ->
-  tsc --noEmit --target ES2023 --module ESNext --moduleResolution Bundler
-      --strict --types node
-      agent/agent.ts agent/tools/execute.ts agent/sandbox/sandbox.ts
+PASS_REQUIRED_CHECKS
+FAIL_COMMAND_EXIT
+FAIL_ORACLE
+FAIL_RESOURCE_LIMIT
+BLOCKED_PROFILE_INCOMPLETE
+BLOCKED_VERIFIER_IDENTITY_MISMATCH
+BLOCKED_CANONICALIZATION_MISMATCH
+BLOCKED_UNAUTHORIZED_PATH
+BLOCKED_CANDIDATE_SNAPSHOT_MISMATCH
+BLOCKED_NETWORK_POLICY_UNRESOLVED
+BLOCKED_ORACLE_IDENTITY_MISMATCH
+BLOCKED_EVIDENCE_AUTHENTICATION
+BLOCKED_RESUME_IDENTITY_DRIFT
+BLOCKED_NEW_RUN_REQUIRED
+BLOCKED_REPAIR_BUDGET_EXHAUSTED
+BLOCKED_EVIDENCE_NOT_NOVEL
+BLOCKED_INCREMENT_BOUNDARY
 ```
 
-The Node 24 harness CI job remains:
+Human text is never parsed to decide verdict, resume, or repair.
+
+## 17. Determinism class and same-state replay
+
+Every INC-3 Build slice is class:
+
+`DETERMINISTIC`
+
+A PASS requires two consecutive verifier executions against the same immutable candidate snapshot and the same frozen identities.
+
+Because run nonces, signatures, and raw npm/log bytes are intentionally non-stable, determinism is evaluated over this frozen projection:
 
 ```text
-npm ci
-npm ci --prefix harness
-npx eslint   harness/src/routing.ts   harness/src/capability.ts   harness/src/supervisor.ts   harness/src/eve-adapter.ts   harness/agent/agent.ts   harness/agent/tools/execute.ts   harness/agent/sandbox/sandbox.ts   harness/tests/routing.test.ts   harness/tests/execution.test.ts
-npm --prefix harness run typecheck
-npm --prefix harness run typecheck:agent
-npm --prefix harness run test
+DeterministicProjection := {
+  implementation_base_oid,
+  candidate_digest,
+  verifier_source_sha256,
+  verifier_profile_sha256,
+  oracle_manifest_sha256,
+  toolchain_identity_sha256,
+  selected_command_ids,
+  command_exit_codes,
+  oracle_result_digests,
+  top_level_verdict,
+  top_level_reason_code
+}
 ```
 
-`harness/tests/execution.test.ts` must invoke the locally installed Eve CLI with `info --json` and assert exact tool closure. It must run physical Docker controls without model/provider credentials. Physical controls must not be skipped when Docker is unavailable.
+The two canonical projection byte strings must be identical.
 
-The existing `PR Verification` job remains fail-closed on `Harness Verification`. Its Node 22.16.0 product setup, name, and pre-existing product verification behavior remain unchanged.
+Mismatch returns `BLOCKED_NEW_RUN_REQUIRED`.
 
-No model call, provider call, deployment, or external application mutation is part of INC-2 CI.
+Raw stdout/stderr remain captured in evidence but do not define semantic determinism.
 
-### 13.16 One-candidate repair discipline
+## 18. Resume ownership and equality-only checks
 
-The review repair is limited to:
+INC-3 never parses or re-derives INC-1/2 semantics.
+
+Frozen ownership:
 
 ```text
-RE-BIND
-  -> FREEZE REVISED CONTRACT
-  -> RE-ADMIT STAGE 04
-  -> ONE BOUNDED REPAIR
-  -> VERIFY
-  -> STOP
+authority_bundle_sha256      -> upstream governance/Build admission
+routing_contract_sha256      -> INC-1 owner
+capability_policy_sha256     -> INC-2 owner
+tool_policy_sha256           -> INC-2 owner
+eve_identity_sha256          -> INC-2 owner
+model_configuration_sha256   -> INC-2 owner
+verifier_identity_sha256     -> INC-3 trusted verifier admission
+oracle_manifest_sha256       -> INC-3 trusted verifier admission
+candidate_digest             -> INC-3 candidate binder
 ```
 
-Before the next protected mutation, Stage 04 must re-read current root authorities, Stage 04 `CONTEXT.md`, engineering rules, architecture manifest, the exact approved Plan, this revised contract, and current PR/base/head.
-
-All `G_PC_*` predicates must be true.
-
-After every mutation, Stage 04 re-evaluates changed-path confinement, exact current head, active stop condition, and reviewable-line count.
-
-The five Codex cycle-1 findings have these frozen dispositions:
-
-- `4063718938`: unsupported by commit history; evidence reply only, no code mutation;
-- `4063718948`: valid P1; replace the disconnected process-local binding map with the signed session-bound authority path;
-- `4063718959`: valid P1; canonicalize and equality-check run cwd immediately before process execution;
-- `4063718972`: valid P2; remove the process-global binding lifecycle that creates the leak condition;
-- `4063718980`: valid P2; make EC-06 otherwise-authorized so only the Git predicate can deny it.
-
-Codex cycle-2 findings at reviewed head `81d5d03a01380e8cef04cba7cd2a4322f785c9a8` have these frozen dispositions:
-
-- `4064921953`: valid P1 mechanism defect; re-admit the Plan-authorized authored sandbox path and bind Eve's real root sandbox definition to the adapter's locked Docker backend;
-- `4064921962`: valid P2 lifecycle defect; retain the public prewarmed `ClientSession` handle and terminally `reset()` it in cleanup-protected supervisor scope;
-- `4064921972`: valid P2 oracle defect; replace external-request failure with direct host-side proof of the locked Docker sandbox's effective network isolation.
-
-No unrelated cleanup is authorized.
-
-### 13.17 Reviewable-size boundary
+INC-3 consumes these as opaque values and performs equality only.
 
 ```text
-TARGET <= 400 reviewable implementation lines
-INTERNAL_STOP = 420
-ABSOLUTE_CURRENT_REPOSITORY_CEILING = 500
+authority/routing digest drift -> RETURN_TO_AUTHORITY_READ_ONLY
+candidate digest drift         -> BLOCKED_RESUME_IDENTITY_DRIFT
+capability/tool/Eve/model/verifier/oracle drift -> BLOCKED_NEW_RUN_REQUIRED
+all equal -> RESUME_ALLOWED
 ```
 
-Dependency lockfiles remain excluded under `AGENTS.md`.
+INC-3 may not re-run routing or rewrite capability grants during resume.
 
-The review repair should reduce or replace existing machinery rather than stack new parallel authority machinery on top of it.
+## 19. Two-repair contract
 
-If the final implementation reaches or projects to 420 reviewable lines:
+Every repair remains a new untrusted candidate subject to existing INC-2 execution authority.
+
+No repair tool, grant, filesystem permission, or verifier authority is added.
+
+Frozen semantic failure fingerprint:
 
 ```text
-STOP -> REDUCE OR REDESIGN
+FailureFingerprint =
+  SHA256(canonical {
+    selected_command_ids,
+    failing_command_ids,
+    command_exit_codes,
+    oracle_result_digests,
+    top_level_reason_code
+  })
 ```
 
-The already-recorded repository-owner size exception addresses the known nested-lockfile counting defect only; it does not waive this 420-line internal stop.
+Raw stdout/stderr hashes are intentionally excluded from novelty.
 
-### 13.18 INC-2 verification obligations
+Transitions:
 
-Before INC-2 may advance beyond implementation:
+```text
+initial repair_count = 0
 
-1. final implementation paths are a subset of the exact ten-path allowlist;
-2. root governance, product files, root package manifests, architecture sources, and INC-1 router files are unchanged;
-3. exact dependency/runtime identities in Section 13.3 are present;
-4. Eve imports occur only through `harness/src/eve-adapter.ts`;
-5. model-visible tool closure is exactly `["execute"]`;
-6. no process-global capability/session binding map exists;
-7. supervisor authority is cryptographically bound to the exact Eve session before the model turn;
-8. the Eve tool rejects signature tampering and cross-session replay before sandbox effects;
-9. all EC-01 through EC-08 produce their exact Section 13.12 outcomes;
-10. all Section 13.13 positive controls pass;
-11. no negative control is skipped, mocked in place of required physical evidence, or satisfied by an unrelated earlier failure;
-12. the run-cwd symlink regression proves canonical equality immediately before execution;
-13. EC-06 is otherwise exactly authorized and fails only on the Git-specific predicate;
-14. harness lint passes;
-15. harness source typecheck passes;
-16. authored agent-file typecheck passes;
-17. harness tests pass;
-18. existing INC-1 routing tests remain unchanged and pass;
-19. the compiled real Eve runtime is bound through authored `agent/sandbox/sandbox.ts` to the locked Docker image and physical `deny-all` network backend;
-20. EC-05 proves effective Docker network isolation directly and cannot pass because `curl`, DNS, TLS, or an external site is unavailable;
-21. every supervisor-scoped prewarmed Eve session is terminally reset in cleanup-protected control flow before the scope ends;
-22. no supervisor private key, privileged secret, or host `.git` metadata reaches the sandbox;
-23. independent runs have distinct Eve session/sandbox identities and no writable-state carryover;
-24. existing Node 22 product verification behavior remains unchanged and passes;
-25. Node 24 `Harness Verification` must succeed for `PR Verification` to succeed;
-26. exact-head CI binds to the final candidate;
-27. implementation remains below the 420 internal stop and 500 repository ceiling;
-28. no INC-3, INC-4, or INC-5 implementation appears.
+FAIL and repair_count < 2
+  -> candidate may be repaired only through existing INC-2 grants
+  -> verifier reruns on the new candidate
 
-Any false predicate stops progression.
+new fingerprint != prior fingerprint
+  -> repair_count += 1
 
-### 13.19 Stop conditions
+new fingerprint == prior fingerprint
+  -> BLOCKED_EVIDENCE_NOT_NOVEL
 
-Stop immediately when any of these becomes true:
+repair_count == 2 and another repair is requested
+  -> BLOCKED_REPAIR_BUDGET_EXHAUSTED
 
-1. root `AGENTS.md`, `CONTEXT.md`, or a stage `CONTEXT.md` must change;
-2. product/application code or dependencies must change;
-3. the INC-1 router must change to grant INC-2 authority;
-4. an eleventh candidate path is required;
-5. a dependency outside Section 13.3 is required;
-6. an Eve internal API is required;
-7. the signed authority envelope cannot bind to public `ctx.session.id`;
-8. the external supervisor cannot pre-create a fresh Eve session through the public client surface;
-9. the runtime would require a process-global mutable authority registry, external service, database, or memory layer;
-10. Eve optional/default capability suppression cannot keep the exact tool surface `["execute"]`;
-11. network denial is only a prompt/model behavior rather than physical `deny-all`;
-12. the sandbox would receive the supervisor private key, host `.git` metadata, or privileged secrets;
-13. canonical cwd mediation cannot detect a symlink escape immediately before execution;
-14. a policy engine, service, database, memory layer, Jev layer, verifier layer, or additional agent/orchestration layer becomes necessary;
-15. physical sandbox tests require model/provider credentials;
-16. implementation reaches or projects to 420 reviewable lines;
-17. the same failure persists without materially new bounded diagnostic evidence;
-18. Plan, contract, base, head, Eve package, AI SDK package, Zod package, or OCI image identity becomes stale;
-19. exact-head CI fails without one bounded evidence-backed correction;
-20. review cycle 3 reports an actionable finding.
+PASS
+  -> terminal harness-local PASS
 
-Required disposition is `BLOCKED`, `REDUCE`, or `REDESIGN` according to the triggering condition. No silent scope expansion or fix-forward is permitted.
+BLOCKED
+  -> terminal current-run BLOCKED
+```
 
-### 13.20 Explicit non-authority
+The verifier reports evidence only; it never grants repair authority.
+
+## 20. Negative controls
+
+Stage 04 tests must freeze these exact intended outcomes:
+
+- NC-01 alternate argv for a known command ID -> ignored/denied; trusted argv unchanged.
+- NC-02 omission of baseline/applicable command -> command remains selected or `BLOCKED_PROFILE_INCOMPLETE`.
+- NC-03 unknown required command ID -> `BLOCKED_PROFILE_INCOMPLETE`.
+- NC-04 verifier/profile/oracle/toolchain identity mismatch -> `BLOCKED_VERIFIER_IDENTITY_MISMATCH`.
+- NC-05 unauthorized candidate path, symlink, unsupported mode, or duplicate normalized path -> `BLOCKED_UNAUTHORIZED_PATH`.
+- NC-06 candidate mutation between manifest and verifier copy -> `BLOCKED_CANDIDATE_SNAPSHOT_MISMATCH`.
+- NC-07 shared writable alias into authority/evidence -> BLOCKED before commands.
+- NC-08 timeout/output/disk limit exceeded -> `FAIL_RESOURCE_LIMIT`.
+- NC-09 nonzero trusted command -> `FAIL_COMMAND_EXIT`.
+- NC-10 INC-2 execute read of oracle/authority/evidence -> DENY before bytes.
+- NC-11 oracle artifact digest mismatch -> `BLOCKED_ORACLE_IDENTITY_MISMATCH`.
+- NC-12 mutate evidence bytes/signature/public-key identity/nonce -> `BLOCKED_EVIDENCE_AUTHENTICATION`.
+- NC-13 replay signed evidence under another nonce/candidate -> `BLOCKED_EVIDENCE_AUTHENTICATION`.
+- NC-14 authority/routing resume drift -> RETURN_TO_AUTHORITY_READ_ONLY.
+- NC-15 candidate resume drift -> `BLOCKED_RESUME_IDENTITY_DRIFT`.
+- NC-16 capability/tool/Eve/model/verifier/oracle drift -> `BLOCKED_NEW_RUN_REQUIRED`.
+- NC-17 identical semantic failure fingerprint -> `BLOCKED_EVIDENCE_NOT_NOVEL`.
+- NC-18 third repair request -> `BLOCKED_REPAIR_BUDGET_EXHAUSTED`.
+- NC-19 candidate tests pass while hidden oracle fails -> `FAIL_ORACLE`.
+- NC-20 each load-bearing predicate mutation must kill at least one designated test.
+
+## 21. Positive controls
+
+- PC-01 trusted selector returns the exact closed command union.
+- PC-02 canonical CandidateManifest fixture reproduces its expected SHA-256.
+- PC-03 verifier-owned snapshot reproduces candidate digest.
+- PC-04 dependency acquisition reaches only `registry.npmjs.org:443`; verification/oracle phase has no network.
+- PC-05 trusted command execution uses expected executable identities and literal argv.
+- PC-06 stdout/stderr byte lengths and SHA-256 match captured bytes.
+- PC-07 hidden oracle identity matches and contributes to verdict.
+- PC-08 Ed25519 signature verifies only for the active nonce/key identity.
+- PC-09 two deterministic projections on same snapshot are byte-identical before PASS.
+- PC-10 unchanged resume identities -> RESUME_ALLOWED.
+- PC-11 at most two semantically novel repair transitions occur under existing INC-2 grants.
+- PC-12 all existing INC-1 routing tests remain unchanged and green.
+- PC-13 all existing INC-2 execution and physical Docker controls remain unchanged, unskipped, and green.
+- PC-14 downstream product `PR Verification` semantics remain unchanged.
+
+## 22. NC-20 mutation matrix
+
+The implementation must assign stable predicate IDs and designated killing tests at minimum for:
+
+```text
+P-SEL-CLOSED        -> NC-01, NC-02, NC-03
+P-VERIFIER-ID       -> NC-04
+P-CANDIDATE-MEMBER  -> NC-05
+P-SNAPSHOT-BIND     -> NC-06
+P-WORKSPACE-ISO     -> NC-07
+P-RESOURCE-BOUND    -> NC-08
+P-COMMAND-FAIL      -> NC-09
+P-ORACLE-CONF       -> NC-10
+P-ORACLE-ID         -> NC-11
+P-EVIDENCE-AUTH     -> NC-12, NC-13
+P-RESUME-AUTH       -> NC-14
+P-RESUME-CANDIDATE  -> NC-15
+P-RESUME-RUNTIME    -> NC-16
+P-REPAIR-NOVELTY    -> NC-17
+P-REPAIR-BUDGET     -> NC-18
+P-ORACLE-OVERRIDE   -> NC-19
+```
+
+A mutation campaign passes only when every listed predicate mutation causes at least one designated test to fail for the intended reason.
+
+Aggregate mutation percentage is not acceptance evidence.
+
+## 23. Build-slice contract
+
+A later Build-admission artifact must emit four DETERMINISTIC slices, each <=5 files.
+
+### Slice 3.1 — create complete file surface and freeze identity/selection
+
+Files:
+- `harness/src/verifier.ts`
+- `harness/verifier/profile.json`
+- `harness/verifier/oracle-manifest.json`
+- `harness/tests/verifier.test.ts`
+
+Postcondition:
+all four future INC-3 files exist; NC-01..06 and PC-01..03 are red-first then pass.
+
+Budget checkpoint:
+projected cumulative reviewable lines <=170.
+
+### Slice 3.2 — workspace, network/resource policy, hidden oracle
+
+Files:
+- `harness/src/verifier.ts`
+- `harness/verifier/profile.json`
+- `harness/verifier/oracle-manifest.json`
+- `harness/tests/verifier.test.ts`
+
+Postcondition:
+NC-07..11/19 and PC-04..07 pass without INC-2 mutation.
+
+Budget checkpoint:
+projected cumulative <=300.
+
+### Slice 3.3 — authenticated evidence, deterministic replay, resume, repair
+
+Files:
+- `harness/src/verifier.ts`
+- `harness/src/supervisor.ts`
+- `harness/tests/verifier.test.ts`
+
+Postcondition:
+NC-12..18 and PC-08..11 pass; supervisor remains consumer only.
+
+Budget checkpoint:
+projected cumulative <=390; supervisor delta <=25 target / 40 hard stop.
+
+### Slice 3.4 — workflow inclusion and preservation
+
+Files:
+- `.github/workflows/pr-verification.yml`
+
+Exact mutation:
+append `harness/src/verifier.ts` and `harness/tests/verifier.test.ts` to the existing Harness Verification ESLint invocation; no other workflow behavior changes.
+
+Postcondition:
+PC-12..14 pass, full exact-head verification is reachable.
+
+Budget:
+whole PR <=400 target / <=500 hard ceiling.
+
+## 24. Completion authority
+
+Frozen authority:
+
+```text
+producer_completion_authority = NONE
+harness_local_verdict_authority = INC-3 verifier only
+increment_3_completion_authority =
+  exact-head repository PR Verification PASS
+  AND required Codex review of that exact implementation state with zero unresolved actionable findings
+stage_05_evidence_role = exact-candidate binding evidence only, NOT a completion issuer
+publication_mode = NONE
+repository_pass_authority = NONE
+jev_authority = NONE
+merge_authority = USER_ONLY
+```
+
+No harness-local PASS can substitute for repository verification/review.
+
+## 25. Required verification sequence
+
+After Build admission and implementation freeze:
+
+1. narrow red-first verifier tests after each authorized mutation;
+2. harness typecheck;
+3. complete harness test suite;
+4. NC-20 mutation campaign;
+5. existing INC-1 tests unchanged and green;
+6. existing INC-2 physical Docker controls unskipped and green;
+7. repository change-size gate;
+8. exact-head persistent PR Verification;
+9. Stage-05 evidence bound to exact candidate/head;
+10. independent Codex review subject to the active three-cycle cap.
+
+No model/provider call is permitted in acceptance CI.
+
+## 26. Stop conditions
+
+Stop immediately if any of these becomes true:
+
+1. INC-1 routing/root-router mutation is required.
+2. INC-2 grants, tool closure, capability semantics, sandbox, network, Git, or filesystem isolation must change.
+3. Any model-visible tool or new grant is required.
+4. Jev, a second judge/agent, or INC-4 authority is required.
+5. Old `stages/` or envelope machinery must be removed, cut over, or equivalence-tested.
+6. A new dependency is required.
+7. Verifier/profile/oracle/toolchain trust becomes self-asserted.
+8. Candidate bytes cannot be bound to the executed verifier-owned snapshot.
+9. Oracle/authority/evidence bytes become candidate/model-readable.
+10. Evidence cannot be authenticated with the frozen Ed25519 boundary.
+11. Verification/oracle execution requires ambient network.
+12. Dependency acquisition needs any resolved package host other than `registry.npmjs.org`.
+13. Resume requires re-routing or grant rewriting instead of digest equality.
+14. Repair requires new authority or exceeds two transitions.
+15. Supervisor delta projects above 40 changed lines.
+16. Workflow change exceeds the exact Section-23 mutation.
+17. Whole implementation reaches 400 without re-measurement or exceeds 500.
+18. Deterministic replay projection differs on unchanged state.
+19. Exact-head CI fails without one bounded evidence-backed correction.
+20. Codex cycle 3 reports an actionable finding.
+21. Build-Agent source binding or approved Plan/Contract identity is stale.
+
+Required disposition: `BLOCKED`, `REDUCE`, or `REDESIGN` according to the trigger. No fix-forward past a stop condition.
+
+## 27. Explicit non-authority
 
 This contract does not authorize:
 
-- INC-3, INC-4, or INC-5 implementation;
-- Jev;
-- final mechanical PASS authority;
-- release/artifact provenance or attestation;
-- root-router cutover;
-- old-governance removal;
-- product feature work;
-- database/backend work;
-- memory;
-- multi-agent execution;
-- model/provider calls in acceptance CI;
+- Stage 04 before a valid Build-Agent admission record and G_PRE_CODE_READY;
+- mutation outside the six candidate paths;
+- INC-1 mutation;
+- INC-2 semantic/grant/tool/isolation mutation;
+- Jev or any INC-4 implementation;
+- INC-5 migration/reduction/cutover;
+- release signing or publication;
 - deployment;
-- release;
-- merge;
-- any new path or dependency beyond the frozen INC-2 surface.
+- product/application/database/backend/memory work;
+- provider/model calls in acceptance CI;
+- dependency additions;
+- change-size exception;
+- merge.
 
-## 14. Stage 03 disposition
+## 28. Stage-03 disposition
 
-The active C1-C7 governance baseline remains unchanged. Codex cycle 1 exposed a real authority-transfer defect in the prior INC-2 mechanism, and Codex cycle 2 proved that the locked Docker backend was still not attached to Eve's real agent sandbox lifecycle.
+The selected Stage-02 mechanisms are frozen without adding a new architectural mechanism.
 
-This revised contract keeps the stateless signed session-bound authority envelope, re-admits the Plan-authorized authored sandbox configuration path required by pinned Eve 0.63.0, binds that path structurally to the same locked Docker backend used by physical verification without an unnecessary `defineSandbox` import, scopes every prewarmed Eve session through terminal `ClientSession.reset()`, and replaces the ambiguous external-request EC-05 oracle with direct effective-network isolation evidence.
+The contract resolves the residual Stage-03 values requested by review:
 
-The repair remains within the approved Plan and frozen dependency set. It adds no service, database, memory layer, internal Eve API, new dependency, or eleventh candidate path.
+- dual Plan/base binding;
+- canonical Build-Agent binding schema separation;
+- Ed25519 signed-payload semantics;
+- bounded four-file toolchain identity;
+- phased dependency acquisition with only `registry.npmjs.org:443`;
+- literal verifier command vectors, cwd, network, timeout and output/disk caps;
+- candidate snapshot and verifier-owned Git materialization;
+- narrowed semantic failure fingerprint;
+- deterministic replay projection;
+- opaque resume-digest ownership;
+- oracle confidentiality against existing INC-2 execute;
+- exact NC/PC and mutation matrices;
+- exact reviewable-line definition and budgets;
+- corrected completion authority;
+- publication `NONE`, Jev `NONE`, migration `NONE`.
 
-`CONTRACT_READY` means ready for fresh Stage 04 admission only. It is not implementation PASS, verification PASS, review approval, release eligibility, or merge authority.
+This contract is ready for a separate Build-admission artifact. It does not itself open Stage 04.
 
 CONTRACT_READY
