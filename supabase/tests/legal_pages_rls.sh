@@ -72,8 +72,19 @@ for role in anon authenticated; do
       | tr -d '\r'
   )"
 
-  if [[ "$visible_slugs" != "disclaimer" ]]; then
-    echo "FAIL: $role visible legal pages were '$visible_slugs'; expected only disclaimer."
+  if [[ "$visible_slugs" != 
+
+  assert_write_denied "$role" \
+    "insert into public.legal_pages (slug, title, body_jsonb, is_published) values ('unauthorized', 'Unauthorized', '[\"x\"]'::jsonb, true);"
+  assert_write_denied "$role" \
+    "update public.legal_pages set title = 'Changed' where slug = 'disclaimer';"
+  assert_write_denied "$role" \
+    "delete from public.legal_pages where slug = 'disclaimer';"
+done
+
+echo "PASS: only published legal pages are public-readable, and anon/authenticated remain write-denied."
+disclaimer\nprivacy\nterms' ]]; then
+    echo "FAIL: $role visible legal pages were '$visible_slugs'; expected disclaimer, privacy, and terms only."
     exit 1
   fi
 
