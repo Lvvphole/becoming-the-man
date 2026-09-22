@@ -68,23 +68,12 @@ assert_write_denied() {
 for role in anon authenticated; do
   visible_slugs="$(
     docker exec "$container" psql -qAt -v ON_ERROR_STOP=1 -U postgres -d postgres \
-      -c "set role $role; select slug from public.legal_pages order by slug;" \
+      -c "set role $role; select string_agg(slug, ',' order by slug) from public.legal_pages;" \
       | tr -d '\r'
   )"
 
-  if [[ "$visible_slugs" != 
-
-  assert_write_denied "$role" \
-    "insert into public.legal_pages (slug, title, body_jsonb, is_published) values ('unauthorized', 'Unauthorized', '[\"x\"]'::jsonb, true);"
-  assert_write_denied "$role" \
-    "update public.legal_pages set title = 'Changed' where slug = 'disclaimer';"
-  assert_write_denied "$role" \
-    "delete from public.legal_pages where slug = 'disclaimer';"
-done
-
-echo "PASS: only published legal pages are public-readable, and anon/authenticated remain write-denied."
-disclaimer\nprivacy\nterms' ]]; then
-    echo "FAIL: $role visible legal pages were '$visible_slugs'; expected disclaimer, privacy, and terms only."
+  if [[ "$visible_slugs" != "disclaimer,privacy,terms" ]]; then
+    echo "FAIL: $role visible legal pages were '$visible_slugs'; expected disclaimer,privacy,terms."
     exit 1
   fi
 
@@ -96,4 +85,4 @@ disclaimer\nprivacy\nterms' ]]; then
     "delete from public.legal_pages where slug = 'disclaimer';"
 done
 
-echo "PASS: published legal pages are public-read only and the Disclaimer seed is present."
+echo "PASS: only published legal pages are public-readable, and anon/authenticated remain write-denied."
