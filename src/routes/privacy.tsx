@@ -1,6 +1,8 @@
 import { useLoaderData } from "react-router";
 import type { LegalPage } from "../../server/domain/legal-page";
 
+const PRIVACY_CANONICAL_URL = "https://www.becomingthemanshecantrust.com/privacy";
+
 export function meta() {
   return [
     { title: "Privacy Policy | Becoming the Man She Can Trust" },
@@ -9,7 +11,18 @@ export function meta() {
       content:
         "How Becoming the Man She Can Trust collects, uses, stores, and shares personal information.",
     },
+    { property: "og:title", content: "Privacy Policy | Becoming the Man She Can Trust" },
+    {
+      property: "og:description",
+      content:
+        "How Becoming the Man She Can Trust collects, uses, stores, and shares personal information.",
+    },
+    { property: "og:url", content: PRIVACY_CANONICAL_URL },
   ];
+}
+
+export function links() {
+  return [{ rel: "canonical", href: PRIVACY_CANONICAL_URL }];
 }
 
 export async function loader() {
@@ -40,6 +53,17 @@ export function PrivacyPage({ page }: { page: LegalPage }) {
           <a href="/#non-negotiables">THE 24 NON-NEGOTIABLES</a>
           <a href="/#community">NEWSLETTER</a>
         </nav>
+        <details className="mobile-nav">
+          <summary aria-label="Navigation menu">
+            <span className="mobile-nav-icon" aria-hidden="true" />
+          </summary>
+          <nav aria-label="Mobile primary">
+            <a href="/">Home</a>
+            <a href="/book">Book</a>
+            <a href="/#non-negotiables">The 24 Non-Negotiables</a>
+            <a href="/#community">Newsletter</a>
+          </nav>
+        </details>
         <a className="header-purchase-link" href="/#purchase">Get Your Copy <span aria-hidden="true">→</span></a>
       </header>
       <main className="legal-main">
