@@ -139,6 +139,10 @@ export function evaluateDiscovery(table, request, options = {}) {
         (source.location === "repository" && !isRepoRelativePath(source.path))) {
       return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", binding);
     }
+    const value = source.location === "repository"
+      ? (options.files ?? {})[source.path]
+      : (options.taskContext ?? {})[sourceId];
+    if (!loaded(value)) return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", binding);
   }
 
   return {
