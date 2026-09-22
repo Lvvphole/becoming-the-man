@@ -145,6 +145,23 @@ describe("Supabase legal pages adapter", () => {
     expect(serialized).not.toContain("Bearer");
   });
 
+  it("keeps diagnostic logger failures from changing fail-closed provider semantics", async () => {
+    const diagnosticLogger = vi.fn(() => {
+      throw new Error("diagnostic sink unavailable");
+    });
+    const repository = createSupabaseLegalPagesRepository({
+      env,
+      fetchImpl: async () => new Response("provider error", { status: 503 }),
+      diagnosticLogger,
+    });
+
+    await expect(repository.read("disclaimer")).resolves.toEqual({
+      status: "unavailable",
+      reason: "provider",
+    });
+    expect(diagnosticLogger).toHaveBeenCalledOnce();
+  });
+
   it("distinguishes a transport exception from an HTTP provider response", async () => {
     const diagnosticLogger = vi.fn();
     const repository = createSupabaseLegalPagesRepository({
