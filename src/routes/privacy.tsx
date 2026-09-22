@@ -40,6 +40,10 @@ export async function loader() {
   return { page: result.page };
 }
 
+export function privacyParagraphKey(index: number) {
+  return `privacy-paragraph-${index}`;
+}
+
 export function PrivacyPage({ page }: { page: LegalPage }) {
   return (
     <div className="site-page urban-home legal-page">
@@ -77,7 +81,7 @@ export function PrivacyPage({ page }: { page: LegalPage }) {
             <p className="legal-copyright">© 2026 Emory Harris. All rights reserved.</p>
             <div className="legal-body">
               {page.body.map((paragraph, index) => (
-                <p className={index === 0 ? "legal-lead" : undefined} key={paragraph}>{paragraph}</p>
+                <p className={index === 0 ? "legal-lead" : undefined} key={privacyParagraphKey(index)}>{paragraph}</p>
               ))}
             </div>
             <a className="legal-return" href="/">Return Home <span aria-hidden="true">→</span></a>

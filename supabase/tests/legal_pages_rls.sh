@@ -99,6 +99,58 @@ if [[ "$terms_contract_summary" != "true|true|true|true|true|true|true|true|true
   exit 1
 fi
 
+privacy_heading_summary="$(
+  docker exec "$container" psql -qAt -v ON_ERROR_STOP=1 -U postgres -d postgres \
+    -c "select string_agg(value, '|' order by ordinality)
+        from public.legal_pages
+        cross join lateral jsonb_array_elements_text(body_jsonb) with ordinality as body(value, ordinality)
+        where slug = 'privacy' and value ~ '^[0-9]+\\. ';" \
+    | tr -d '\r'
+)"
+
+expected_privacy_headings="1. Who Operates the Website|2. Information You Provide Directly|3. Information Collected Automatically|4. How We Use Personal Information|5. Email Communications and Marketing Consent|6. Service Providers and Infrastructure|7. Analytics|8. Cookies, Similar Technologies, and Preference Signals|9. Sale, Sharing, and Targeted Advertising|10. Sensitive Personal Information and Relationship Content|11. Third-Party Websites and Retailers|12. Data Retention|13. Security|14. Your Privacy Rights|15. How to Submit a Privacy Request|16. Children’s Privacy|17. Data Minimization and Purpose Limitation|18. Changes to This Privacy Policy|19. Contact"
+
+if [[ "$privacy_heading_summary" != "$expected_privacy_headings" ]]; then
+  echo "FAIL: Privacy Policy section headings are missing, duplicated, or out of approved order."
+  exit 1
+fi
+
+privacy_contract_summary="$(
+  docker exec "$container" psql -qAt -v ON_ERROR_STOP=1 -U postgres -d postgres \
+    -c "with privacy as (
+          select title, is_published, body_jsonb
+          from public.legal_pages
+          where slug = 'privacy'
+        ),
+        body as (
+          select value
+          from privacy
+          cross join lateral jsonb_array_elements_text(body_jsonb) as item(value)
+        )
+        select
+          (select title = 'Privacy Policy' and is_published and jsonb_array_length(body_jsonb) = 96 from privacy)::text || '|' ||
+          (select bool_or(value = 'Effective Date: September 22, 2026') from body)::text || '|' ||
+          (select bool_or(value like '%Love Purpose Flourish Inc%collects, uses, discloses, stores, and protects personal information%') from body)::text || '|' ||
+          (select bool_or(value like '%first name, email address, marketing-consent choice%') from body)::text || '|' ||
+          (select bool_or(value like '%Supabase provides backend database services%') from body)::text || '|' ||
+          (select bool_or(value like '%Resend provides email-audience and email-delivery infrastructure%') from body)::text || '|' ||
+          (select bool_or(value = 'Vercel provides application hosting and related infrastructure.') from body)::text || '|' ||
+          (select bool_or(value like '%Cloudflare infrastructure may process network, security, routing, and request information%') from body)::text || '|' ||
+          (select bool_or(value like '%analytics must not receive raw email addresses, private contact-message text, assessment answers, AI conversation transcripts, authentication tokens, or payment information%') from body)::text || '|' ||
+          (select bool_or(value like '%does not operate a business model that sells Website visitor personal information%') from body)::text || '|' ||
+          (select bool_or(value like '%assessment and AI features%not part of the currently verified production collection%') from body)::text || '|' ||
+          (select bool_or(value like '%not directed to children under 13%') from body)::text || '|' ||
+          (select bool_or(value like '%collect only information reasonably necessary for the purpose disclosed%') from body)::text || '|' ||
+          (select count(*) = 3 from body where value like '%info@lovepurposeflourish.com%')::text
+        ;" \
+    | tr -d '\r'
+)"
+
+if [[ "$privacy_contract_summary" != "true|true|true|true|true|true|true|true|true|true|true|true|true|true" ]]; then
+  echo "FAIL: Privacy Policy contract is missing one or more owner-approved invariants: $privacy_contract_summary"
+  exit 1
+fi
+
 docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U postgres -d postgres <<'SQL'
 insert into public.legal_pages (slug, title, body_jsonb, is_published)
 values ('internal-draft', 'Internal Draft', '["private"]'::jsonb, false);

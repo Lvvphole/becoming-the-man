@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   PrivacyPage,
+  privacyParagraphKey,
   links as privacyLinks,
   meta as privacyMeta,
 } from "../../src/routes/privacy";
@@ -36,6 +37,22 @@ describe("R1 privacy and terms", () => {
     expect(html).toContain('<summary aria-label="Navigation menu">');
     expect(html).toContain('<nav aria-label="Mobile primary">');
     expect(html).toContain('<a href="/">Home</a>');
+  });
+
+  it("assigns unique keys to repeated privacy paragraphs", () => {
+    const repeatedParagraphs = [
+      "Love Purpose Flourish Inc",
+      "Love Purpose Flourish Inc",
+      "Love Purpose Flourish Inc",
+    ];
+    const keys = repeatedParagraphs.map((_, index) => privacyParagraphKey(index));
+
+    expect(new Set(keys).size).toBe(repeatedParagraphs.length);
+    expect(keys).toEqual([
+      "privacy-paragraph-0",
+      "privacy-paragraph-1",
+      "privacy-paragraph-2",
+    ]);
   });
 
   it("renders the terms and external-service boundary", () => {
