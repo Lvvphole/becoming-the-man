@@ -4,7 +4,7 @@ Status: ACTIVE LAYER 1 ROUTER
 Authority: subordinate only to `AGENTS.md`.
 Contract: `contracts/governance-routing-contract.json`.
 
-Root `CONTEXT.md` is the only task-domain and source router. It validates caller-supplied task selectors and resolves the exact authoritative sources for the task. It does not impose a repository lifecycle stage, predecessor artifact, or stage transition.
+Root `CONTEXT.md` is the only task-domain and source router. It validates caller- or controller-supplied task-domain selectors, permits bounded read-only localization to construct exact non-domain selectors, and resolves the exact authoritative sources for the task. It does not impose a repository lifecycle stage, predecessor artifact, or stage transition.
 
 ## Context Layers
 
@@ -27,7 +27,39 @@ A task envelope must contain all of these fields:
 - `approvals`
 - `source_binding`
 
-Selectors are valid only when caller-supplied or deterministically supplied by an authorized external execution controller. Repository work does not require Scout, Plan, Contract, Implement, Verify, Review, or Release predecessor state.
+Task-domain selectors are valid only when caller-supplied or deterministically supplied by an authorized external execution controller. Exact `source_sections` and `workpiece_paths` may additionally be deterministically derived by the bounded read-only localization bootstrap below after the task-domain selector resolves exactly one route. All other task-envelope fields retain their existing authority requirements. Repository work does not require Scout, Plan, Contract, Implement, Verify, Review, or Release predecessor state.
+
+## Read-Only Localization Bootstrap
+
+A caller or authorized external execution controller may request bounded read-only localization before a full task envelope exists.
+
+The discovery request contains exactly:
+
+- `task_domains`
+- `subject`
+- `source_binding`
+
+`task_domains` remains caller- or controller-supplied. The executing agent may not infer, broaden, substitute, or choose it. `subject` is a non-empty caller-supplied description of the repository target to localize. `source_binding` must equal the trusted current execution binding.
+
+For discovery request `D`:
+
+```text
+G_DISCOVERY_ROUTE(D) :=
+  D has exactly task_domains, subject, source_binding
+  AND D.task_domains matches exactly one canonical route
+  AND D.source_binding equals the trusted current binding
+```
+
+When `G_DISCOVERY_ROUTE(D) = true`, the agent may perform only these localization reads:
+
+1. inspect the selected route's registered Layer 3 source identities and use bounded text/heading search inside those exact routed sources to identify exact section selectors;
+2. inspect repository tree/metadata and perform subject-targeted read-only search to identify exact candidate workpiece paths;
+3. emit a non-authoritative Scout Report when scouting was requested; and
+4. emit a separate proposed task envelope populated with the localized exact selectors.
+
+Discovery does not authorize full workpiece inspection, evidence access, test/build execution, repository mutation, route inference, requirement creation, permission creation, waiver creation, or merge authority. It must not inspect `docs/evidence/**`.
+
+A discovery result is not a task envelope and cannot satisfy the Pre-Code Readiness Gate. Normal route evaluation must validate the completed task envelope before ordinary Layer 3 source loading, exact workpiece reads, evidence reads, or any mutation.
 
 ## Canonical Route Matrix
 
@@ -41,7 +73,7 @@ ROUTING_TABLE_BEGIN
 
 ```json
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "routes": [
     {
       "route_id": "route:governance",
@@ -560,6 +592,8 @@ G_ROUTE_UNIQUE(E) := |M(E)| = 1
 No semantic similarity, fallback route, "best fit", inferred task domain, or inferred source selector is permitted.
 
 ## Source Loading
+
+The Read-Only Localization Bootstrap is the only pre-envelope exception to ordinary source loading. It permits locator-only search within the exact routed Layer 3 bundle and subject-targeted repository localization as defined above; it does not treat discovered content as authoritative task input and grants no mutation or evidence authority.
 
 After one route matches:
 
