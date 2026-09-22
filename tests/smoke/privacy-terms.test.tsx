@@ -1,7 +1,15 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { PrivacyPage } from "../../src/routes/privacy";
-import { TermsPage } from "../../src/routes/terms";
+import {
+  PrivacyPage,
+  links as privacyLinks,
+  meta as privacyMeta,
+} from "../../src/routes/privacy";
+import {
+  TermsPage,
+  links as termsLinks,
+  meta as termsMeta,
+} from "../../src/routes/terms";
 
 describe("R1 privacy and terms", () => {
   it("renders the privacy disclosure and legal navigation", () => {
@@ -24,6 +32,10 @@ describe("R1 privacy and terms", () => {
     expect(html).toContain("deletion");
     expect(html).toContain('href="/terms"');
     expect(html).toContain('aria-current="page"');
+    expect(html).toContain('<details class="mobile-nav">');
+    expect(html).toContain('<summary aria-label="Navigation menu">');
+    expect(html).toContain('<nav aria-label="Mobile primary">');
+    expect(html).toContain('<a href="/">Home</a>');
   });
 
   it("renders the terms and external-service boundary", () => {
@@ -45,5 +57,27 @@ describe("R1 privacy and terms", () => {
     expect(html).toContain("Third-party retailers");
     expect(html).toContain('href="/privacy"');
     expect(html).toContain('aria-current="page"');
+    expect(html).toContain('<details class="mobile-nav">');
+    expect(html).toContain('<summary aria-label="Navigation menu">');
+    expect(html).toContain('<nav aria-label="Mobile primary">');
+    expect(html).toContain('<a href="/">Home</a>');
+  });
+
+  it("publishes canonical metadata for both public legal routes", () => {
+    expect(privacyLinks()).toEqual([
+      { rel: "canonical", href: "https://www.becomingthemanshecantrust.com/privacy" },
+    ]);
+    expect(privacyMeta()).toContainEqual({
+      property: "og:url",
+      content: "https://www.becomingthemanshecantrust.com/privacy",
+    });
+
+    expect(termsLinks()).toEqual([
+      { rel: "canonical", href: "https://www.becomingthemanshecantrust.com/terms" },
+    ]);
+    expect(termsMeta()).toContainEqual({
+      property: "og:url",
+      content: "https://www.becomingthemanshecantrust.com/terms",
+    });
   });
 });
