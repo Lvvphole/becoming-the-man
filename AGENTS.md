@@ -5,11 +5,11 @@ Status: active React SSR repository. Keep this file under 150 lines and synchron
 
 ## Authority & Routing
 - This file is the repository execution constitution and highest repository authority.
-- After reading this file, route every task through root `CONTEXT.md`. `CONTEXT.md` exclusively owns task-domain selection, workflow-stage selection, subordinate source selection, and stage transitions.
+- After reading this file, route every task through root `CONTEXT.md`. `CONTEXT.md` exclusively owns deterministic task/path routing, applicable source selection, and required verification selection.
 - `CLAUDE.md` may only route to this file. It must not duplicate or reinterpret governance.
-- Product specifications, architecture documents/amendments, stage contracts, skills, contracts, schemas, tests, plans, and evidence are subordinate to this file.
+- Product specifications, architecture documents/amendments, skills, contracts, schemas, tests, plans, and evidence are subordinate to this file.
 - The executing agent must not infer, broaden, substitute, or choose a route. Any missing, conflicting, zero-match, or multi-match route returns the machine-readable `BLOCKED` record defined by the routed engineering rules.
-- Before creating or modifying code, tests, schemas, migrations, build/workflow logic, or harness/verifier logic, read the engineering-rules source selected by `CONTEXT.md` and satisfy its Pre-Code Readiness Gate.
+- Before creating or modifying code, tests, schemas, migrations, build/workflow logic, or harness/verifier logic, read the engineering-rules source selected by `CONTEXT.md` and satisfy its Repository-Work Readiness Gate.
 
 ## Build & Test
 - Install locked dependencies: `npm ci`.
@@ -95,8 +95,9 @@ Do not introduce microservices, queues, Kubernetes, custom payment/order systems
 - `main` must require `PR Verification` and require the branch to be up to date before merge. Until repository rules enforce both, merge enforcement is incomplete.
 
 ## Routing Boundary
-- Root `CONTEXT.md` is the only task/stage router. Do not maintain a second skill router, source router, or evidence router in this file.
-- Load only the exact stage contract, Layer 3 sources, prior-stage outputs, workpiece paths, and evidence IDs selected by the validated task envelope.
+- Root `CONTEXT.md` is the only repository task/path router. Do not maintain a second skill router, source router, or evidence router in this file.
+- Load only the authorities and verification required by the explicit affected-path routes. Multi-path tasks compose requirements additively.
 - Do not scan or preload `.claude/skills/`, `docs/`, or `docs/evidence/` to discover a route or source.
-- Skills are subordinate stage workflows and cannot grant write, review, PASS, merge-readiness, or merge authority.
+- Skills are subordinate procedures and cannot grant write, review, PASS, merge-readiness, or merge authority.
+- Historical evidence and external harness state cannot create repository requirements, permissions, waivers, routes, PASS, merge-readiness, or merge authority.
 - If root `CONTEXT.md` or any required routed source is unavailable, stale, ambiguous, or conflicts without explicit precedence, stop and return `BLOCKED`. Do not substitute memory or guess.
