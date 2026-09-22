@@ -73,16 +73,20 @@ export function createSupabaseLegalPagesRepository(
         failureClass: LegalPageFailureClass,
         providerStatus?: number,
       ): void => {
-        diagnosticLogger({
-          event: "legal_page_provider_failure",
-          slug,
-          failureClass,
-          providerStatus,
-          aborted: abortController.signal.aborted,
-          attempt: 1,
-          timeoutMs: LEGAL_PAGE_READ_TIMEOUT_MS,
-          elapsedMs: Math.max(0, Date.now() - startedAt),
-        });
+        try {
+          diagnosticLogger({
+            event: "legal_page_provider_failure",
+            slug,
+            failureClass,
+            providerStatus,
+            aborted: abortController.signal.aborted,
+            attempt: 1,
+            timeoutMs: LEGAL_PAGE_READ_TIMEOUT_MS,
+            elapsedMs: Math.max(0, Date.now() - startedAt),
+          });
+        } catch {
+          // Observability must not alter the legal-page read result.
+        }
       };
 
       let payload: unknown;
