@@ -98,8 +98,9 @@ export function verifyAuthorization(
   const [payload, signature, ...extra] = token.split(".");
   if (!payload || !signature || extra.length || !/^[A-Za-z0-9_-]+$/.test(signature) || !publicKey || !sessionId) return null;
   try {
-    if (!verifySignature(null, Buffer.from(payload), publicKey,
-      Buffer.from(signature, "base64url"))) return null;
+    const signatureBytes = Buffer.from(signature, "base64url");
+    if (signatureBytes.toString("base64url") !== signature ||
+        !verifySignature(null, Buffer.from(payload), publicKey, signatureBytes)) return null;
     const value = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Record<string, unknown>;
     const policy = parsePolicy(value.policy);
     const grants = parseGrants(value.grants);
