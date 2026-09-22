@@ -160,7 +160,7 @@ describe("contracted controls", () => {
     expect(evaluateRoute(table, envelope(), { sourceBinding: {}, files: activeFiles() }).status)
       .toBe("INVALID_EXECUTION_CONTEXT"));
   test("stale envelope binding is blocked", () =>
-    expect(reason(route(envelope({ source_binding: { ...binding, current_head: "0".repeat(40) } })))
+    expect(reason(route(envelope({ source_binding: { ...binding, current_head: "0".repeat(40) } }))))
       .toBe("SOURCE_BINDING_STALE"));
   test("distinct matching routes are blocked", () => {
     const copy = structuredClone(table);
