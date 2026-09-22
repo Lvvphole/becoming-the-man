@@ -75,10 +75,14 @@ describe("read-only localization bootstrap contract", () => {
     source_binding: binding,
     ...overrides,
   });
+  const discoveryFiles = () => ({
+    ...activeFiles(),
+    [table.source_registry.product_prd.path]: "loaded product prd",
+  });
   const discover = (request = discoveryRequest(), more = {}) => {
     const fn = governanceRouting.evaluateDiscovery;
     if (typeof fn !== "function") return { status: "DISCOVERY_API_MISSING" };
-    return fn(table, request, options(more));
+    return fn(table, request, options({ files: discoveryFiles(), ...more }));
   };
 
   test("admits bounded read-only localization before the full task envelope exists", () => {
@@ -113,6 +117,18 @@ describe("read-only localization bootstrap contract", () => {
     expect(reason(discover(discoveryRequest({
       source_binding: { ...binding, current_head: "0".repeat(40) },
     })))).toBe("SOURCE_BINDING_STALE");
+  });
+
+  test("discovery blocks when a required repository source is unavailable", () => {
+    const files = discoveryFiles();
+    delete files[table.source_registry.product_prd.path];
+    expect(reason(discover(discoveryRequest(), { files }))).toBe("MISSING_SOURCE");
+  });
+
+  test("discovery blocks when a required task-context source is unavailable", () => {
+    expect(reason(discover(discoveryRequest({
+      task_domains: ["content_identity"],
+    }), { taskContext: {} }))).toBe("MISSING_SOURCE");
   });
 
   test("discovery output grants neither mutation nor evidence authority", () => {
