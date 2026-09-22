@@ -4,6 +4,8 @@ import { DENIED, inside, quote, selectGrant,
   type CapabilityPolicy, type ExecuteInput, type ExecuteResult,
   type Grant, type VerifiedAuthorization } from "./capability.js";
 import { prewarmEveSession } from "./eve-adapter.js";
+import { verifyHarnessEvidence, type ExpectedVerifierIdentity, type HarnessLocalEvidence } from "./verifier.js";
+import type { KeyObject } from "node:crypto";
 
 export interface SandboxPort {
   readonly id: string;
@@ -61,4 +63,11 @@ export async function executeAuthorized(
     command: `cd -- ${quote(grant.cwd)} && exec ${grant.argv.map(quote).join(" ")}`,
   });
   return { kind: "run", exit_code: result.exitCode, stdout: result.stdout, stderr: result.stderr };
+}
+
+export function consumeHarnessEvidence(
+  publicKey: KeyObject, expectedKeyId: string, nonce: string, expected: ExpectedVerifierIdentity,
+  baseOid: string, candidateDigest: string, payload: string, signature: string,
+): HarnessLocalEvidence | { readonly verdict: "BLOCKED"; readonly reason_code: "BLOCKED_EVIDENCE_AUTHENTICATION" } {
+  return verifyHarnessEvidence(publicKey, expectedKeyId, nonce, expected, baseOid, candidateDigest, payload, signature);
 }
