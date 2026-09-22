@@ -4,7 +4,7 @@ declare
 begin
   update public.legal_pages
   set title = 'Terms',
-      body_jsonb = jsonb_build_array(
+      body_jsonb = to_jsonb(ARRAY[
     'Effective Date: September 22, 2026',
     'These Terms and Conditions (“Terms”) govern your access to and use of the Becoming the Man She Can Trust website, its articles, book-related materials, frameworks, resources, communications, and other content provided through the website (collectively, the “Website”).',
     'The Website is operated by Love Purpose Flourish Inc (“Company,” “we,” “us,” or “our”). By accessing or using the Website, you agree to these Terms. If you do not agree with these Terms, do not use the Website.',
@@ -125,7 +125,7 @@ begin
     'Love Purpose Flourish Inc',
     'Georgia, United States',
     'Email: info@lovepurposeflourish.com'
-      ),
+      ]::text[]),
       is_published = true,
       updated_at = now()
   where slug = 'terms';
