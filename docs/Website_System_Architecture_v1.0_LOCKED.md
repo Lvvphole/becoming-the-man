@@ -108,7 +108,7 @@ Prepared 26 August 2026 • Architecture approved • LOCKED • Implementation 
 | **Precedence**             | Root `AGENTS.md` controls. The routed Product Specification controls product requirements in its domain. Any unresolved subordinate conflict is `BLOCKED`; no silent reconciliation. |
 | **Optimization rule**      | Prefer direct, provider-native capabilities and explicit ownership. Service count, code volume, model sophistication, and architectural novelty are not outcomes.        |
 | **Regression rule**        | No architecture change may weaken a locked journey, canonical principle, safety boundary, operator capability, or previously accepted release.                           |
-| **Next control artifact**  | Root `AGENTS.md` routes task/stage selection to root `CONTEXT.md`; all Layer 2 stage contracts and Layer 3 references remain subordinate.                                |
+| **Next control artifact**  | Root `AGENTS.md` routes repository work to root `CONTEXT.md`; `CONTEXT.md` deterministically selects applicable authority and verification from explicit affected paths. Routed product and architecture sources remain subordinate to `AGENTS.md`.                                |
 
 <table>
 <colgroup>
