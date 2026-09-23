@@ -131,6 +131,20 @@ describe("read-only localization bootstrap contract", () => {
     }), { taskContext: {} }))).toBe("MISSING_SOURCE");
   });
 
+  test.each([
+    ["missing", (source) => { delete source.section_policy; }],
+    ["unrecognized", (source) => { source.section_policy = "unknown_policy"; }],
+  ])("discovery blocks a %s routed-source section policy", (_name, mutate) => {
+    const copy = structuredClone(table);
+    mutate(copy.source_registry.product_prd);
+    const result = governanceRouting.evaluateDiscovery(
+      copy,
+      discoveryRequest(),
+      options({ files: discoveryFiles() }),
+    );
+    expect(reason(result)).toBe("MISSING_SELECTOR");
+  });
+
   test("discovery output grants neither mutation nor evidence authority", () => {
     const result = discover();
     expect(result.permissions?.mutation_access).toBe(false);
