@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "task_envelope": {
     "required_fields": [
       "task_domains",
@@ -28,8 +28,13 @@
       "source_binding",
       "resolution_required"
     ],
-    "source_binding_required_fields": ["base", "current_head"],
-    "source_binding_optional_fields": ["pr"],
+    "source_binding_required_fields": [
+      "base",
+      "current_head"
+    ],
+    "source_binding_optional_fields": [
+      "pr"
+    ],
     "status": "BLOCKED",
     "reason_codes": [
       "ROUTING_TABLE_INVALID",
@@ -70,5 +75,36 @@
       "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md",
       "scripts/check-change-size.sh"
     ]
+  },
+  "discovery_request": {
+    "required_fields": [
+      "task_domains",
+      "subject",
+      "source_binding"
+    ],
+    "exact_field_set": true,
+    "caller_controlled_fields": [
+      "task_domains",
+      "subject"
+    ],
+    "derived_output_fields": [
+      "route_id",
+      "layer3",
+      "permissions"
+    ],
+    "forbidden_authority_fields": [
+      "source_sections",
+      "workpiece_paths",
+      "selected_evidence_ids",
+      "authorized_candidate_paths",
+      "approvals"
+    ],
+    "permissions": {
+      "routed_source_section_localization": true,
+      "repository_workpiece_localization": true,
+      "evidence_access": false,
+      "mutation_access": false,
+      "route_inference": false
+    }
   }
 }

@@ -7,6 +7,7 @@ import {
   validateEvidenceRole, validateGovernanceSnapshot, validateLoadedInputs,
   validateReviewCycle,
 } from "../scripts/verify-governance-routing.mjs";
+import * as governanceRouting from "../scripts/verify-governance-routing.mjs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const contract = JSON.parse(read("contracts/governance-routing-contract.json"));
@@ -64,6 +65,135 @@ describe("governance route positives", () => {
       "01_scout", "02_plan", "03_contract", "04_implement",
       "05_verify", "06_review", "07_release",
     ]) expect(governed).not.toContain(token);
+  });
+});
+
+describe("read-only localization bootstrap contract", () => {
+  const discoveryRequest = (overrides = {}) => ({
+    task_domains: ["product_behavior"],
+    subject: "Accessibility page",
+    source_binding: binding,
+    ...overrides,
+  });
+  const discoveryFiles = () => ({
+    ...activeFiles(),
+    [table.source_registry.product_prd.path]: "loaded product prd",
+  });
+  const discover = (request = discoveryRequest(), more = {}) => {
+    const fn = governanceRouting.evaluateDiscovery;
+    if (typeof fn !== "function") return { status: "DISCOVERY_API_MISSING" };
+    return fn(table, request, options({ files: discoveryFiles(), ...more }));
+  };
+
+  test("admits bounded read-only localization before the full task envelope exists", () => {
+    expect(discover()).toEqual({
+      status: "DISCOVERY_ALLOWED",
+      route_id: "route:product_behavior",
+      layer3: ["architecture_manifest", "engineering_rules", "product_prd"],
+      permissions: {
+        routed_source_section_localization: true,
+        repository_workpiece_localization: true,
+        evidence_access: false,
+        mutation_access: false,
+        route_inference: false,
+      },
+    });
+  });
+
+  test("missing task domain remains blocked rather than inferred", () => {
+    const request = discoveryRequest();
+    delete request.task_domains;
+    expect(reason(discover(request))).toBe("MISSING_SELECTOR");
+  });
+
+  test("unknown and undeclared composite task domains remain blocked", () => {
+    expect(reason(discover(discoveryRequest({ task_domains: ["unknown"] })))).toBe("ROUTE_ZERO_MATCH");
+    expect(reason(discover(discoveryRequest({
+      task_domains: ["product_behavior", "ui_ux"],
+    })))).toBe("ROUTE_ZERO_MATCH");
+  });
+
+  test("stale discovery source binding is blocked", () => {
+    expect(reason(discover(discoveryRequest({
+      source_binding: { ...binding, current_head: "0".repeat(40) },
+    })))).toBe("SOURCE_BINDING_STALE");
+  });
+
+  test("discovery blocks when a required repository source is unavailable", () => {
+    const files = discoveryFiles();
+    delete files[table.source_registry.product_prd.path];
+    expect(reason(discover(discoveryRequest(), { files }))).toBe("MISSING_SOURCE");
+  });
+
+  test("discovery blocks when a required task-context source is unavailable", () => {
+    expect(reason(discover(discoveryRequest({
+      task_domains: ["content_identity"],
+    }), { taskContext: {} }))).toBe("MISSING_SOURCE");
+  });
+
+  test.each([
+    ["missing", (source) => { delete source.section_policy; }],
+    ["unrecognized", (source) => { source.section_policy = "unknown_policy"; }],
+  ])("discovery blocks a %s routed-source section policy", (_name, mutate) => {
+    const copy = structuredClone(table);
+    mutate(copy.source_registry.product_prd);
+    const result = governanceRouting.evaluateDiscovery(
+      copy,
+      discoveryRequest(),
+      options({ files: discoveryFiles() }),
+    );
+    expect(reason(result)).toBe("MISSING_SELECTOR");
+  });
+
+  test("discovery output grants neither mutation nor evidence authority", () => {
+    const result = discover();
+    expect(result.permissions?.mutation_access).toBe(false);
+    expect(result.permissions?.evidence_access).toBe(false);
+    expect(result).not.toHaveProperty("authorized_candidate_paths");
+    expect(result).not.toHaveProperty("approvals");
+    expect(result).not.toHaveProperty("selected_evidence_ids");
+  });
+
+  test("discovery source localization is confined to the selected route bundle", () => {
+    expect(discover().layer3).toEqual([
+      "architecture_manifest", "engineering_rules", "product_prd",
+    ]);
+  });
+
+  test("discovery requires a non-empty caller subject", () => {
+    expect(reason(discover(discoveryRequest({ subject: "" })))).toBe("TASK_ENVELOPE_REQUIRED");
+  });
+
+  test("discovery rejects authority-bearing task-envelope fields", () => {
+    for (const [field, value] of [
+      ["source_sections", {}],
+      ["workpiece_paths", ["src/routes/accessibility.tsx"]],
+      ["selected_evidence_ids", ["ev-1"]],
+      ["authorized_candidate_paths", ["src/routes/accessibility.tsx"]],
+      ["approvals", { approved: true }],
+    ]) {
+      expect(reason(discover({ ...discoveryRequest(), [field]: value }))).toBe("TASK_ENVELOPE_REQUIRED");
+    }
+  });
+
+  test("the discovery contract is exact-field and explicitly non-authoritative", () => {
+    expect(contract.version).toBe("2.1.0");
+    expect(contract.discovery_request.exact_field_set).toBe(true);
+    expect(contract.discovery_request.required_fields).toEqual([
+      "task_domains", "subject", "source_binding",
+    ]);
+    expect(contract.discovery_request.permissions).toEqual({
+      routed_source_section_localization: true,
+      repository_workpiece_localization: true,
+      evidence_access: false,
+      mutation_access: false,
+      route_inference: false,
+    });
+  });
+
+  test("a discovery request and discovery result cannot bypass normal envelope validation", () => {
+    expect(reason(route(discoveryRequest()))).toBe("TASK_ENVELOPE_REQUIRED");
+    expect(reason(route(discover()))).toBe("TASK_ENVELOPE_REQUIRED");
   });
 });
 

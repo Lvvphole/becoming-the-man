@@ -47,7 +47,7 @@ export function parseRoutingTable(text, sourceBinding) {
   if (!match) return makeBlocked("ROUTING_TABLE_INVALID", "G_ROUTE_UNIQUE", sourceBinding);
   try {
     const table = JSON.parse(match[1]);
-    if (!exactKeys(table, ["version", "routes", "source_registry"]) || table.version !== "2.0.0" ||
+    if (!exactKeys(table, ["version", "routes", "source_registry"]) || table.version !== "2.1.0" ||
         !Array.isArray(table.routes) || !table.routes.length || !object(table.source_registry) ||
         !table.routes.every(validRoute) ||
         new Set(table.routes.map((route) => route.route_id)).size !== table.routes.length) {
@@ -102,6 +102,64 @@ function candidateRoute(route, envelope) {
   return sameSet(route.selectors?.task_domains, envelope.task_domains) &&
     route.predicate.required_approval_facts.every((fact) => envelope.approvals[fact] === true) &&
     envelope.selected_evidence_ids.every((id) => route.allowed_evidence_ids.includes(id));
+}
+
+export function evaluateDiscovery(table, request, options = {}) {
+  const binding = options.sourceBinding;
+  if (!validBinding(binding)) return { status: "INVALID_EXECUTION_CONTEXT" };
+  if (table?.status === "BLOCKED" || table?.status === "INVALID_EXECUTION_CONTEXT") return table;
+  if (!object(request)) return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", binding);
+  if (!Object.hasOwn(request, "task_domains")) {
+    return makeBlocked("MISSING_SELECTOR", "G_ROUTE_UNIQUE", binding);
+  }
+  if (!exactKeys(request, ["task_domains", "subject", "source_binding"]) ||
+      !strings(request.task_domains) || request.task_domains.length === 0 ||
+      typeof request.subject !== "string" || request.subject.trim().length === 0 ||
+      !object(request.source_binding)) {
+    return makeBlocked("TASK_ENVELOPE_REQUIRED", "G_ROUTE_UNIQUE", binding);
+  }
+  if (!sameBinding(request.source_binding, binding)) {
+    return makeBlocked("SOURCE_BINDING_STALE", "G_SOURCE_PRESENT", binding);
+  }
+
+  const matches = table.routes.filter((route) =>
+    sameSet(route.selectors?.task_domains, request.task_domains));
+  if (!matches.length) return makeBlocked("ROUTE_ZERO_MATCH", "G_ROUTE_UNIQUE", binding);
+  if (matches.length > 1) {
+    const blocked = makeBlocked("ROUTE_MULTI_MATCH", "G_ROUTE_UNIQUE", binding);
+    blocked.route_candidates = matches.map((route) => route.route_id);
+    return blocked;
+  }
+
+  const route = matches[0];
+  for (const sourceId of route.required_layer3_bundle) {
+    const source = table.source_registry[sourceId];
+    if (!object(source) || source.kind !== "layer3" ||
+        !["repository", "task_context"].includes(source.location) ||
+        (source.location === "repository" && !isRepoRelativePath(source.path))) {
+      return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", binding);
+    }
+    if (!["full", "explicit_selector_required"].includes(source.section_policy)) {
+      return makeBlocked("MISSING_SELECTOR", "G_SOURCE_PRESENT", binding);
+    }
+    const value = source.location === "repository"
+      ? (options.files ?? {})[source.path]
+      : (options.taskContext ?? {})[sourceId];
+    if (!loaded(value)) return makeBlocked("MISSING_SOURCE", "G_SOURCE_PRESENT", binding);
+  }
+
+  return {
+    status: "DISCOVERY_ALLOWED",
+    route_id: route.route_id,
+    layer3: [...route.required_layer3_bundle].sort(),
+    permissions: {
+      routed_source_section_localization: true,
+      repository_workpiece_localization: true,
+      evidence_access: false,
+      mutation_access: false,
+      route_inference: false,
+    },
+  };
 }
 
 export function evaluateRoute(table, envelope, options = {}) {
