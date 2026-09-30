@@ -14,13 +14,10 @@ import type {
 } from "../../server/domain/contact-submission";
 
 type ApiErrorCode = ContactErrorCode | ContactDeliveryErrorCode;
-export type ContactSubmitHandler = (
-  input: ContactSubmissionInput,
-) => Promise<ContactSubmissionResult>;
+export type ContactSubmitHandler = (input: ContactSubmissionInput) => Promise<ContactSubmissionResult>;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const STATUS_BY_CODE: Readonly<Record<ApiErrorCode, number>> = {
+const STATUS: Readonly<Record<ApiErrorCode, number>> = {
   [CONTACT_ERROR_CODE.inquiryTypeInvalid]: 422,
   [CONTACT_ERROR_CODE.nameRequired]: 422,
   [CONTACT_ERROR_CODE.emailInvalid]: 422,
@@ -35,22 +32,17 @@ const STATUS_BY_CODE: Readonly<Record<ApiErrorCode, number>> = {
   [CONTACT_DELIVERY_ERROR_CODE.unavailable]: 503,
 };
 
-function readField(form: FormData, name: string): string {
+const read = (form: FormData, name: string) => {
   const value = form.get(name);
   return typeof value === "string" ? value : "";
-}
-
-function clientIp(request: Request): string {
-  const direct = request.headers.get("x-real-ip")?.trim();
-  if (direct) return direct;
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
-}
+};
 
 function failure(requestId: string, code: ApiErrorCode): Response {
-  const unavailable =
-    code === CONTACT_ERROR_CODE.unavailable ||
-    code === CONTACT_ERROR_CODE.emailVerificationUnavailable ||
-    code === CONTACT_DELIVERY_ERROR_CODE.unavailable;
+  const unavailable = [
+    CONTACT_ERROR_CODE.unavailable,
+    CONTACT_ERROR_CODE.emailVerificationUnavailable,
+    CONTACT_DELIVERY_ERROR_CODE.unavailable,
+  ].includes(code as never);
   return Response.json(
     {
       request_id: requestId,
@@ -64,19 +56,17 @@ function failure(requestId: string, code: ApiErrorCode): Response {
         retryable: unavailable || code === CONTACT_ERROR_CODE.rateLimited,
       },
     },
-    { status: STATUS_BY_CODE[code], headers: { "cache-control": "no-store" } },
+    { status: STATUS[code], headers: { "cache-control": "no-store" } },
   );
 }
 
 export async function handleContactRequest(
   request: Request,
   submit: ContactSubmitHandler,
-  newRequestId: () => string = () => crypto.randomUUID(),
+  newRequestId = () => crypto.randomUUID(),
 ): Promise<Response> {
   const fallbackId = newRequestId();
-  if (request.method !== "POST") {
-    return failure(fallbackId, CONTACT_ERROR_CODE.rejected);
-  }
+  if (request.method !== "POST") return failure(fallbackId, CONTACT_ERROR_CODE.rejected);
 
   let form: FormData;
   try {
@@ -85,38 +75,31 @@ export async function handleContactRequest(
     return failure(fallbackId, CONTACT_ERROR_CODE.rejected);
   }
 
-  const submittedId = readField(form, "requestId").trim();
+  const submittedId = read(form, "requestId").trim();
   const requestId = UUID_PATTERN.test(submittedId) ? submittedId : fallbackId;
-  if (readField(form, CONTACT_HONEYPOT_FIELD).trim()) {
+  if (read(form, CONTACT_HONEYPOT_FIELD).trim()) {
     return failure(requestId, CONTACT_ERROR_CODE.rejected);
   }
 
-  const ip = clientIp(request);
-  if (!ip) {
-    return failure(requestId, CONTACT_ERROR_CODE.unavailable);
-  }
+  const ip =
+    request.headers.get("x-real-ip")?.trim() ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "";
+  if (!ip) return failure(requestId, CONTACT_ERROR_CODE.unavailable);
 
   const result = await submit({
     requestId,
-    inquiryType: readField(form, "inquiryType"),
-    name: readField(form, "name"),
-    email: readField(form, "email"),
-    message: readField(form, "message"),
-    recaptchaToken: readField(form, CONTACT_RECAPTCHA_FIELD),
+    inquiryType: read(form, "inquiryType"),
+    name: read(form, "name"),
+    email: read(form, "email"),
+    message: read(form, "message"),
+    recaptchaToken: read(form, CONTACT_RECAPTCHA_FIELD),
     ip,
   });
-
-  if (result.status === "error") {
-    return failure(requestId, result.code);
-  }
+  if (result.status === "error") return failure(requestId, result.code);
 
   return Response.json(
-    {
-      request_id: requestId,
-      status: "accepted",
-      data: { receipt: result.receipt },
-      error: null,
-    },
+    { request_id: requestId, status: "accepted", data: { receipt: result.receipt }, error: null },
     { status: 200, headers: { "cache-control": "no-store" } },
   );
 }
@@ -135,7 +118,6 @@ export async function action({ request }: { request: Request }): Promise<Respons
     import("../../server/adapters/emailable-email-verifier.server"),
     import("../../server/adapters/resend-contact-delivery.server"),
   ]);
-
   return handleContactRequest(request, (input) =>
     submitContactInquiry(input, {
       humanVerifier: createGoogleRecaptchaVerifier(),
