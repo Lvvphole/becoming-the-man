@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import "./styles/global.css";
 import "./styles/home-approved.css";
 import "./styles/disclaimer.css";
+import "./styles/contact.css";
 import "./styles/mobile-navigation.css";
 
 export function Layout({ children }: { children: ReactNode }) {
