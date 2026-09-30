@@ -50,8 +50,8 @@ export interface ContactSubmissionDependencies {
   delivery: ContactDeliveryProvider;
 }
 
-const error = (code: ContactSubmissionResult extends infer _ ? ContactErrorCode | ContactDeliveryErrorCode : never) =>
-  ({ status: "error" as const, code });
+const error = (code: ContactErrorCode | ContactDeliveryErrorCode): ContactSubmissionResult =>
+  ({ status: "error", code });
 
 export async function submitContactInquiry(
   input: ContactSubmissionInput,
