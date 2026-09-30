@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { CONTACT_ERROR_CODE } from "../../contracts/contact";
 import { CONTACT_DELIVERY_ERROR_CODE } from "../../server/email/contact-delivery";
-import { submitContactInquiry } from "../../server/domain/contact-submission";
+import { submitContactInquiry, type ContactRequestState } from "../../server/domain/contact-submission";
 import { handleContactRequest } from "../../src/routes/api.contact";
 
 const REQUEST_ID = "1b2c3d4e-7777-4000-8000-000000000105";
@@ -19,7 +19,7 @@ function request(extra: Record<string, string> = {}, withIp = true) {
   });
 }
 
-function deps(begin: unknown = { status: "new" }) {
+function deps(begin: Awaited<ReturnType<ContactRequestState["begin"]>> = { status: "new" }) {
   return {
     humanVerifier: { verify: vi.fn(async () => ({ status: "verified" as const })) },
     requestState: {
