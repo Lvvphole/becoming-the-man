@@ -48,10 +48,6 @@ BEGIN
     hashtextextended('contact-ip:' || p_ip_hmac, 0)
   );
 
-  -- Expired rows no longer carry rate-limit authority and are removed opportunistically.
-  DELETE FROM public.contact_rate_limits
-  WHERE expires_at <= v_now;
-
   IF EXISTS (
     SELECT 1
     FROM public.contact_rate_limits
@@ -78,9 +74,47 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.cleanup_contact_rate_limits(
+  p_batch_size integer
+)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $
+DECLARE
+  v_deleted integer;
+BEGIN
+  IF p_batch_size IS NULL OR p_batch_size < 1 OR p_batch_size > 500 THEN
+    RAISE EXCEPTION 'contact cleanup batch size must be between 1 and 500'
+      USING ERRCODE = '22023';
+  END IF;
+
+  WITH expired AS (
+    SELECT ctid
+    FROM public.contact_rate_limits
+    WHERE expires_at <= clock_timestamp()
+    ORDER BY expires_at
+    LIMIT p_batch_size
+    FOR UPDATE SKIP LOCKED
+  )
+  DELETE FROM public.contact_rate_limits AS target
+  USING expired
+  WHERE target.ctid = expired.ctid;
+
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END;
+$;
+
 REVOKE ALL ON FUNCTION public.claim_contact_rate_limit(text, text)
   FROM PUBLIC, anon, authenticated, community_runtime;
 GRANT EXECUTE ON FUNCTION public.claim_contact_rate_limit(text, text)
+  TO service_role;
+
+REVOKE ALL ON FUNCTION public.cleanup_contact_rate_limits(integer)
+  FROM PUBLIC, anon, authenticated, community_runtime;
+GRANT EXECUTE ON FUNCTION public.cleanup_contact_rate_limits(integer)
   TO service_role;
 
 COMMIT;
