@@ -30,6 +30,19 @@ export function ContactPage() {
           <a href="/contact" aria-current="page">CONTACT</a>
         </nav>
 
+        <details className="mobile-nav">
+          <summary aria-label="Navigation menu">
+            <span className="mobile-nav-icon" aria-hidden="true" />
+          </summary>
+          <nav aria-label="Mobile primary">
+            <a href="/">Home</a>
+            <a href="/book">Book</a>
+            <a href="/#non-negotiables">The 24 Non-Negotiables</a>
+            <a href="/#community">Newsletter</a>
+            <a href="/contact" aria-current="page">Contact</a>
+          </nav>
+        </details>
+
         <a className="header-purchase-link" href="/#purchase">
           Get Your Copy <span aria-hidden="true">→</span>
         </a>
