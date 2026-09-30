@@ -14,7 +14,8 @@ export function createGoogleRecaptchaVerifier(
   return {
     async verify(token, ip) {
       const secret = env.RECAPTCHA_SECRET_KEY;
-      if (!secret || !token.trim()) return { status: "unavailable" };
+      if (!secret) return { status: "unavailable" };
+      if (!token.trim()) return { status: "rejected" };
 
       const body = new URLSearchParams({ secret, response: token.trim() });
       if (ip.trim()) body.set("remoteip", ip.trim());
