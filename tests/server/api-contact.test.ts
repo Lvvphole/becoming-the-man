@@ -85,15 +85,20 @@ describe("FR-105 request-bound retry", () => {
 
   it("records retry state after transient delivery failure", async () => {
     const d = deps();
-    d.delivery.deliver.mockResolvedValue({
+    const failed = {
+      ...d,
+      delivery: {
+        deliver: vi.fn(async () => ({
+          status: "error" as const,
+          code: CONTACT_DELIVERY_ERROR_CODE.unavailable,
+        })),
+      },
+    };
+    expect(await submitContactInquiry(INPUT, failed)).toEqual({
       status: "error",
       code: CONTACT_DELIVERY_ERROR_CODE.unavailable,
     });
-    expect(await submitContactInquiry(INPUT, d)).toEqual({
-      status: "error",
-      code: CONTACT_DELIVERY_ERROR_CODE.unavailable,
-    });
-    expect(d.requestState.retry).toHaveBeenCalledWith(REQUEST_ID, {
+    expect(failed.requestState.retry).toHaveBeenCalledWith(REQUEST_ID, {
       rateLimitClaimed: true,
       verification: "verified",
     });
