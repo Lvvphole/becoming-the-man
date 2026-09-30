@@ -46,6 +46,9 @@ def main() -> int:
                'CREATE ROLE anon LOGIN; CREATE ROLE authenticated LOGIN;')
         for migration in sorted((ROOT.parents[2] / 'supabase' / 'migrations').glob('*.sql')):
             expect(container, 'migration ' + migration.name, 'postgres', migration.read_text())
+        expect(container, 'contact rate-limit contract', 'postgres',
+               (ROOT.parent / 'contact_rate_limit.sql').read_text(),
+               expected_output='CONTACT_RATE_LIMIT_CONTRACT_OK')
         expect(container, 'actual database version', 'postgres', 'select version();')
         if not inventory(container):
             expect(container, 'isolated runtime login only', 'postgres',
