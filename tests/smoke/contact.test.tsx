@@ -25,4 +25,13 @@ describe("FR-105 contact page UI", () => {
     expect(html).toContain("disabled");
     expect(html).not.toContain("action=");
   });
+
+  it("preserves primary navigation on mobile", () => {
+    const html = renderToStaticMarkup(<ContactPage />);
+
+    expect(html).toContain('<details class="mobile-nav">');
+    expect(html).toContain('<summary aria-label="Navigation menu">');
+    expect(html).toContain('<nav aria-label="Mobile primary">');
+    expect(html).toContain('<a href="/contact" aria-current="page">Contact</a>');
+  });
 });
