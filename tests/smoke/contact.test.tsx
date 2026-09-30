@@ -14,10 +14,10 @@ describe("FR-105 contact page UI", () => {
     expect(html).toContain(">Speaking<");
     expect(html).toContain(">Business<");
     expect(html).toContain('name="name"');
-    expect(html).toContain('autocomplete="name"');
+    expect(html).toContain('autoComplete="name"');
     expect(html).toContain('name="email"');
     expect(html).toContain('type="email"');
-    expect(html).toContain('autocomplete="email"');
+    expect(html).toContain('autoComplete="email"');
     expect(html).toContain('name="message"');
     expect(html).toContain('href="/privacy"');
     expect(html).toContain("Online submission is temporarily unavailable.");
