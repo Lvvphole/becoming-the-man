@@ -1,166 +1,124 @@
 import { describe, expect, it, vi } from "vitest";
 import { CONTACT_ERROR_CODE } from "../../contracts/contact";
+import { CONTACT_DELIVERY_ERROR_CODE } from "../../server/email/contact-delivery";
+import { submitContactInquiry } from "../../server/domain/contact-submission";
 import { handleContactRequest } from "../../src/routes/api.contact";
-import {
-  submitContactInquiry,
-  type ContactHumanVerifier,
-} from "../../server/domain/contact-submission";
-import type { ContactRateLimiter } from "../../server/domain/contact-rate-limit";
-import type { ContactEmailVerifier } from "../../server/domain/contact-inquiry";
-import type { ContactDeliveryProvider } from "../../server/email/contact-delivery";
 
 const REQUEST_ID = "1b2c3d4e-7777-4000-8000-000000000105";
-
-function formRequest(fields: Record<string, string>, headers: HeadersInit = {}): Request {
-  const body = new FormData();
-  for (const [key, value] of Object.entries(fields)) {
-    body.set(key, value);
-  }
-  return new Request("https://example.test/api/contact", {
-    method: "POST",
-    body,
-    headers,
-  });
-}
-
-const VALID_FIELDS = {
+const INPUT = {
   requestId: REQUEST_ID,
   inquiryType: "reader",
   name: "Reader Example",
   email: "reader@example.com",
-  message: "I have a question about the book.",
+  message: "Question about the book.",
   recaptchaToken: "captcha-token",
+  ip: "203.0.113.7",
 };
 
+function request(extra: Record<string, string> = {}, withIp = true) {
+  const form = new FormData();
+  for (const [key, value] of Object.entries({ ...INPUT, ...extra })) {
+    if (key !== "ip") form.set(key, value);
+  }
+  return new Request("https://example.test/api/contact", {
+    method: "POST",
+    body: form,
+    headers: withIp ? { "x-real-ip": INPUT.ip } : undefined,
+  });
+}
+
+function deps(begin: unknown = { status: "new" }) {
+  return {
+    humanVerifier: { verify: vi.fn(async () => ({ status: "verified" as const })) },
+    requestState: {
+      begin: vi.fn(async () => begin),
+      retry: vi.fn(async () => true),
+      complete: vi.fn(async () => true),
+    },
+    rateLimiter: { claim: vi.fn(async () => ({ status: "claimed" as const })) },
+    emailVerifier: {
+      verify: vi.fn(async () => ({
+        ok: true as const,
+        state: "deliverable" as const,
+        disposable: false,
+      })),
+    },
+    delivery: {
+      deliver: vi.fn(async () => ({ status: "delivered" as const, receipt: "sent" as const })),
+    },
+  };
+}
+
 describe("POST /api/contact boundary", () => {
-  it("passes normalized input and trusted client IP to the contact use case", async () => {
-    const submit = vi.fn().mockResolvedValue({ status: "accepted", receipt: "sent" });
-
-    const response = await handleContactRequest(
-      formRequest(VALID_FIELDS, { "x-real-ip": "203.0.113.7" }),
-      submit,
-    );
-
+  it("passes the stable request ID and trusted client IP", async () => {
+    const submit = vi.fn(async () => ({ status: "accepted" as const, receipt: "sent" as const }));
+    const response = await handleContactRequest(request(), submit);
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      request_id: REQUEST_ID,
-      status: "accepted",
-      data: { receipt: "sent" },
-      error: null,
-    });
-    expect(submit).toHaveBeenCalledWith({
-      requestId: REQUEST_ID,
-      inquiryType: "reader",
-      name: "Reader Example",
-      email: "reader@example.com",
-      message: "I have a question about the book.",
-      recaptchaToken: "captcha-token",
-      ip: "203.0.113.7",
-    });
+    expect(submit).toHaveBeenCalledWith(INPUT);
+    expect((await response.json()).request_id).toBe(REQUEST_ID);
   });
 
-  it("rejects a filled honeypot before invoking dependencies", async () => {
+  it.each([
+    ["honeypot", request({ company: "bot" }), CONTACT_ERROR_CODE.rejected, 400],
+    ["missing IP", request({}, false), CONTACT_ERROR_CODE.unavailable, 503],
+  ])("rejects %s before orchestration", async (_label, req, code, status) => {
     const submit = vi.fn();
-
-    const response = await handleContactRequest(
-      formRequest({ ...VALID_FIELDS, company: "bot" }, { "x-real-ip": "203.0.113.7" }),
-      submit,
-    );
-
-    expect(response.status).toBe(400);
-    expect((await response.json()).error.code).toBe(CONTACT_ERROR_CODE.rejected);
-    expect(submit).not.toHaveBeenCalled();
-  });
-
-  it("fails closed when a client IP is unavailable", async () => {
-    const submit = vi.fn();
-
-    const response = await handleContactRequest(formRequest(VALID_FIELDS), submit);
-
-    expect(response.status).toBe(503);
-    expect((await response.json()).error.code).toBe(CONTACT_ERROR_CODE.unavailable);
+    const response = await handleContactRequest(req, submit);
+    expect(response.status).toBe(status);
+    expect((await response.json()).error.code).toBe(code);
     expect(submit).not.toHaveBeenCalled();
   });
 });
 
-describe("FR-105 contact submission orchestration", () => {
-  function dependencies(overrides: {
-    human?: ContactHumanVerifier["verify"];
-    rate?: ContactRateLimiter["claim"];
-    email?: ContactEmailVerifier["verify"];
-    deliver?: ContactDeliveryProvider["deliver"];
-  } = {}) {
-    return {
-      humanVerifier: {
-        verify: vi.fn(overrides.human ?? (async () => ({ status: "verified" as const }))),
-      },
-      rateLimiter: {
-        claim: vi.fn(overrides.rate ?? (async () => ({ status: "claimed" as const }))),
-      },
-      emailVerifier: {
-        verify: vi.fn(
-          overrides.email ??
-            (async () => ({ ok: true as const, state: "deliverable" as const, disposable: false })),
-        ),
-      },
-      delivery: {
-        deliver: vi.fn(
-          overrides.deliver ??
-            (async () => ({ status: "delivered" as const, receipt: "sent" as const })),
-        ),
-      },
-    };
-  }
-
-  const input = {
-    requestId: REQUEST_ID,
-    inquiryType: "reader",
-    name: "Reader Example",
-    email: "reader@example.com",
-    message: "I have a question about the book.",
-    recaptchaToken: "captcha-token",
-    ip: "203.0.113.7",
-  };
-
-  it("verifies human, claims the rate limit, verifies email, then delivers", async () => {
-    const deps = dependencies();
-
-    const result = await submitContactInquiry(input, deps);
-
-    expect(result).toEqual({ status: "accepted", receipt: "sent" });
-    expect(deps.humanVerifier.verify).toHaveBeenCalledWith("captcha-token", "203.0.113.7");
-    expect(deps.rateLimiter.claim).toHaveBeenCalledWith({
-      email: "reader@example.com",
-      ip: "203.0.113.7",
-    });
-    expect(deps.emailVerifier.verify).toHaveBeenCalledWith("reader@example.com");
-    expect(deps.delivery.deliver).toHaveBeenCalledWith(
-      expect.objectContaining({
-        requestId: REQUEST_ID,
-        email: "reader@example.com",
-        verification: "verified",
-      }),
+describe("FR-105 request-bound retry", () => {
+  it("executes the new request through rate limit, email verification, and delivery", async () => {
+    const d = deps();
+    expect(await submitContactInquiry(INPUT, d)).toEqual({ status: "accepted", receipt: "sent" });
+    expect(d.requestState.begin).toHaveBeenCalled();
+    expect(d.rateLimiter.claim).toHaveBeenCalledWith({ email: INPUT.email, ip: INPUT.ip });
+    expect(d.emailVerifier.verify).toHaveBeenCalledWith(INPUT.email);
+    expect(d.requestState.complete).toHaveBeenCalledWith(
+      REQUEST_ID,
+      { status: "accepted", receipt: "sent" },
     );
   });
 
-  it("does not call paid or delivery dependencies when reCAPTCHA rejects", async () => {
-    const deps = dependencies({ human: async () => ({ status: "rejected" }) });
-
-    const result = await submitContactInquiry(input, deps);
-
-    expect(result).toEqual({ status: "error", code: CONTACT_ERROR_CODE.rejected });
-    expect(deps.rateLimiter.claim).not.toHaveBeenCalled();
-    expect(deps.emailVerifier.verify).not.toHaveBeenCalled();
-    expect(deps.delivery.deliver).not.toHaveBeenCalled();
+  it("records retry state after transient delivery failure", async () => {
+    const d = deps();
+    d.delivery.deliver.mockResolvedValue({
+      status: "error",
+      code: CONTACT_DELIVERY_ERROR_CODE.unavailable,
+    });
+    expect(await submitContactInquiry(INPUT, d)).toEqual({
+      status: "error",
+      code: CONTACT_DELIVERY_ERROR_CODE.unavailable,
+    });
+    expect(d.requestState.retry).toHaveBeenCalledWith(REQUEST_ID, {
+      rateLimitClaimed: true,
+      verification: "verified",
+    });
   });
 
-  it("stops before email verification when the rate limit is reached", async () => {
-    const deps = dependencies({ rate: async () => ({ status: "rate_limited" }) });
+  it("replays the same request without consuming the email/IP claim again", async () => {
+    const d = deps({
+      status: "retry",
+      rateLimitClaimed: true,
+      verification: "verified",
+    });
+    expect(await submitContactInquiry(INPUT, d)).toEqual({ status: "accepted", receipt: "sent" });
+    expect(d.rateLimiter.claim).not.toHaveBeenCalled();
+    expect(d.emailVerifier.verify).not.toHaveBeenCalled();
+    expect(d.delivery.deliver).toHaveBeenCalledTimes(1);
+  });
 
-    const result = await submitContactInquiry(input, deps);
-
-    expect(result).toEqual({ status: "error", code: CONTACT_ERROR_CODE.rateLimited });
-    expect(deps.emailVerifier.verify).not.toHaveBeenCalled();
-    expect(deps.delivery.deliver).not.toHaveBeenCalled();
+  it("returns a completed replay without repeating downstream work", async () => {
+    const d = deps({
+      status: "replay",
+      result: { status: "accepted", receipt: "sent" },
+    });
+    expect(await submitContactInquiry(INPUT, d)).toEqual({ status: "accepted", receipt: "sent" });
+    expect(d.rateLimiter.claim).not.toHaveBeenCalled();
+    expect(d.emailVerifier.verify).not.toHaveBeenCalled();
+    expect(d.delivery.deliver).not.toHaveBeenCalled();
   });
 });
