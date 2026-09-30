@@ -6,6 +6,8 @@ DO $$
 DECLARE
   claimed text;
   blocked text;
+  cleaned integer;
+  expired_count integer;
   v_email_hmac text := repeat('a', 64);
   v_other_email_hmac text := repeat('c', 64);
   v_ip_hmac text := repeat('b', 64);
@@ -30,9 +32,23 @@ BEGIN
     RAISE EXCEPTION 'service_role cannot execute claim_contact_rate_limit';
   END IF;
 
+  INSERT INTO public.contact_rate_limits (email_hmac, ip_hmac, created_at, expires_at)
+  VALUES
+    (repeat('1', 64), repeat('2', 64), now() - interval '48 hours', now() - interval '24 hours'),
+    (repeat('3', 64), repeat('4', 64), now() - interval '49 hours', now() - interval '25 hours'),
+    (repeat('5', 64), repeat('6', 64), now() - interval '50 hours', now() - interval '26 hours');
+
   SELECT public.claim_contact_rate_limit(v_email_hmac, v_ip_hmac) INTO claimed;
   IF claimed <> 'CLAIMED' THEN
     RAISE EXCEPTION 'first contact-rate-limit claim was not admitted: %', claimed;
+  END IF;
+
+  SELECT count(*) INTO expired_count
+  FROM public.contact_rate_limits
+  WHERE expires_at <= now();
+
+  IF expired_count <> 3 THEN
+    RAISE EXCEPTION 'contact claim deleted unrelated expired rows: % remain', expired_count;
   END IF;
 
   SELECT public.claim_contact_rate_limit(v_email_hmac, v_other_ip_hmac) INTO blocked;
@@ -43,6 +59,31 @@ BEGIN
   SELECT public.claim_contact_rate_limit(v_other_email_hmac, v_ip_hmac) INTO blocked;
   IF blocked <> 'RATE_LIMITED' THEN
     RAISE EXCEPTION 'same IP HMAC was not rate limited: %', blocked;
+  END IF;
+
+  IF to_regprocedure('public.cleanup_contact_rate_limits(integer)') IS NULL THEN
+    RAISE EXCEPTION 'bounded cleanup function missing';
+  END IF;
+
+  IF NOT has_function_privilege(
+    'service_role',
+    'public.cleanup_contact_rate_limits(integer)',
+    'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'service_role cannot execute cleanup_contact_rate_limits';
+  END IF;
+
+  SELECT public.cleanup_contact_rate_limits(2) INTO cleaned;
+  IF cleaned <> 2 THEN
+    RAISE EXCEPTION 'bounded cleanup removed % rows instead of 2', cleaned;
+  END IF;
+
+  SELECT count(*) INTO expired_count
+  FROM public.contact_rate_limits
+  WHERE expires_at <= now();
+
+  IF expired_count <> 1 THEN
+    RAISE EXCEPTION 'bounded cleanup did not leave exactly one expired row: % remain', expired_count;
   END IF;
 
   IF NOT EXISTS (
