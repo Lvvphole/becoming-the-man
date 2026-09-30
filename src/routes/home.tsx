@@ -68,7 +68,7 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
           <a href="/book">BOOK</a>
           <a href="#non-negotiables">THE 24 NON-NEGOTIABLES</a>
           <span aria-disabled="true">ABOUT</span>
-          <span aria-disabled="true">CONTACT</span>
+          <a href="/contact">CONTACT</a>
           <a href="#community">NEWSLETTER</a>
         </nav>
         <details className="mobile-nav">
@@ -79,7 +79,7 @@ export function HomePage({ purchase }: { purchase: BookPurchaseDestination }) {
             <a href="/book">Book</a>
             <a href="#non-negotiables">The 24 Non-Negotiables</a>
             <span aria-disabled="true">About</span>
-            <span aria-disabled="true">Contact</span>
+            <a href="/contact">Contact</a>
             <a href="#community">Newsletter</a>
           </nav>
         </details>
