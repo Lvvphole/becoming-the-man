@@ -6,10 +6,10 @@ DO $$
 DECLARE
   claimed text;
   blocked text;
-  email_hmac text := repeat('a', 64);
-  other_email_hmac text := repeat('c', 64);
-  ip_hmac text := repeat('b', 64);
-  other_ip_hmac text := repeat('d', 64);
+  v_email_hmac text := repeat('a', 64);
+  v_other_email_hmac text := repeat('c', 64);
+  v_ip_hmac text := repeat('b', 64);
+  v_other_ip_hmac text := repeat('d', 64);
 BEGIN
   IF to_regclass('public.contact_rate_limits') IS NULL THEN
     RAISE EXCEPTION 'contact_rate_limits missing';
@@ -30,17 +30,17 @@ BEGIN
     RAISE EXCEPTION 'service_role cannot execute claim_contact_rate_limit';
   END IF;
 
-  SELECT public.claim_contact_rate_limit(email_hmac, ip_hmac) INTO claimed;
+  SELECT public.claim_contact_rate_limit(v_email_hmac, v_ip_hmac) INTO claimed;
   IF claimed <> 'CLAIMED' THEN
     RAISE EXCEPTION 'first contact-rate-limit claim was not admitted: %', claimed;
   END IF;
 
-  SELECT public.claim_contact_rate_limit(email_hmac, other_ip_hmac) INTO blocked;
+  SELECT public.claim_contact_rate_limit(v_email_hmac, v_other_ip_hmac) INTO blocked;
   IF blocked <> 'RATE_LIMITED' THEN
     RAISE EXCEPTION 'same email HMAC was not rate limited: %', blocked;
   END IF;
 
-  SELECT public.claim_contact_rate_limit(other_email_hmac, ip_hmac) INTO blocked;
+  SELECT public.claim_contact_rate_limit(v_other_email_hmac, v_ip_hmac) INTO blocked;
   IF blocked <> 'RATE_LIMITED' THEN
     RAISE EXCEPTION 'same IP HMAC was not rate limited: %', blocked;
   END IF;
@@ -48,8 +48,8 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM public.contact_rate_limits
-    WHERE email_hmac = email_hmac
-      AND ip_hmac = ip_hmac
+    WHERE email_hmac = v_email_hmac
+      AND ip_hmac = v_ip_hmac
       AND expires_at - created_at = interval '24 hours'
   ) THEN
     RAISE EXCEPTION 'claim did not persist the approved 24-hour HMAC-only state';
