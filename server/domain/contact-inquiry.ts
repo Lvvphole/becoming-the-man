@@ -38,7 +38,7 @@ function isInquiryType(value: string): value is ContactInquiryType {
   return (CONTACT_INQUIRY_TYPES as readonly string[]).includes(value);
 }
 
-function validate(input: ContactInquiryInput): ContactErrorCode | null {
+export function validateContactInquiry(input: ContactInquiryInput): ContactErrorCode | null {
   if (!isInquiryType(input.inquiryType)) {
     return CONTACT_ERROR_CODE.inquiryTypeInvalid;
   }
@@ -68,7 +68,7 @@ export async function assessContactInquiry(
   input: ContactInquiryInput,
   dependencies: ContactInquiryDependencies,
 ): Promise<ContactInquiryResult> {
-  const invalid = validate(input);
+  const invalid = validateContactInquiry(input);
   if (invalid) {
     return { status: "error", code: invalid };
   }

@@ -14,7 +14,8 @@ ARCHITECTURE_MANIFEST_BEGIN
   "active_sources": [
     "docs/Website_System_Architecture_v1.0_LOCKED.md",
     "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md",
-    "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md"
+    "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md",
+    "docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.3.md"
   ],
   "supersession": [
     {
@@ -44,6 +45,25 @@ ARCHITECTURE_MANIFEST_BEGIN
         "A18-02",
         "all other v1.1 requirements not explicitly amended"
       ]
+    },
+    {
+      "from": "v1.2",
+      "to": "v1.3",
+      "scope": [
+        "FR-105 Contact abuse provider",
+        "POST /api/contact persistence and success semantics",
+        "FR-105 Contact rate-limit replay",
+        "FR-105 Contact analytics success condition"
+      ],
+      "replacements": [
+        "FR-105A",
+        "FR-105B",
+        "FR-105C",
+        "FR-105D"
+      ],
+      "preserved": [
+        "all v1.0, v1.1, and v1.2 requirements outside the declared FR-105 scope"
+      ]
     }
   ],
   "active_reviewable_loc_limit": 500
@@ -57,8 +77,15 @@ ARCHITECTURE_MANIFEST_END
 1. `docs/Website_System_Architecture_v1.0_LOCKED.md`
 2. `docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.1.md`
 3. `docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.2.md`
+4. `docs/SYSTEM_ARCHITECTURE_AMENDMENT_v1.3.md`
 
 No other architecture source is active unless an authorized governance change updates this manifest.
+
+## v1.2 -> v1.3
+
+v1.3 amends only FR-105 Contact architecture: the Contact anti-bot provider, raw inquiry persistence, request-bound rate-limit replay, and Contact success/analytics semantics.
+
+FR-105A through FR-105D control inside that boundary. All other v1.0, v1.1, and v1.2 requirements remain active.
 
 ## v1.0 -> v1.1
 
@@ -84,7 +111,7 @@ A18-01 and A18-02 remain controlled by v1.1. Every v1.0/v1.1 requirement not exp
 
 ```text
 G_ARCH_SOURCE_SET :=
-  ActiveSources = [v1.0, v1.1, v1.2]
+  ActiveSources = [v1.0, v1.1, v1.2, v1.3]
 
 G_ARCH_PRECEDENCE :=
   every architecture conflict is resolved by an explicit supersession boundary
