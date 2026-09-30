@@ -8,4 +8,5 @@ export default [
   route("privacy", "routes/privacy.tsx"),
   route("terms", "routes/terms.tsx"),
   route("api/subscribe", "routes/api.subscribe.ts"),
+  route("api/contact", "routes/api.contact.ts"),
 ] satisfies RouteConfig;
