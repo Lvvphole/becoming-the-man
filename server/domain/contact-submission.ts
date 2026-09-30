@@ -50,6 +50,9 @@ export interface ContactSubmissionDependencies {
   delivery: ContactDeliveryProvider;
 }
 
+const error = (code: ContactSubmissionResult extends infer _ ? ContactErrorCode | ContactDeliveryErrorCode : never) =>
+  ({ status: "error" as const, code });
+
 export async function submitContactInquiry(
   input: ContactSubmissionInput,
   d: ContactSubmissionDependencies,
@@ -61,25 +64,20 @@ export async function submitContactInquiry(
     message: input.message.trim(),
   };
   const invalid = validateContactInquiry(n);
-  if (invalid) return { status: "error", code: invalid };
+  if (invalid) return error(invalid);
 
   const human = await d.humanVerifier.verify(input.recaptchaToken.trim(), input.ip.trim());
   if (human.status !== "verified") {
-    return {
-      status: "error",
-      code: human.status === "rejected" ? CONTACT_ERROR_CODE.rejected : CONTACT_ERROR_CODE.unavailable,
-    };
+    return error(
+      human.status === "rejected" ? CONTACT_ERROR_CODE.rejected : CONTACT_ERROR_CODE.unavailable,
+    );
   }
 
-  const state = await d.requestState.begin({
-    requestId: input.requestId,
-    ...n,
-    ip: input.ip.trim(),
-  });
+  const state = await d.requestState.begin({ requestId: input.requestId, ...n, ip: input.ip.trim() });
   if (state.status === "replay") return state.result;
-  if (state.status === "conflict") return { status: "error", code: CONTACT_ERROR_CODE.rejected };
+  if (state.status === "conflict") return error(CONTACT_ERROR_CODE.rejected);
   if (state.status === "in_progress" || state.status === "unavailable") {
-    return { status: "error", code: CONTACT_ERROR_CODE.unavailable };
+    return error(CONTACT_ERROR_CODE.unavailable);
   }
 
   let rateLimitClaimed = state.status === "retry" && state.rateLimitClaimed;
@@ -88,13 +86,11 @@ export async function submitContactInquiry(
   if (!rateLimitClaimed) {
     const claim = await d.rateLimiter.claim({ email: n.email, ip: input.ip.trim() });
     if (claim.status !== "claimed") {
-      const result = {
-        status: "error" as const,
-        code:
-          claim.status === "rate_limited"
-            ? CONTACT_ERROR_CODE.rateLimited
-            : CONTACT_ERROR_CODE.unavailable,
-      };
+      const result = error(
+        claim.status === "rate_limited"
+          ? CONTACT_ERROR_CODE.rateLimited
+          : CONTACT_ERROR_CODE.unavailable,
+      );
       if (claim.status === "rate_limited") await d.requestState.complete(input.requestId, result);
       else await d.requestState.retry(input.requestId, { rateLimitClaimed: false });
       return result;
