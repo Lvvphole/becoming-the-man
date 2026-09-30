@@ -149,7 +149,7 @@ jobs:
             { text: "BOOK", href: "/book", disabled: false },
             { text: "THE 24 NON-NEGOTIABLES", href: "#non-negotiables", disabled: false },
             { text: "ABOUT", href: null, disabled: true },
-            { text: "CONTACT", href: null, disabled: true },
+            { text: "CONTACT", href: "/contact", disabled: false },
             { text: "NEWSLETTER", href: "#community", disabled: false },
           ];
 
