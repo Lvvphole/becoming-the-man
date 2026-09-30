@@ -4,13 +4,10 @@ import {
   CONTACT_RECAPTCHA_FIELD,
   type ContactErrorCode,
 } from "../../contracts/contact";
-import {
-  CONTACT_DELIVERY_ERROR_CODE,
-  type ContactDeliveryErrorCode,
-} from "../../server/email/contact-delivery";
+import { CONTACT_DELIVERY_ERROR_CODE } from "../../server/email/contact-delivery";
 import type { ContactSubmissionInput, ContactSubmissionResult } from "../../server/domain/contact-submission";
 
-type ApiErrorCode = ContactErrorCode | ContactDeliveryErrorCode;
+type ApiErrorCode = ContactErrorCode | typeof CONTACT_DELIVERY_ERROR_CODE.unavailable;
 export type ContactSubmitHandler = (input: ContactSubmissionInput) => Promise<ContactSubmissionResult>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,19 +17,17 @@ const read = (form: FormData, name: string) => {
 };
 
 function status(code: ApiErrorCode): number {
-  if (
-    [
-      CONTACT_ERROR_CODE.inquiryTypeInvalid,
-      CONTACT_ERROR_CODE.nameRequired,
-      CONTACT_ERROR_CODE.emailInvalid,
-      CONTACT_ERROR_CODE.messageRequired,
-      CONTACT_ERROR_CODE.fieldTooLong,
-      CONTACT_ERROR_CODE.emailUndeliverable,
-      CONTACT_ERROR_CODE.emailDisposable,
-    ].includes(code as never)
-  ) return 422;
   if (code === CONTACT_ERROR_CODE.rejected) return 400;
   if (code === CONTACT_ERROR_CODE.rateLimited) return 429;
+  if (
+    code === CONTACT_ERROR_CODE.inquiryTypeInvalid ||
+    code === CONTACT_ERROR_CODE.nameRequired ||
+    code === CONTACT_ERROR_CODE.emailInvalid ||
+    code === CONTACT_ERROR_CODE.messageRequired ||
+    code === CONTACT_ERROR_CODE.fieldTooLong ||
+    code === CONTACT_ERROR_CODE.emailUndeliverable ||
+    code === CONTACT_ERROR_CODE.emailDisposable
+  ) return 422;
   return 503;
 }
 
@@ -41,21 +36,18 @@ function failure(requestId: string, code: ApiErrorCode): Response {
     code === CONTACT_ERROR_CODE.unavailable ||
     code === CONTACT_ERROR_CODE.emailVerificationUnavailable ||
     code === CONTACT_DELIVERY_ERROR_CODE.unavailable;
-  return Response.json(
-    {
-      request_id: requestId,
-      status: "error",
-      data: null,
-      error: {
-        code,
-        message: unavailable
-          ? "Contact submission is temporarily unavailable."
-          : "Contact submission could not be accepted.",
-        retryable: unavailable || code === CONTACT_ERROR_CODE.rateLimited,
-      },
+  return Response.json({
+    request_id: requestId,
+    status: "error",
+    data: null,
+    error: {
+      code,
+      message: unavailable
+        ? "Contact submission is temporarily unavailable."
+        : "Contact submission could not be accepted.",
+      retryable: unavailable || code === CONTACT_ERROR_CODE.rateLimited,
     },
-    { status: status(code), headers: { "cache-control": "no-store" } },
-  );
+  }, { status: status(code), headers: { "cache-control": "no-store" } });
 }
 
 export async function handleContactRequest(
@@ -65,22 +57,16 @@ export async function handleContactRequest(
 ): Promise<Response> {
   const fallbackId = newRequestId();
   if (request.method !== "POST") return failure(fallbackId, CONTACT_ERROR_CODE.rejected);
-
   let form: FormData;
-  try {
-    form = await request.formData();
-  } catch {
-    return failure(fallbackId, CONTACT_ERROR_CODE.rejected);
-  }
+  try { form = await request.formData(); }
+  catch { return failure(fallbackId, CONTACT_ERROR_CODE.rejected); }
 
   const submittedId = read(form, "requestId").trim();
   const requestId = UUID.test(submittedId) ? submittedId : fallbackId;
   if (read(form, CONTACT_HONEYPOT_FIELD).trim()) return failure(requestId, CONTACT_ERROR_CODE.rejected);
 
-  const ip =
-    request.headers.get("x-real-ip")?.trim() ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "";
+  const ip = request.headers.get("x-real-ip")?.trim()
+    || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "";
   if (!ip) return failure(requestId, CONTACT_ERROR_CODE.unavailable);
 
   const result = await submit({
@@ -100,9 +86,10 @@ export async function handleContactRequest(
 }
 
 export async function action({ request }: { request: Request }): Promise<Response> {
-  const [submission, recaptcha, rateLimit, email, delivery] = await Promise.all([
+  const [submission, recaptcha, state, rateLimit, email, delivery] = await Promise.all([
     import("../../server/domain/contact-submission"),
     import("../../server/adapters/google-recaptcha.server"),
+    import("../../server/repositories/supabase-contact-request-state.server"),
     import("../../server/repositories/supabase-contact-rate-limit.server"),
     import("../../server/adapters/emailable-email-verifier.server"),
     import("../../server/adapters/resend-contact-delivery.server"),
@@ -110,6 +97,7 @@ export async function action({ request }: { request: Request }): Promise<Respons
   return handleContactRequest(request, (input) =>
     submission.submitContactInquiry(input, {
       humanVerifier: recaptcha.createGoogleRecaptchaVerifier(),
+      requestState: state.createSupabaseContactRequestState(),
       rateLimiter: rateLimit.createSupabaseContactRateLimiter(),
       emailVerifier: email.createEmailableEmailVerifier(),
       delivery: delivery.createResendContactDelivery(),
