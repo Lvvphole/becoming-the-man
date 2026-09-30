@@ -1,17 +1,9 @@
 import { createHmac } from "node:crypto";
-import type {
-  ContactRequestState,
-  ContactSubmissionResult,
-} from "../domain/contact-submission";
+import type { ContactRequestState, ContactSubmissionResult } from "../domain/contact-submission";
 
 type Env = Readonly<Record<string, string | undefined>>;
 type DbFetch = (input: URL, init: RequestInit) => Promise<Response>;
 const SCOPE = "contact";
-
-const first = (value: unknown): Record<string, unknown> | null =>
-  Array.isArray(value) && value[0] && typeof value[0] === "object"
-    ? (value[0] as Record<string, unknown>)
-    : null;
 
 export function createSupabaseContactRequestState(
   options: { env?: Env; fetchImpl?: DbFetch; now?: () => number } = {},
@@ -26,17 +18,15 @@ export function createSupabaseContactRequestState(
     body: unknown,
     params: Record<string, string> = {},
   ): Promise<Response | null> {
-    const base = env.SUPABASE_URL;
-    const credential = env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!base || !credential) return null;
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return null;
     try {
-      const url = new URL(path, base);
+      const url = new URL(path, env.SUPABASE_URL);
       for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
       return await fetchImpl(url, {
         method,
         headers: {
-          apikey: credential,
-          authorization: `Bearer ${credential}`,
+          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+          authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
           "content-type": "application/json",
           prefer: "return=representation",
         },
@@ -47,17 +37,13 @@ export function createSupabaseContactRequestState(
     }
   }
 
-  async function settle(
-    requestId: string,
-    status: "retryable" | "completed",
-    result_jsonb: object,
-  ): Promise<boolean> {
-    const response = await send("/rest/v1/idempotency_keys", "PATCH", { status, result_jsonb }, {
-      scope: `eq.${SCOPE}`,
-      key: `eq.${requestId}`,
-      status: "eq.pending",
+  async function patch(requestId: string, status: string, payload: object): Promise<boolean> {
+    const response = await send("/rest/v1/idempotency_keys", "PATCH", payload, {
+      scope: `eq.${SCOPE}`, key: `eq.${requestId}`, status,
     });
-    return Boolean(response?.ok);
+    if (!response?.ok) return false;
+    const rows = await response.json().catch(() => null);
+    return Array.isArray(rows) && rows.length === 1;
   }
 
   return {
@@ -65,8 +51,7 @@ export function createSupabaseContactRequestState(
       const secret = env.CONTACT_RATE_LIMIT_HMAC_KEY;
       if (!secret) return { status: "unavailable" };
       const requestHash = createHmac("sha256", secret)
-        .update(`contact-request:v1\0${JSON.stringify(input)}`)
-        .digest("hex");
+        .update(`contact-request:v1\0${JSON.stringify(input)}`).digest("hex");
       const response = await send("/rest/v1/rpc/claim_idempotency_key", "POST", {
         p_scope: SCOPE,
         p_key: input.requestId,
@@ -74,8 +59,10 @@ export function createSupabaseContactRequestState(
         p_expires_at: new Date(now() + 86_400_000).toISOString(),
       });
       if (!response?.ok) return { status: "unavailable" };
+      const rows = await response.json().catch(() => null);
+      const row = Array.isArray(rows) && rows[0] && typeof rows[0] === "object"
+        ? (rows[0] as Record<string, unknown>) : null;
 
-      const row = first(await response.json());
       if (row?.decision === "CLAIMED") return { status: "new" };
       if (row?.decision === "CONFLICT") return { status: "conflict" };
       if (row?.decision === "IN_PROGRESS") return { status: "in_progress" };
@@ -90,32 +77,17 @@ export function createSupabaseContactRequestState(
       }
 
       const state = stored.state as { rateLimitClaimed?: unknown; verification?: unknown };
-      const reacquired = await send("/rest/v1/idempotency_keys", "PATCH", { status: "pending" }, {
-        scope: `eq.${SCOPE}`,
-        key: `eq.${input.requestId}`,
-        request_hash: `eq.${requestHash}`,
-        status: "eq.retryable",
-      });
-      const rows = reacquired?.ok ? await reacquired.json() : null;
-      if (!Array.isArray(rows) || rows.length !== 1) return { status: "in_progress" };
-      return {
-        status: "retry",
-        rateLimitClaimed: state.rateLimitClaimed === true,
-        verification:
-          state.verification === "verified" ||
-          state.verification === "risky" ||
-          state.verification === "unknown"
-            ? state.verification
-            : undefined,
-      };
+      if (!await patch(input.requestId, "eq.retryable", { status: "pending" })) {
+        return { status: "in_progress" };
+      }
+      const verification =
+        state.verification === "verified" || state.verification === "risky" ||
+        state.verification === "unknown" ? state.verification : undefined;
+      return { status: "retry", rateLimitClaimed: state.rateLimitClaimed === true, verification };
     },
-
-    retry(requestId, state) {
-      return settle(requestId, "retryable", { state });
-    },
-
-    complete(requestId, result) {
-      return settle(requestId, "completed", { result });
-    },
+    retry: (requestId, state) =>
+      patch(requestId, "eq.pending", { status: "retryable", result_jsonb: { state } }),
+    complete: (requestId, result) =>
+      patch(requestId, "eq.pending", { status: "completed", result_jsonb: { result } }),
   };
 }
