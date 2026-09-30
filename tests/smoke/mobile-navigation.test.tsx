@@ -19,7 +19,7 @@ describe("mobile primary navigation", () => {
     expect(html).toContain('<a href="/book">Book</a>');
     expect(html).toContain('<a href="#non-negotiables">The 24 Non-Negotiables</a>');
     expect(html).toContain('<span aria-disabled="true">About</span>');
-    expect(html).toContain('<span aria-disabled="true">Contact</span>');
+    expect(html).toContain('<a href="/contact">Contact</a>');
     expect(html).toContain('<a href="#community">Newsletter</a>');
   });
 
@@ -30,7 +30,7 @@ describe("mobile primary navigation", () => {
     expect(html).toContain('<a href="/book">BOOK</a>');
     expect(html).toContain('<a href="#non-negotiables">THE 24 NON-NEGOTIABLES</a>');
     expect(html).toContain('<span aria-disabled="true">ABOUT</span>');
-    expect(html).toContain('<span aria-disabled="true">CONTACT</span>');
+    expect(html).toContain('<a href="/contact">CONTACT</a>');
     expect(html).toContain('<a href="#community">NEWSLETTER</a>');
 
     expect(html).toContain('<nav aria-label="Legal">');
