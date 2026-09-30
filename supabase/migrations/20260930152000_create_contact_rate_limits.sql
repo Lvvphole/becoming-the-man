@@ -81,7 +81,7 @@ RETURNS integer
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, public
-AS $
+AS $$
 DECLARE
   v_deleted integer;
 BEGIN
@@ -105,7 +105,7 @@ BEGIN
   GET DIAGNOSTICS v_deleted = ROW_COUNT;
   RETURN v_deleted;
 END;
-$;
+$$;
 
 REVOKE ALL ON FUNCTION public.claim_contact_rate_limit(text, text)
   FROM PUBLIC, anon, authenticated, community_runtime;
