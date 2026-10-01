@@ -7,6 +7,7 @@ import {
 } from "../../contracts/contact";
 
 type ContactFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+type ContactField = "inquiryType" | "name" | "email" | "message";
 
 type ContactApiPayload = {
   status?: unknown;
@@ -42,6 +43,18 @@ const CONTACT_ENDPOINT = "/api/contact";
 const RECAPTCHA_SCRIPT_ID = "btmsct-google-recaptcha";
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY?.trim() ?? "";
 
+export function contactErrorField(code: string): ContactField | null {
+  if (code === CONTACT_ERROR_CODE.inquiryTypeInvalid) return "inquiryType";
+  if (code === CONTACT_ERROR_CODE.nameRequired) return "name";
+  if (
+    code === CONTACT_ERROR_CODE.emailInvalid ||
+    code === CONTACT_ERROR_CODE.emailUndeliverable ||
+    code === CONTACT_ERROR_CODE.emailDisposable
+  ) return "email";
+  if (code === CONTACT_ERROR_CODE.messageRequired) return "message";
+  return null;
+}
+
 export function contactErrorMessage(code: string): string {
   if (code === CONTACT_ERROR_CODE.rateLimited) {
     return "An inquiry from this email or network was submitted recently. Please try again later.";
@@ -49,6 +62,8 @@ export function contactErrorMessage(code: string): string {
   if (code === CONTACT_ERROR_CODE.rejected) {
     return "We could not verify this submission. Complete the reCAPTCHA and try again.";
   }
+  if (code === CONTACT_ERROR_CODE.inquiryTypeInvalid) return "Choose a valid inquiry type.";
+  if (code === CONTACT_ERROR_CODE.nameRequired) return "Enter your name.";
   if (
     code === CONTACT_ERROR_CODE.emailInvalid ||
     code === CONTACT_ERROR_CODE.emailUndeliverable
@@ -58,13 +73,9 @@ export function contactErrorMessage(code: string): string {
   if (code === CONTACT_ERROR_CODE.emailDisposable) {
     return "Use a non-disposable email address so a reply can reach you.";
   }
-  if (
-    code === CONTACT_ERROR_CODE.inquiryTypeInvalid ||
-    code === CONTACT_ERROR_CODE.nameRequired ||
-    code === CONTACT_ERROR_CODE.messageRequired ||
-    code === CONTACT_ERROR_CODE.fieldTooLong
-  ) {
-    return "Review the highlighted form fields and try again.";
+  if (code === CONTACT_ERROR_CODE.messageRequired) return "Enter a message.";
+  if (code === CONTACT_ERROR_CODE.fieldTooLong) {
+    return "One or more fields is too long. Shorten your entry and try again.";
   }
   if (
     code === CONTACT_ERROR_CODE.unavailable ||
@@ -132,6 +143,7 @@ export function meta() {
 type UiStatus = {
   kind: "idle" | "submitting" | "success" | "error";
   message: string;
+  field?: ContactField;
 };
 
 export function ContactPage() {
@@ -154,6 +166,14 @@ export function ContactPage() {
     }
 
     let active = true;
+    const unavailable = () => {
+      if (!active) return;
+      setRecaptchaToken("");
+      setStatus({
+        kind: "error",
+        message: "Contact verification is temporarily unavailable. Please try again.",
+      });
+    };
     const renderCaptcha = () => {
       const api = window.grecaptcha;
       const container = captchaContainerRef.current;
@@ -174,35 +194,42 @@ export function ContactPage() {
               message: "The reCAPTCHA verification expired. Complete it again before sending.",
             });
           },
-          "error-callback"() {
-            setRecaptchaToken("");
-            setStatus({
-              kind: "error",
-              message: "Contact verification is temporarily unavailable. Please try again.",
-            });
-          },
+          "error-callback": unavailable,
         });
       });
     };
 
-    const existing = document.getElementById(RECAPTCHA_SCRIPT_ID) as HTMLScriptElement | null;
+    let script = document.getElementById(RECAPTCHA_SCRIPT_ID) as HTMLScriptElement | null;
+    const loaded = () => {
+      if (script) script.dataset.recaptchaState = "loaded";
+      renderCaptcha();
+    };
+    const failed = () => {
+      if (script) script.dataset.recaptchaState = "error";
+      unavailable();
+    };
+
     if (window.grecaptcha) {
       renderCaptcha();
-    } else if (existing) {
-      existing.addEventListener("load", renderCaptcha);
+    } else if (script?.dataset.recaptchaState === "error") {
+      unavailable();
     } else {
-      const script = document.createElement("script");
-      script.id = RECAPTCHA_SCRIPT_ID;
-      script.src = "https://www.google.com/recaptcha/api.js?render=explicit";
-      script.async = true;
-      script.defer = true;
-      script.addEventListener("load", renderCaptcha);
-      document.head.appendChild(script);
+      if (!script) {
+        script = document.createElement("script");
+        script.id = RECAPTCHA_SCRIPT_ID;
+        script.src = "https://www.google.com/recaptcha/api.js?render=explicit";
+        script.async = true;
+        script.defer = true;
+      }
+      script.addEventListener("load", loaded);
+      script.addEventListener("error", failed);
+      if (!script.isConnected) document.head.appendChild(script);
     }
 
     return () => {
       active = false;
-      existing?.removeEventListener("load", renderCaptcha);
+      script?.removeEventListener("load", loaded);
+      script?.removeEventListener("error", failed);
     };
   }, []);
 
@@ -214,8 +241,8 @@ export function ContactPage() {
   };
 
   const handleChange = () => {
+    requestIdRef.current = null;
     if (status.kind === "error") {
-      requestIdRef.current = null;
       setStatus({
         kind: "idle",
         message: recaptchaToken
@@ -258,7 +285,11 @@ export function ContactPage() {
     }
 
     if (!result.retryable) requestIdRef.current = null;
-    setStatus({ kind: "error", message: result.message });
+    setStatus({
+      kind: "error",
+      message: result.message,
+      field: contactErrorField(result.code) ?? undefined,
+    });
   };
 
   return (
@@ -329,6 +360,8 @@ export function ContactPage() {
                 id="contact-inquiry-type"
                 name="inquiryType"
                 defaultValue=""
+                aria-invalid={status.field === "inquiryType" || undefined}
+                aria-describedby={status.field === "inquiryType" ? "contact-status" : undefined}
                 required
               >
                 <option value="" disabled>Select an inquiry type</option>
@@ -345,6 +378,8 @@ export function ContactPage() {
                 type="text"
                 autoComplete="name"
                 maxLength={CONTACT_FIELD_LIMITS.name}
+                aria-invalid={status.field === "name" || undefined}
+                aria-describedby={status.field === "name" ? "contact-status" : undefined}
                 required
               />
 
@@ -355,6 +390,8 @@ export function ContactPage() {
                 type="email"
                 autoComplete="email"
                 maxLength={CONTACT_FIELD_LIMITS.email}
+                aria-invalid={status.field === "email" || undefined}
+                aria-describedby={status.field === "email" ? "contact-status" : undefined}
                 required
               />
 
@@ -364,6 +401,8 @@ export function ContactPage() {
                 name="message"
                 rows={8}
                 maxLength={CONTACT_FIELD_LIMITS.message}
+                aria-invalid={status.field === "message" || undefined}
+                aria-describedby={status.field === "message" ? "contact-status" : undefined}
                 required
               />
 
