@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CONTACT_ERROR_CODE } from "../../contracts/contact";
 import {
   ContactPage,
+  contactErrorField,
   contactErrorMessage,
   submitContactForm,
 } from "../../src/routes/contact";
@@ -101,7 +102,17 @@ describe("FR-105 contact page UI", () => {
     });
   });
 
-  it("uses stable user-facing messages for validation, abuse, and verification errors", () => {
+  it("maps stable validation failures to their accessible form controls", () => {
+    expect(contactErrorField(CONTACT_ERROR_CODE.inquiryTypeInvalid)).toBe("inquiryType");
+    expect(contactErrorField(CONTACT_ERROR_CODE.nameRequired)).toBe("name");
+    expect(contactErrorField(CONTACT_ERROR_CODE.emailInvalid)).toBe("email");
+    expect(contactErrorField(CONTACT_ERROR_CODE.messageRequired)).toBe("message");
+    expect(contactErrorField(CONTACT_ERROR_CODE.fieldTooLong)).toBeNull();
+    expect(contactErrorMessage(CONTACT_ERROR_CODE.nameRequired)).toBe("Enter your name.");
+    expect(contactErrorMessage(CONTACT_ERROR_CODE.messageRequired)).toBe("Enter a message.");
+  });
+
+  it("uses stable user-facing messages for abuse and verification errors", () => {
     expect(contactErrorMessage(CONTACT_ERROR_CODE.emailInvalid)).toContain(
       "email address that can receive replies",
     );
